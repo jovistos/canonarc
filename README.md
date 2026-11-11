@@ -1,45 +1,80 @@
 # `narrative-memory`
 
-**Tier 1–5 Temporal Graph, Voice Bank & Causal Time-Travel Engine for LLMs**
+<p align="center">
+  <strong>Tier 1–5 Temporal Graph, Voice Bank & Causal Time-Travel Engine for LLMs</strong>
+</p>
 
-`narrative-memory` is a standalone, local-first Python library that gives LLM applications **stateful character memory, directed interpersonal relationships, empirical voice anchoring, and Git-like discrete time travel (`rollback_to(step)` and `branch(step)`)**.
+<p align="center">
+  <a href="docs/architecture.md">Architecture</a> &bull;
+  <a href="docs/time-travel.md">Time Travel Guide</a> &bull;
+  <a href="docs/voice-bank.md">Voice Bank & Anti-Drift</a> &bull;
+  <a href="docs/presets.md">Domain Presets</a> &bull;
+  <a href="docs/api-reference.md">API Reference</a>
+</p>
 
-## Core Features
+---
 
-- **Discrete Causal Time**: State transitions, pairwise relationships, and dialogue exemplars are indexed by discrete causal steps (turns, scenes, ticks, or chunks).
-- **Zero-Copy Branching (`branch(at_step, name)`)**: Fork alternate reality timelines with zero data duplication.
-- **Instant Rollback (`rollback_to(step)`)**: Rewind timeline state atomically in `< 1ms`.
-- **Tiers 1–4 Temporal Graph**: Track immutable base attributes, dynamic pairwise registers/stances, and 1-hop coreference aliases.
-- **Tier 5 Gated Voice Bank**: Style and syntax anchoring without "error compounding", protected by a 2-stage anti-drift gate.
-- **Single-File SQLite Portability**: Everything lives in a single portable `.sqlite` file (or `:memory:`).
+## What is `narrative-memory`?
+
+Most LLM memory frameworks (`mem0`, `zep`, `langmem`) are designed for **conversational chatbots** operating in continuous wall-clock time. They fall short when building **Interactive Fiction, Visual Novels (Ren'Py / Ink), Multi-Agent Simulations, Creative Writing Co-Pilots, and Sequential Localization Pipelines**, where time moves in discrete **causal steps** (turns, scenes, ticks, or chunks) and narrative state must be **rewindable, branchable, and spoiler-free**.
+
+`narrative-memory` gives your application:
+- **Tiers 1–4 Temporal Property Graph**: Tracks immutable base attributes (gender, declension, archetypes), asymmetric directed relationships (`A -> B != B -> A`), 1-hop coreference aliases (`"the old wizard"` -> `char_merlin`), and rolling state deltas.
+- **Tier 5 Gated Dynamic Voice Bank**: Anchors dialogue style and syntax using historical in-character lines without "error compounding" or self-conditioning drift.
+- **First-Class Causal Time Travel**: Atomic `< 1ms` rollback (`rollback_to(step)`) and zero-copy branching (`branch(at_step, name)`) via an append-only SQLite lineage tree.
+- **Single-File Portability**: The entire multiverse of timelines, graph revisions, and vector embeddings lives inside a **single `.sqlite` file** (or `:memory:`).
+
+---
 
 ## Quickstart
 
+### Installation
+
+```bash
+pip install narrative-memory
+```
+
+*(Dependencies: `pydantic>=2.0`, `numpy>=1.26`, `rapidfuzz>=3.0`, and standard library `sqlite3`)*
+
+---
+
+### Basic Usage
+
 ```python
-from narrative_memory import NarrativeMemoryEngine, EntityRecord, EdgeDelta, StepDelta
+from narrative_memory import (
+    NarrativeMemoryEngine,
+    EntityRecord,
+    StepDelta,
+    EntityDelta,
+    EdgeDelta,
+    VoiceExemplar,
+)
 
-engine = NarrativeMemoryEngine(":memory:")
+# 1. Initialize Engine (file path or in-memory)
+engine = NarrativeMemoryEngine("story_save.sqlite")
 
-# Tier 1 Seeding
+# 2. Tier 1: Seed Root Entities & Aliases (Step 0)
 engine.register_entity(
     EntityRecord(
         entity_id="char_arthur",
         canonical_name="Arthur",
-        base_attributes={"gender": "M", "title": "King"},
-    )
+        base_attributes={"title": "King", "gender": "M"},
+    ),
+    step=0,
 )
 engine.register_entity(
     EntityRecord(
         entity_id="char_merlin",
         canonical_name="Merlin",
-        base_attributes={"gender": "M", "title": "Court Wizard"},
+        base_attributes={"title": "Court Wizard", "gender": "M"},
     ),
     aliases=["the old wizard"],
+    step=0,
 )
 
-# Step 1: Initial relationship
+# 3. Tier 2 & 3: Commit Scene State Shifts
 engine.commit_step(
-    step=1,
+    step=10,
     delta=StepDelta(
         edges=[
             EdgeDelta(
@@ -51,6 +86,113 @@ engine.commit_step(
     ),
 )
 
-# Branch a counterfactual timeline at step 1
-branch = engine.branch(at_step=1, name="rebellion_route")
+# Index an empirical voice exemplar into Tier 5 Voice Bank
+engine.index_voice_exemplars(
+    step=15,
+    exemplars=[
+        VoiceExemplar(
+            speaker_id="char_arthur",
+            text="I beseech your counsel, venerable wizard, for the kingdom stands upon the precipice.",
+            metadata={"register": "formal", "tone": "respectful"},
+            quality_score=9.5,
+        )
+    ],
+)
 ```
+
+---
+
+### Step 82 Argument & Step 85 Retrieval
+
+```python
+# Step 82: Argument occurs -> Arthur's mood shifts and he switches to informal contempt
+engine.commit_step(
+    step=82,
+    delta=StepDelta(
+        entities=[EntityDelta(entity_id="char_arthur", state={"mood": "furious"})],
+        edges=[
+            EdgeDelta(
+                source_id="char_arthur",
+                target_id="char_merlin",
+                state={"register": "informal", "tone": "furious"},
+            )
+        ],
+    ),
+)
+
+# Step 85: Unified Tier 1-5 Retrieval Pass
+context = engine.retrieve_context(
+    step=85,
+    text='Arthur glared at the old wizard. "Speak truth now!"',
+    mentions=["Arthur", "the old wizard"],
+    top_k_voice=3,
+)
+
+# 1. 1-Hop Coreference: "the old wizard" -> char_merlin
+assert any(m.entity_id == "char_merlin" for m in context.resolved_mentions)
+
+# 2. Temporal Edge: Arthur -> Merlin is informal & furious
+edge = context.active_edges[0]
+print(edge.state)  # {'register': 'informal', 'tone': 'furious'}
+
+# 3. Formatted Prompt for LLM Injection
+print(engine.format_context(context))
+```
+
+---
+
+### Time Travel: Branching & Rollback
+
+```python
+# Create an alternate timeline branch forked at Step 50
+engine.branch(at_step=50, name="reconciliation_route")
+
+# Switch to the new branch
+engine.checkout("reconciliation_route")
+
+# The branch inherits state up to Step 50, but ignores the Step 82 argument on 'main'!
+branch_context = engine.retrieve_context(step=85)
+assert branch_context.active_edges[0].state["register"] == "formal"
+
+# Rewind 'main' back to Step 10 in < 1ms
+engine.rollback_to(step=10, timeline_id="main")
+```
+
+---
+
+## Transactional Step Execution (`step_transaction`)
+
+For interactive game loops, visual novels, and automated pipelines, use the built-in context manager:
+
+```python
+with engine.step_transaction(step=85, text=scene_text) as tx:
+    # 1. Access point-in-time state (guaranteed clean, no forward leakage)
+    ctx = tx.context
+    prompt = engine.format_context(ctx)
+
+    # 2. Call your LLM
+    response = call_llm(prompt)
+
+    # 3. Extract deltas & voice lines, then stage for atomic commit
+    tx.commit(
+        delta=extracted_delta,
+        exemplars=candidate_lines,
+    )
+# Automatically commits on exit or rolls back if an exception occurs
+```
+
+---
+
+## Documentation
+
+- [**Architecture Guide**](docs/architecture.md): Deep dive into the 5-tier state superset and SQLite schema.
+- [**Causal Time Travel**](docs/time-travel.md): Lineage trees, copy-on-write branching, atomic rollback, and save-slot exports.
+- [**Voice Bank & Anti-Drift**](docs/voice-bank.md): The 2-stage ingestion gate, n-gram vector retrieval, and hard-register cascade.
+- [**Domain Presets**](docs/presets.md): Pre-built prompt formatters for Interactive Fiction, Localization, and Multi-Agent Simulations.
+- [**API Reference**](docs/api-reference.md): Detailed reference for classes, methods, and Pydantic schemas.
+
+---
+
+## License
+
+MIT License. Free and open source.
