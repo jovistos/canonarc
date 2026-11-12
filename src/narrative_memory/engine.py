@@ -853,8 +853,59 @@ class NarrativeMemoryEngine:
             step_range=step_range,
         )
 
-    def extract_dialogue_candidates(self, text: str, *, source_text: str = "") -> list[DialogueCandidate]:
-        return self.voice_bank.gate.extract_candidates(text, source_text=source_text)
+    def extract_dialogue_candidates(
+        self,
+        text: str,
+        *,
+        source_text: str = "",
+        step: int | None = None,
+        timeline_id: str | None = None,
+    ) -> list[DialogueCandidate]:
+        tl = timeline_id or self.active_timeline
+        if step is None:
+            tl_info = self.store.get_timeline(tl)
+            cutoff_step = tl_info.head_step if tl_info is not None else 0
+        else:
+            cutoff_step = step
+
+        active_entities = self.store.get_all_active_entities(tl, cutoff_step)
+        active_aliases = self.store.get_all_active_aliases(tl, cutoff_step)
+
+        def _resolve_speaker(before_win: str, after_win: str) -> tuple[str | None, str | None, str | None]:
+            if not active_entities and not active_aliases:
+                return None, None, None
+            for window in (before_win, after_win):
+                if not window:
+                    continue
+                mentions = self.mention_resolver.resolve(
+                    text=window,
+                    explicit_mentions=(),
+                    entities=active_entities,
+                    aliases=active_aliases,
+                )
+                if mentions:
+                    # Order by earliest appearance in the attribution clause
+                    win_lower = window.lower()
+                    ordered = sorted(
+                        mentions,
+                        key=lambda m: (
+                            idx if (idx := win_lower.find(m.surface_text.lower())) != -1 else len(win_lower)
+                        ),
+                    )
+                    speaker_id = ordered[0].entity_id
+                    speaker_surface = ordered[0].surface_text
+                    addressee_id = next(
+                        (m.entity_id for m in ordered[1:] if m.entity_id != speaker_id),
+                        None,
+                    )
+                    return speaker_id, addressee_id, speaker_surface
+            return None, None, None
+
+        return self.voice_bank.gate.extract_candidates(
+            text,
+            source_text=source_text,
+            speaker_resolver=_resolve_speaker,
+        )
 
     def index_voice_exemplars(
         self,

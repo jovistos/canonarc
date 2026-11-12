@@ -4,20 +4,41 @@ import math
 import re
 import uuid
 import zlib
-from typing import Any, Literal, Protocol, Sequence
+from typing import Any, Callable, Literal, Protocol, Sequence
 
 import numpy as np
 
 from .models import DialogueCandidate, EpisodeRecord, VoiceExemplar
 from .presets import DEFAULT_SCHEMA_POLICY, SchemaPolicy
 
-# Quoted dialogue patterns across English, European, and Balkan typographic conventions
+# Quoted dialogue patterns across English, European, Balkan, and CJK typographic conventions
 DIALOGUE_PATTERNS = [
     re.compile(r'["“]([^"”]+)["”]'),           # Standard English / curved quotes
     re.compile(r'„([^“]+)“'),                   # Serbian / Croatian / German
     re.compile(r'«([^»]+)»'),                   # French / Russian guillemets
+    re.compile(r'「([^」]+)」'),                   # Japanese / Traditional Chinese
+    re.compile(r'『([^』]+)』'),                   # Japanese / Traditional Chinese inner quotes
     re.compile(r'(?:^|\n)\s*—\s*([^\n]+)'),     # Em-dash dialogue lines
 ]
+
+# CJK Unified Ideographs, Extension A, Hiragana, Katakana, Hangul Syllables
+_CJK_CHAR_RE = re.compile(r'[\u3040-\u309f\u30a0-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af]')
+_TOKEN_UNIT_RE = re.compile(
+    r'[\u3040-\u309f\u30a0-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af]'
+    r'|[^\W\u3040-\u309f\u30a0-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af]+'
+)
+
+
+def _tokenize_units(text: str) -> tuple[list[str], bool]:
+    """Tokenizes text into linguistic units (CJK characters individually, non-CJK words via \\w+).
+
+    Returns (lowercased_units, is_cjk_dominant).
+    """
+    units = [m.lower() for m in _TOKEN_UNIT_RE.findall(text)]
+    if not units:
+        return [], False
+    cjk_count = sum(1 for u in units if len(u) == 1 and _CJK_CHAR_RE.match(u))
+    return units, (cjk_count / len(units)) >= 0.5
 
 
 class Embedder(Protocol):
@@ -74,7 +95,31 @@ class IngestionGate:
         self.min_distinctiveness = min_distinctiveness
         self.min_quality = min_quality
 
-    def extract_candidates(self, text: str, *, source_text: str = "") -> list[DialogueCandidate]:
+    @staticmethod
+    def _attribution_windows(text: str, start: int, end: int) -> tuple[str, str]:
+        """Extracts local pre-quote and post-quote attribution clauses."""
+        before_raw = text[max(0, start - 140) : start]
+        # Bound by paragraph break or previous closing quote
+        for sep in ("\n\n", '"', "”", "“", "»", "」", "』"):
+            idx = before_raw.rfind(sep)
+            if idx != -1:
+                before_raw = before_raw[idx + len(sep) :]
+
+        after_raw = text[end : min(len(text), end + 100)]
+        for sep in ("\n\n", "\n", '"', "”", "“", "«", "「", "『"):
+            idx = after_raw.find(sep)
+            if idx != -1:
+                after_raw = after_raw[:idx]
+
+        return before_raw.strip(), after_raw.strip()
+
+    def extract_candidates(
+        self,
+        text: str,
+        *,
+        source_text: str = "",
+        speaker_resolver: Callable[[str, str], tuple[str | None, str | None, str | None]] | None = None,
+    ) -> list[DialogueCandidate]:
         """Extracts quoted dialogue spans and applies Gate 1 (length + distinctiveness pre-filter)."""
         candidates: list[DialogueCandidate] = []
         seen_spans: set[str] = set()
@@ -86,33 +131,53 @@ class IngestionGate:
                     continue
                 seen_spans.add(span)
 
-                words = re.findall(r"\w+", span)
-                word_count = len(words)
-                if not (self.min_words <= word_count <= self.max_words):
+                units, is_cjk = _tokenize_units(span)
+                unit_count = len(units)
+                effective_max = int(self.max_words * 1.8) if is_cjk else self.max_words
+                if not (self.min_words <= unit_count <= effective_max):
                     continue
 
-                # Compute distinctiveness & lexical diversity
-                lower_words = [w.lower() for w in words]
-                unique_words = set(lower_words)
+                # Compute script-agnostic distinctiveness & lexical diversity
+                unique_units = set(units)
                 # Root Type-Token Ratio: |V| / sqrt(N)
-                root_ttr = len(unique_words) / math.sqrt(word_count)
-                # Long words density (>= 6 chars)
-                long_words = [w for w in lower_words if len(w) >= 6]
-                long_ratio = len(long_words) / word_count
+                root_ttr = len(unique_units) / math.sqrt(unit_count)
+                lexical_diversity = len(unique_units) / unit_count
+                bigrams = set(zip(units, units[1:]))
+                bigram_diversity = len(bigrams) / max(1, unit_count - 1)
 
-                # Normalized distinctiveness score in [0.0, 1.0]
-                distinctiveness = min(1.0, (root_ttr / 5.0) * 0.6 + long_ratio * 0.4)
-                lexical_diversity = len(unique_words) / word_count
+                if is_cjk:
+                    # CJK words are typically 1-2 characters; avoid English >=6-char word-length bias
+                    distinctiveness = min(1.0, (root_ttr / 5.0) * 0.6 + bigram_diversity * 0.4)
+                else:
+                    long_words = [w for w in units if len(w) >= 6]
+                    long_ratio = len(long_words) / unit_count
+                    distinctiveness = min(
+                        1.0,
+                        (root_ttr / 5.0) * 0.55 + long_ratio * 0.25 + bigram_diversity * 0.20,
+                    )
 
                 if distinctiveness >= self.min_distinctiveness:
+                    speaker_id: str | None = None
+                    addressee_id: str | None = None
+                    speaker_surface: str | None = None
+                    if speaker_resolver is not None:
+                        before_win, after_win = self._attribution_windows(
+                            text, match.start(), match.end()
+                        )
+                        speaker_id, addressee_id, speaker_surface = speaker_resolver(
+                            before_win, after_win
+                        )
                     candidates.append(
                         DialogueCandidate(
                             candidate_id=str(uuid.uuid4())[:8],
                             text=span,
                             source_text=source_text,
-                            word_count=word_count,
+                            word_count=unit_count,
                             distinctiveness_score=round(distinctiveness, 3),
                             lexical_diversity=round(lexical_diversity, 3),
+                            speaker_id=speaker_id,
+                            addressee_id=addressee_id,
+                            speaker_surface=speaker_surface,
                         )
                     )
 

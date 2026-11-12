@@ -189,6 +189,38 @@ class DialogueCandidate(BaseModel):
     word_count: int
     distinctiveness_score: float
     lexical_diversity: float
+    speaker_id: str | None = None
+    addressee_id: str | None = None
+    speaker_surface: str | None = None
+
+    def to_voice_exemplar(
+        self,
+        *,
+        step: int,
+        speaker_id: str | None = None,
+        addressee_id: str | None = None,
+        metadata: dict[str, str] | None = None,
+        quality_score: float = 10.0,
+        timeline_id: str = "main",
+    ) -> VoiceExemplar:
+        """Converts this candidate into a VoiceExemplar ready for index_voice_exemplars()."""
+        resolved_speaker = speaker_id or self.speaker_id
+        if not resolved_speaker:
+            raise ValueError(
+                "Cannot convert DialogueCandidate to VoiceExemplar without speaker_id."
+            )
+        resolved_addressee = addressee_id if addressee_id is not None else self.addressee_id
+        return VoiceExemplar(
+            timeline_id=timeline_id,
+            step=step,
+            speaker_id=resolved_speaker,
+            addressee_id=resolved_addressee,
+            text=self.text,
+            source_text=self.source_text,
+            metadata=dict(metadata) if metadata else {},
+            quality_score=quality_score,
+            distinctiveness_score=self.distinctiveness_score,
+        )
 
 
 class VoiceExemplar(BaseModel):
