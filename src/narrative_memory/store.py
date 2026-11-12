@@ -96,7 +96,7 @@ CREATE INDEX IF NOT EXISTS idx_episode_epistemics_lookup
     ON episode_epistemics(timeline_id, episode_id, step DESC);
 """
 
-LINEAGE_ACTIVE_REVISIONS_CTE = """
+LINEAGE_CTE_SQL = """
 WITH RECURSIVE lineage(timeline_id, parent_id, max_step, depth) AS (
     SELECT timeline_id, parent_id, :cutoff_step, 0
     FROM timelines
@@ -105,13 +105,20 @@ WITH RECURSIVE lineage(timeline_id, parent_id, max_step, depth) AS (
     SELECT
         t.timeline_id,
         t.parent_id,
-        MIN(l.max_step, t_child.fork_step),
+        CASE
+            WHEN l.max_step IS NULL THEN t_child.fork_step
+            WHEN t_child.fork_step IS NULL THEN l.max_step
+            ELSE MIN(l.max_step, t_child.fork_step)
+        END,
         l.depth + 1
     FROM lineage l
     JOIN timelines t_child ON t_child.timeline_id = l.timeline_id
     JOIN timelines t       ON t.timeline_id = l.parent_id
     WHERE l.parent_id IS NOT NULL
-),
+)
+"""
+
+LINEAGE_ACTIVE_REVISIONS_CTE = LINEAGE_CTE_SQL + """,
 ranked_revisions AS (
     SELECT
         r.revision_id,
@@ -146,7 +153,7 @@ ranked_revisions AS (
     FROM graph_revisions r
     JOIN lineage l
       ON r.timeline_id = l.timeline_id
-     AND r.step <= l.max_step
+     AND (l.max_step IS NULL OR r.step <= l.max_step)
     /*EXTRA_FILTERS*/
 )
 SELECT
@@ -234,13 +241,13 @@ class MemoryStore(Protocol):
     def get_lineage_episodes(
         self,
         timeline_id: str,
-        cutoff_step: int,
+        cutoff_step: int | None,
     ) -> list[tuple[EpisodeRecord, bytes]]: ...
     def query_episodes(
         self,
         *,
         timeline_id: str = "main",
-        cutoff_step: int = 999999999,
+        cutoff_step: int | None = None,
         participants: Sequence[str] = (),
         match_all_participants: bool = False,
         predicate: str | None = None,
@@ -261,7 +268,13 @@ class MemoryStore(Protocol):
         cutoff_step: int,
         speaker_id: str,
     ) -> list[tuple[VoiceExemplar, bytes]]: ...
-    def get_history(self, subject_key: str, *, timeline_id: str) -> list[dict[str, Any]]: ...
+    def get_history(
+        self,
+        subject_key: str,
+        *,
+        timeline_id: str,
+        record_type: str | None = None,
+    ) -> list[dict[str, Any]]: ...
     def diff_timelines(self, timeline_a: str, timeline_b: str, *, at_step: int) -> dict[str, Any]: ...
     def export_snapshot(
         self,
@@ -282,6 +295,10 @@ class CausalStore:
         self._init_db()
 
     def _init_db(self) -> None:
+        self.conn.execute("PRAGMA foreign_keys = ON;")
+        if self.db_path != ":memory:" and not self.db_path.startswith("file::memory:"):
+            self.conn.execute("PRAGMA journal_mode = WAL;")
+            self.conn.execute("PRAGMA busy_timeout = 5000;")
         with self.conn:
             self.conn.executescript(SCHEMA_SQL)
             # Safe migration for existing DBs lacking believed_summary column
@@ -305,6 +322,26 @@ class CausalStore:
 
     # --- Timelines & Branching ---
 
+    def _compute_head_step(self, timeline_id: str, fork_step: int | None) -> int:
+        row = self.conn.execute(
+            """
+            SELECT MAX(s) AS max_step FROM (
+                SELECT MAX(step) AS s FROM graph_revisions WHERE timeline_id = ?
+                UNION ALL
+                SELECT MAX(step) AS s FROM episodes WHERE timeline_id = ?
+                UNION ALL
+                SELECT MAX(step) AS s FROM voice_exemplars WHERE timeline_id = ?
+                UNION ALL
+                SELECT MAX(step) AS s FROM episode_epistemics WHERE timeline_id = ?
+            )
+            """,
+            (timeline_id, timeline_id, timeline_id, timeline_id),
+        ).fetchone()
+        max_step = row["max_step"] if row else None
+        if max_step is not None:
+            return int(max_step)
+        return int(fork_step) if fork_step is not None else 0
+
     def create_timeline(
         self,
         timeline_id: str,
@@ -312,6 +349,8 @@ class CausalStore:
         fork_step: int | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> TimelineInfo:
+        if parent_id is not None and fork_step is None:
+            raise ValueError("fork_step is required when parent_id is specified.")
         with self.conn:
             self.conn.execute(
                 "INSERT INTO timelines (timeline_id, parent_id, fork_step, metadata) VALUES (?, ?, ?, ?)",
@@ -321,6 +360,7 @@ class CausalStore:
             timeline_id=timeline_id,
             parent_id=parent_id,
             fork_step=fork_step,
+            head_step=fork_step if fork_step is not None else 0,
             metadata=metadata or {},
         )
 
@@ -337,17 +377,40 @@ class CausalStore:
             timeline_id=row["timeline_id"],
             parent_id=row["parent_id"],
             fork_step=row["fork_step"],
+            head_step=self._compute_head_step(row["timeline_id"], row["fork_step"]),
             metadata=json.loads(row["metadata"]),
         )
 
     def list_timelines(self) -> list[TimelineInfo]:
         cursor = self.conn.cursor()
-        cursor.execute("SELECT timeline_id, parent_id, fork_step, metadata FROM timelines")
+        cursor.execute(
+            """
+            WITH all_steps AS (
+                SELECT timeline_id, MAX(step) AS max_step FROM graph_revisions GROUP BY timeline_id
+                UNION ALL
+                SELECT timeline_id, MAX(step) AS max_step FROM episodes GROUP BY timeline_id
+                UNION ALL
+                SELECT timeline_id, MAX(step) AS max_step FROM voice_exemplars GROUP BY timeline_id
+                UNION ALL
+                SELECT timeline_id, MAX(step) AS max_step FROM episode_epistemics GROUP BY timeline_id
+            ),
+            head_steps AS (
+                SELECT timeline_id, MAX(max_step) AS head_step
+                FROM all_steps
+                GROUP BY timeline_id
+            )
+            SELECT t.timeline_id, t.parent_id, t.fork_step, t.metadata,
+                   COALESCE(h.head_step, t.fork_step, 0) AS head_step
+            FROM timelines t
+            LEFT JOIN head_steps h ON h.timeline_id = t.timeline_id
+            """
+        )
         return [
             TimelineInfo(
                 timeline_id=row["timeline_id"],
                 parent_id=row["parent_id"],
                 fork_step=row["fork_step"],
+                head_step=int(row["head_step"]),
                 metadata=json.loads(row["metadata"]),
             )
             for row in cursor.fetchall()
@@ -390,10 +453,13 @@ class CausalStore:
     def get_active_revisions(
         self,
         timeline_id: str,
-        cutoff_step: int,
+        cutoff_step: int | None,
         record_type: str | None = None,
         *,
         subject_key: str | None = None,
+        source_id: str | None = None,
+        target_id: str | None = None,
+        relation_type: str | None = None,
     ) -> list[dict[str, Any]]:
         """Returns the winning (latest) non-tombstone revision for every subject_key along the lineage."""
         filters: list[str] = []
@@ -404,6 +470,18 @@ class CausalStore:
         if subject_key is not None:
             filters.append("r.subject_key = :subject_key")
             params["subject_key"] = subject_key
+        if source_id is not None:
+            filters.append("r.source_id = :source_id")
+            params["source_id"] = source_id
+        if target_id is not None:
+            filters.append("r.target_id = :target_id")
+            params["target_id"] = target_id
+        if relation_type is not None:
+            if relation_type == "stance":
+                filters.append("(r.relation_type = :relation_type OR r.relation_type IS NULL)")
+            else:
+                filters.append("r.relation_type = :relation_type")
+            params["relation_type"] = relation_type
 
         extra_sql = f"WHERE {' AND '.join(filters)}" if filters else ""
         query = LINEAGE_ACTIVE_REVISIONS_CTE.replace("/*EXTRA_FILTERS*/", extra_sql)
@@ -521,12 +599,14 @@ class CausalStore:
         timeline_id: str,
         cutoff_step: int,
     ) -> list[DirectedEdgeRecord]:
-        revisions = self.get_active_revisions(timeline_id, cutoff_step, record_type="edge")
-        edges: list[DirectedEdgeRecord] = []
-        for rev in revisions:
-            if rev["source_id"] == source_id and rev["target_id"] == target_id:
-                edges.append(self._row_to_edge(rev))
-        return edges
+        revisions = self.get_active_revisions(
+            timeline_id,
+            cutoff_step,
+            record_type="edge",
+            source_id=source_id,
+            target_id=target_id,
+        )
+        return [self._row_to_edge(rev) for rev in revisions]
 
     def get_all_active_entities(
         self,
@@ -543,14 +623,16 @@ class CausalStore:
         *,
         relation_type: str | None = None,
     ) -> list[DirectedEdgeRecord]:
-        revs = self.get_active_revisions(timeline_id, cutoff_step, record_type="edge")
-        edges: list[DirectedEdgeRecord] = []
-        for r in revs:
-            r_type = r.get("relation_type") or "stance"
-            if relation_type is not None and r_type != relation_type:
-                continue
-            edges.append(self._row_to_edge(r, default_relation=r_type))
-        return edges
+        revs = self.get_active_revisions(
+            timeline_id,
+            cutoff_step,
+            record_type="edge",
+            relation_type=relation_type,
+        )
+        return [
+            self._row_to_edge(r, default_relation=r.get("relation_type") or "stance")
+            for r in revs
+        ]
 
     def get_all_active_aliases(
         self,
@@ -563,7 +645,7 @@ class CausalStore:
             p = r["payload"]
             aliases.append(
                 AliasRecord(
-                    alias=r["subject_key"],
+                    alias=p.get("alias") or r["subject_key"],
                     entity_id=r["source_id"],
                     kind=p.get("kind", "epithet"),
                     known_to=p.get("known_to"),
@@ -574,6 +656,10 @@ class CausalStore:
         return aliases
 
     # --- Write-Time State Materialization (Resolve-on-Write) ---
+
+    @staticmethod
+    def alias_subject_key(entity_id: str, alias: str) -> str:
+        return f"{entity_id}:{alias.strip().lower()}"
 
     def _insert_alias_revision(
         self,
@@ -586,24 +672,25 @@ class CausalStore:
     ) -> None:
         """Inserts an alias revision preserving kind, known_to, and persona_name."""
         if isinstance(alias, AliasRecord):
-            alias_str = alias.alias
+            alias_str = alias.alias.strip()
             target_entity_id = alias.entity_id or entity_id
-            alias_payload: dict[str, Any] = {"kind": alias.kind}
+            alias_payload: dict[str, Any] = {"alias": alias_str, "kind": alias.kind}
             if alias.known_to is not None:
                 alias_payload["known_to"] = alias.known_to
             if alias.persona_name is not None:
                 alias_payload["persona_name"] = alias.persona_name
         else:
-            alias_str = alias
+            alias_str = alias.strip()
             target_entity_id = entity_id
-            alias_payload = {"kind": default_kind}
+            alias_payload = {"alias": alias_str, "kind": default_kind}
 
+        subject_key = self.alias_subject_key(target_entity_id, alias_str)
         self.conn.execute(
             """
             INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, source_id, target_id, is_tombstone, payload)
             VALUES (?, ?, 'alias', ?, ?, NULL, 0, ?)
             """,
-            (timeline_id, step, alias_str, target_entity_id, json.dumps(alias_payload)),
+            (timeline_id, step, subject_key, target_entity_id, json.dumps(alias_payload)),
         )
 
     def register_entity(
@@ -704,11 +791,12 @@ class CausalStore:
                 canonical_name = ed.canonical_name or (active.canonical_name if active else ed.entity_id)
                 kind = ed.kind or (active.kind if active else "character")
 
+                has_state_mutation = bool(ed.state or ed.private_state or not ed.merge_state)
                 caused_by = ed.caused_by_episode_id
-                if caused_by is None and active and ed.merge_state:
+                if caused_by is None and active and ed.merge_state and not has_state_mutation:
                     caused_by = active.caused_by_episode_id
                 reason = ed.reason
-                if reason is None and active and ed.merge_state:
+                if reason is None and active and ed.merge_state and not has_state_mutation:
                     reason = active.reason
 
                 payload: dict[str, Any] = {
@@ -742,14 +830,15 @@ class CausalStore:
                         default_kind="epithet",
                     )
 
-                # Remove aliases (tombstone)
+                # Remove aliases (tombstone scoped to entity_id)
                 for alias in ed.remove_aliases:
+                    alias_key = self.alias_subject_key(ed.entity_id, alias)
                     self.conn.execute(
                         """
                         INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, source_id, target_id, is_tombstone, payload)
                         VALUES (?, ?, 'alias', ?, ?, NULL, 1, '{}')
                         """,
-                        (timeline_id, step, alias, ed.entity_id),
+                        (timeline_id, step, alias_key, ed.entity_id),
                     )
 
             # 2. Process edge deltas
@@ -776,11 +865,12 @@ class CausalStore:
                 edge_state.update(rd.state)
                 edge_state = {k: v for k, v in edge_state.items() if v is not None}
 
+                has_edge_mutation = bool(rd.state or not rd.merge)
                 caused_by = rd.caused_by_episode_id
-                if caused_by is None and active_edge and rd.merge:
+                if caused_by is None and active_edge and rd.merge and not has_edge_mutation:
                     caused_by = active_edge.caused_by_episode_id
                 reason = rd.reason
-                if reason is None and active_edge and rd.merge:
+                if reason is None and active_edge and rd.merge and not has_edge_mutation:
                     reason = active_edge.reason
 
                 edge_payload = dict(edge_state)
@@ -876,59 +966,46 @@ class CausalStore:
     def get_lineage_episodes(
         self,
         timeline_id: str,
-        cutoff_step: int,
+        cutoff_step: int | None,
+        *,
+        episode_id: str | None = None,
     ) -> list[tuple[EpisodeRecord, bytes]]:
-        """Retrieves all episodes visible along the lineage with step <= cutoff_step, with resolved epistemic map."""
-        ep_query = """
-        WITH RECURSIVE lineage(timeline_id, parent_id, max_step, depth) AS (
-            SELECT timeline_id, parent_id, :cutoff_step, 0
-            FROM timelines
-            WHERE timeline_id = :timeline_id
-            UNION ALL
-            SELECT
-                t.timeline_id,
-                t.parent_id,
-                MIN(l.max_step, t_child.fork_step),
-                l.depth + 1
-            FROM lineage l
-            JOIN timelines t_child ON t_child.timeline_id = l.timeline_id
-            JOIN timelines t       ON t.timeline_id = l.parent_id
-            WHERE l.parent_id IS NOT NULL
-        )
+        """Retrieves episodes visible along the lineage with step <= cutoff_step, with resolved epistemic map."""
+        ep_filter = "WHERE e.episode_id = :episode_id" if episode_id is not None else ""
+        epistemic_filter = "WHERE ep.episode_id = :episode_id" if episode_id is not None else ""
+
+        ep_query = (
+            LINEAGE_CTE_SQL
+            + f"""
         SELECT e.episode_id, e.timeline_id, e.step, e.predicate, e.summary,
                e.location_id, e.salience, e.participants, e.witnesses, e.metadata, e.embedding
         FROM episodes e
         JOIN lineage l
           ON e.timeline_id = l.timeline_id
-         AND e.step <= l.max_step
-        ORDER BY e.step DESC;
+         AND (l.max_step IS NULL OR e.step <= l.max_step)
+        {ep_filter}
+        ORDER BY l.depth ASC, e.step DESC;
         """
-
-        epistemic_query = """
-        WITH RECURSIVE lineage(timeline_id, parent_id, max_step, depth) AS (
-            SELECT timeline_id, parent_id, :cutoff_step, 0
-            FROM timelines
-            WHERE timeline_id = :timeline_id
-            UNION ALL
-            SELECT
-                t.timeline_id,
-                t.parent_id,
-                MIN(l.max_step, t_child.fork_step),
-                l.depth + 1
-            FROM lineage l
-            JOIN timelines t_child ON t_child.timeline_id = l.timeline_id
-            JOIN timelines t       ON t.timeline_id = l.parent_id
-            WHERE l.parent_id IS NOT NULL
         )
+
+        epistemic_query = (
+            LINEAGE_CTE_SQL
+            + f"""
         SELECT ep.episode_id, ep.entity_id, ep.epistemic, ep.believed_summary, ep.step, l.depth
         FROM episode_epistemics ep
         JOIN lineage l
           ON ep.timeline_id = l.timeline_id
-         AND ep.step <= l.max_step
+         AND (l.max_step IS NULL OR ep.step <= l.max_step)
+        {epistemic_filter}
         ORDER BY l.depth DESC, ep.step ASC, ep.id ASC;
         """
+        )
+        params: dict[str, Any] = {"timeline_id": timeline_id, "cutoff_step": cutoff_step}
+        if episode_id is not None:
+            params["episode_id"] = episode_id
+
         cursor = self.conn.cursor()
-        cursor.execute(epistemic_query, {"timeline_id": timeline_id, "cutoff_step": cutoff_step})
+        cursor.execute(epistemic_query, params)
         known_map: dict[str, dict[str, Literal["direct", "told", "deceived"]]] = {}
         believed_map: dict[str, dict[str, str]] = {}
         for row in cursor.fetchall():
@@ -946,12 +1023,13 @@ class CausalStore:
             # 'direct' awareness is never downgraded to 'told' or 'deceived'
             if known_map[ep_id].get(ent_id) != "direct":
                 known_map[ep_id][ent_id] = mode
-                if mode == "deceived" and row["believed_summary"]:
-                    believed_map.setdefault(ep_id, {})[ent_id] = row["believed_summary"]
+                if mode == "deceived":
+                    if row["believed_summary"]:
+                        believed_map.setdefault(ep_id, {})[ent_id] = row["believed_summary"]
                 elif ep_id in believed_map and ent_id in believed_map[ep_id]:
                     believed_map[ep_id].pop(ent_id, None)
 
-        cursor.execute(ep_query, {"timeline_id": timeline_id, "cutoff_step": cutoff_step})
+        cursor.execute(ep_query, params)
         items: list[tuple[EpisodeRecord, bytes]] = []
         seen_ids: set[str] = set()
         for row in cursor.fetchall():
@@ -974,6 +1052,7 @@ class CausalStore:
                 metadata=json.loads(row["metadata"]),
             )
             items.append((rec, bytes(row["embedding"])))
+        items.sort(key=lambda item: item[0].step, reverse=True)
         return items
 
     def get_episode(
@@ -981,18 +1060,16 @@ class CausalStore:
         episode_id: str,
         *,
         timeline_id: str = "main",
-        cutoff_step: int = 999999999,
+        cutoff_step: int | None = None,
     ) -> EpisodeRecord | None:
-        for ep, _ in self.get_lineage_episodes(timeline_id, cutoff_step):
-            if ep.episode_id == episode_id:
-                return ep
-        return None
+        items = self.get_lineage_episodes(timeline_id, cutoff_step, episode_id=episode_id)
+        return items[0][0] if items else None
 
     def query_episodes(
         self,
         *,
         timeline_id: str = "main",
-        cutoff_step: int = 999999999,
+        cutoff_step: int | None = None,
         participants: Sequence[str] = (),
         match_all_participants: bool = False,
         predicate: str | None = None,
@@ -1066,41 +1143,34 @@ class CausalStore:
     def get_lineage_voice_exemplars(
         self,
         timeline_id: str,
-        cutoff_step: int,
+        cutoff_step: int | None,
         speaker_id: str,
     ) -> list[tuple[VoiceExemplar, bytes]]:
-        """Retrieves voice exemplars for speaker_id visible along the lineage with step < cutoff_step."""
-        query = """
-        WITH RECURSIVE lineage(timeline_id, parent_id, max_step, depth) AS (
-            SELECT timeline_id, parent_id, :cutoff_step, 0
-            FROM timelines
-            WHERE timeline_id = :timeline_id
-            UNION ALL
-            SELECT
-                t.timeline_id,
-                t.parent_id,
-                MIN(l.max_step, t_child.fork_step),
-                l.depth + 1
-            FROM lineage l
-            JOIN timelines t_child ON t_child.timeline_id = l.timeline_id
-            JOIN timelines t       ON t.timeline_id = l.parent_id
-            WHERE l.parent_id IS NOT NULL
-        )
+        """Retrieves voice exemplars for speaker_id visible along the lineage with step <= cutoff_step."""
+        query = (
+            LINEAGE_CTE_SQL
+            + """
         SELECT v.exemplar_id, v.timeline_id, v.step, v.speaker_id, v.addressee_id,
                v.text, v.source_text, v.metadata, v.quality_score, v.distinctiveness_score, v.embedding
         FROM voice_exemplars v
         JOIN lineage l
           ON v.timeline_id = l.timeline_id
-         AND v.step <= l.max_step
+         AND (l.max_step IS NULL OR v.step <= l.max_step)
         WHERE v.speaker_id = :speaker_id
-        ORDER BY v.step DESC;
+        ORDER BY l.depth ASC, v.step DESC;
         """
+        )
         cursor = self.conn.cursor()
         cursor.execute(query, {"timeline_id": timeline_id, "cutoff_step": cutoff_step, "speaker_id": speaker_id})
-        items = []
+        items: list[tuple[VoiceExemplar, bytes]] = []
+        seen_ids: set[str] = set()
         for row in cursor.fetchall():
+            ex_id = row["exemplar_id"]
+            if ex_id in seen_ids:
+                continue
+            seen_ids.add(ex_id)
             ex = VoiceExemplar(
-                exemplar_id=row["exemplar_id"],
+                exemplar_id=ex_id,
                 timeline_id=row["timeline_id"],
                 step=row["step"],
                 speaker_id=row["speaker_id"],
@@ -1112,68 +1182,83 @@ class CausalStore:
                 distinctiveness_score=row["distinctiveness_score"],
             )
             items.append((ex, bytes(row["embedding"])))
+        items.sort(key=lambda item: item[0].step, reverse=True)
         return items
 
     # --- History & Branch Diffing ---
 
-    def get_history(self, subject_key: str, *, timeline_id: str) -> list[dict[str, Any]]:
+    def get_history(
+        self,
+        subject_key: str,
+        *,
+        timeline_id: str,
+        record_type: str | None = None,
+    ) -> list[dict[str, Any]]:
         """Returns the full chronological interval history of a subject_key along the lineage."""
-        query = """
-        WITH RECURSIVE lineage(timeline_id, parent_id, max_step, depth) AS (
-            SELECT timeline_id, parent_id, 999999999, 0
-            FROM timelines
-            WHERE timeline_id = :timeline_id
-            UNION ALL
-            SELECT
-                t.timeline_id,
-                t.parent_id,
-                MIN(l.max_step, t_child.fork_step),
-                l.depth + 1
-            FROM lineage l
-            JOIN timelines t_child ON t_child.timeline_id = l.timeline_id
-            JOIN timelines t       ON t.timeline_id = l.parent_id
-            WHERE l.parent_id IS NOT NULL
-        ),
+        type_filter = "AND r.record_type = :record_type" if record_type is not None else ""
+        query = (
+            LINEAGE_CTE_SQL
+            + f""",
         visible_revs AS (
             SELECT
                 r.*,
                 ROW_NUMBER() OVER (
-                    PARTITION BY r.step
+                    PARTITION BY r.record_type, r.step
                     ORDER BY l.depth ASC, r.revision_id DESC
                 ) AS step_rn
             FROM graph_revisions r
             JOIN lineage l
               ON r.timeline_id = l.timeline_id
-             AND r.step <= l.max_step
+             AND (l.max_step IS NULL OR r.step <= l.max_step)
             WHERE r.subject_key = :subject_key
+            {type_filter}
         ),
         projected AS (
             SELECT
                 revision_id,
                 timeline_id,
+                record_type,
                 step AS valid_from_step,
-                LEAD(step - 1) OVER (ORDER BY step ASC, revision_id ASC) AS valid_to_step,
+                LEAD(step - 1) OVER (
+                    PARTITION BY record_type
+                    ORDER BY step ASC, revision_id ASC
+                ) AS valid_to_step,
                 is_tombstone,
                 payload
             FROM visible_revs
             WHERE step_rn = 1
         )
-        SELECT * FROM projected ORDER BY valid_from_step ASC;
+        SELECT * FROM projected ORDER BY valid_from_step ASC, revision_id ASC;
         """
+        )
+        params: dict[str, Any] = {
+            "timeline_id": timeline_id,
+            "cutoff_step": None,
+            "subject_key": subject_key,
+        }
+        if record_type is not None:
+            params["record_type"] = record_type
         cursor = self.conn.cursor()
-        cursor.execute(query, {"timeline_id": timeline_id, "subject_key": subject_key})
+        cursor.execute(query, params)
         rows = cursor.fetchall()
-        return [
-            {
-                "revision_id": r["revision_id"],
-                "timeline_id": r["timeline_id"],
-                "valid_from_step": r["valid_from_step"],
-                "valid_to_step": r["valid_to_step"],
-                "is_tombstone": bool(r["is_tombstone"]),
-                "payload": json.loads(r["payload"]),
-            }
-            for r in rows
-        ]
+        results: list[dict[str, Any]] = []
+        for r in rows:
+            is_tombstone = bool(r["is_tombstone"])
+            valid_to = r["valid_to_step"]
+            if is_tombstone:
+                valid_to = r["valid_from_step"]
+            results.append(
+                {
+                    "revision_id": r["revision_id"],
+                    "timeline_id": r["timeline_id"],
+                    "record_type": r["record_type"],
+                    "valid_from_step": r["valid_from_step"],
+                    "valid_to_step": valid_to,
+                    "is_tombstone": is_tombstone,
+                    "payload": json.loads(r["payload"]),
+                }
+            )
+        return results
 
     def diff_timelines(
         self,
@@ -1229,54 +1314,80 @@ class CausalStore:
         export_store = CausalStore(path)
         active_revs = self.get_active_revisions(timeline_id, at_step)
         lineage_episodes = self.get_lineage_episodes(timeline_id, at_step)
-        # Export visible voice exemplars along the lineage up to at_step
-        voice_query = """
-        WITH RECURSIVE lineage(timeline_id, parent_id, max_step, depth) AS (
-            SELECT timeline_id, parent_id, :cutoff_step, 0
-            FROM timelines
-            WHERE timeline_id = :timeline_id
-            UNION ALL
-            SELECT
-                t.timeline_id,
-                t.parent_id,
-                MIN(l.max_step, t_child.fork_step),
-                l.depth + 1
-            FROM lineage l
-            JOIN timelines t_child ON t_child.timeline_id = l.timeline_id
-            JOIN timelines t       ON t.timeline_id = l.parent_id
-            WHERE l.parent_id IS NOT NULL
+
+        epistemic_query = (
+            LINEAGE_CTE_SQL
+            + """
+        SELECT ep.step, ep.episode_id, ep.entity_id, ep.epistemic, ep.believed_summary
+        FROM episode_epistemics ep
+        JOIN lineage l
+          ON ep.timeline_id = l.timeline_id
+         AND (l.max_step IS NULL OR ep.step <= l.max_step)
+        ORDER BY l.depth DESC, ep.step ASC, ep.id ASC;
+        """
         )
-        SELECT v.exemplar_id, v.timeline_id, v.step, v.speaker_id, v.addressee_id,
+        epistemic_rows = self.conn.execute(
+            epistemic_query, {"timeline_id": timeline_id, "cutoff_step": at_step}
+        ).fetchall()
+
+        voice_query = (
+            LINEAGE_CTE_SQL
+            + """
+        SELECT v.exemplar_id, v.step, v.speaker_id, v.addressee_id,
                v.text, v.source_text, v.metadata, v.quality_score, v.distinctiveness_score, v.embedding
         FROM voice_exemplars v
         JOIN lineage l
           ON v.timeline_id = l.timeline_id
-         AND v.step <= l.max_step
-        ORDER BY v.step ASC;
+         AND (l.max_step IS NULL OR v.step <= l.max_step)
+        ORDER BY l.depth ASC, v.step ASC;
         """
+        )
         voice_rows = self.conn.execute(
             voice_query, {"timeline_id": timeline_id, "cutoff_step": at_step}
         ).fetchall()
-        lineage_exemplars = [
-            (
-                VoiceExemplar(
-                    exemplar_id=row["exemplar_id"],
-                    timeline_id="main",
-                    step=row["step"],
-                    speaker_id=row["speaker_id"],
-                    addressee_id=row["addressee_id"],
-                    text=row["text"],
-                    source_text=row["source_text"],
-                    metadata=json.loads(row["metadata"]),
-                    quality_score=row["quality_score"],
-                    distinctiveness_score=row["distinctiveness_score"],
-                ),
-                bytes(row["embedding"]),
+        lineage_exemplars: list[tuple[VoiceExemplar, bytes]] = []
+        seen_exemplar_ids: set[str] = set()
+        for row in voice_rows:
+            ex_id = row["exemplar_id"]
+            if ex_id in seen_exemplar_ids:
+                continue
+            seen_exemplar_ids.add(ex_id)
+            lineage_exemplars.append(
+                (
+                    VoiceExemplar(
+                        exemplar_id=ex_id,
+                        timeline_id="main",
+                        step=row["step"],
+                        speaker_id=row["speaker_id"],
+                        addressee_id=row["addressee_id"],
+                        text=row["text"],
+                        source_text=row["source_text"],
+                        metadata=json.loads(row["metadata"]),
+                        quality_score=row["quality_score"],
+                        distinctiveness_score=row["distinctiveness_score"],
+                    ),
+                    bytes(row["embedding"]),
+                )
             )
-            for row in voice_rows
-        ]
+
         with export_store.conn:
             for r in active_revs:
+                if r.get("prior_payload") is not None and r.get("prior_step") is not None:
+                    export_store.conn.execute(
+                        """
+                        INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, relation_type, source_id, target_id, is_tombstone, payload)
+                        VALUES ('main', ?, ?, ?, ?, ?, ?, 0, ?)
+                        """,
+                        (
+                            r["prior_step"],
+                            r["record_type"],
+                            r["subject_key"],
+                            r.get("relation_type"),
+                            r["source_id"],
+                            r["target_id"],
+                            json.dumps(r["prior_payload"]),
+                        ),
+                    )
                 export_store.conn.execute(
                     """
                     INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, relation_type, source_id, target_id, is_tombstone, payload)
@@ -1292,7 +1403,40 @@ class CausalStore:
                         json.dumps(r["payload"]),
                     ),
                 )
-            export_store._insert_episodes_in_tx(lineage_episodes, timeline_id="main")
+            for ep, emb_bytes in lineage_episodes:
+                export_store.conn.execute(
+                    """
+                    INSERT OR REPLACE INTO episodes
+                    (episode_id, timeline_id, step, predicate, summary, location_id, salience, participants, witnesses, metadata, embedding)
+                    VALUES (?, 'main', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        ep.episode_id,
+                        ep.step,
+                        ep.predicate,
+                        ep.summary,
+                        ep.location_id,
+                        ep.salience,
+                        json.dumps(ep.participants),
+                        json.dumps(ep.witnesses),
+                        json.dumps(ep.metadata),
+                        emb_bytes,
+                    ),
+                )
+            for row in epistemic_rows:
+                export_store.conn.execute(
+                    """
+                    INSERT INTO episode_epistemics (timeline_id, step, episode_id, entity_id, epistemic, believed_summary)
+                    VALUES ('main', ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        row["step"],
+                        row["episode_id"],
+                        row["entity_id"],
+                        row["epistemic"],
+                        row["believed_summary"],
+                    ),
+                )
             if lineage_exemplars:
                 export_store.insert_voice_exemplars(lineage_exemplars, timeline_id="main")
         export_store.close()

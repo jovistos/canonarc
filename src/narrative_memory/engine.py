@@ -22,7 +22,7 @@ from .models import (
     VoiceExemplar,
 )
 from .presets import DEFAULT_SCHEMA_POLICY, DomainPreset, InteractiveFictionPreset, SchemaPolicy
-from .store import CausalStore, MemoryStore
+from .store import CausalStore, MemoryStore, TimelineBranchConflictError
 from .voice import Embedder, IngestionGate, VoiceBank
 
 
@@ -175,8 +175,18 @@ class StepTransaction:
 
     def __enter__(self) -> StepTransaction:
         if self.rerun_clean:
-            # Clean rerun: roll back any prior data at >= step on this timeline
-            self.engine.rollback_to(self.step - 1, timeline_id=self.timeline_id)
+            # Fail fast if a child branch depends on steps >= self.step, without deleting yet
+            for tl in self.engine.list_timelines():
+                if (
+                    tl.parent_id == self.timeline_id
+                    and tl.fork_step is not None
+                    and tl.fork_step > self.step - 1
+                ):
+                    raise TimelineBranchConflictError(
+                        f"Cannot roll back '{self.timeline_id}' to step {self.step - 1}: child branch "
+                        f"'{tl.timeline_id}' forked at step {tl.fork_step}. "
+                        "Pass force=True to store.rollback_to to override."
+                    )
 
         self._context = self.engine.retrieve_context(
             self.step,
@@ -232,6 +242,8 @@ class StepTransaction:
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         if exc_type is None:
+            if self.rerun_clean:
+                self.engine.rollback_to(self.step - 1, timeline_id=self.timeline_id)
             if self._staged_delta or self._staged_exemplars or self._staged_episodes:
                 self.engine.commit_step(
                     self.step,
@@ -777,7 +789,7 @@ class NarrativeMemoryEngine:
     def query_episodes(
         self,
         *,
-        cutoff_step: int = 999999999,
+        cutoff_step: int | None = None,
         participants: Sequence[str] = (),
         match_all_participants: bool = False,
         predicate: str | None = None,
@@ -877,9 +889,15 @@ class NarrativeMemoryEngine:
     def list_timelines(self) -> list[TimelineInfo]:
         return self.store.list_timelines()
 
-    def get_history(self, subject_key: str, *, timeline_id: str | None = None) -> list[dict[str, Any]]:
+    def get_history(
+        self,
+        subject_key: str,
+        *,
+        timeline_id: str | None = None,
+        record_type: str | None = None,
+    ) -> list[dict[str, Any]]:
         tl = timeline_id or self.active_timeline
-        return self.store.get_history(subject_key, timeline_id=tl)
+        return self.store.get_history(subject_key, timeline_id=tl, record_type=record_type)
 
     def diff_timelines(self, timeline_a: str, timeline_b: str, *, at_step: int) -> dict[str, Any]:
         return self.store.diff_timelines(timeline_a, timeline_b, at_step=at_step)
@@ -935,9 +953,8 @@ class NarrativeMemoryEngine:
     ) -> StepDelta:
         """Normalizes canonical names/aliases into entity_ids and resolves intra-step episode IDs."""
         tl = timeline_id or self.active_timeline
-        cutoff = step if step is not None else 999999999
-        entities = self.store.get_all_active_entities(tl, cutoff)
-        aliases = self.store.get_all_active_aliases(tl, cutoff)
+        entities = self.store.get_all_active_entities(tl, step)
+        aliases = self.store.get_all_active_aliases(tl, step)
 
         lookup: dict[str, str] = {}
         for e in entities:
