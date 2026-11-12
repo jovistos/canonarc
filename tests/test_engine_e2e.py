@@ -140,3 +140,72 @@ def test_step_transaction():
     # After transaction, step 11 sees the updated state
     ctx11 = engine.retrieve_context(step=11)
     assert ctx11.entities[0].state["mood"] == "surprised"
+
+
+def test_multigraph_voice_and_preset_rendering():
+    from narrative_memory.presets import InteractiveFictionPreset
+    engine = NarrativeMemoryEngine(":memory:", preset=InteractiveFictionPreset())
+
+    engine.register_entity(EntityRecord(entity_id="char_arthur", canonical_name="Arthur"), step=0)
+    engine.register_entity(EntityRecord(entity_id="char_mordred", canonical_name="Mordred"), step=0)
+
+    # Commit both kinship and stance edges between Arthur and Mordred
+    engine.commit_step(
+        step=1,
+        delta=StepDelta(
+            edges=[
+                EdgeDelta(
+                    source_id="char_arthur",
+                    target_id="char_mordred",
+                    relation_type="kinship",
+                    state={"relation": "nephew"},
+                ),
+                EdgeDelta(
+                    source_id="char_arthur",
+                    target_id="char_mordred",
+                    relation_type="stance",
+                    state={"register": "formal", "tone": "suspicious", "trust": -0.8},
+                ),
+            ]
+        ),
+    )
+
+    # Index voice exemplar
+    ex_suspicious = VoiceExemplar(
+        step=2,
+        speaker_id="char_arthur",
+        text="Watch your words carefully, Mordred.",
+        metadata={"register": "formal", "tone": "suspicious"},
+        quality_score=9.0,
+    )
+    engine.index_voice_exemplars(2, [ex_suspicious])
+
+    ctx = engine.retrieve_context(
+        step=5,
+        text="Arthur observed Mordred from across the table.",
+        mentions=["Arthur", "Mordred"],
+    )
+
+    # 1. Active edges contain both typed edges
+    assert len(ctx.active_edges) == 2
+    types = {e.relation_type for e in ctx.active_edges}
+    assert types == {"kinship", "stance"}
+
+    # 2. Voice exemplar was selected using the stance edge, NOT shadowed by kinship
+    assert len(ctx.voice_exemplars) == 1
+    assert ctx.voice_exemplars[0].metadata["tone"] == "suspicious"
+
+    # 3. Prompt rendering includes both stance and typed kinship
+    formatted = engine.format_context(ctx)
+    assert "register=formal, tone=suspicious, trust=-0.8" in formatted
+    assert "char_arthur → char_mordred [kinship]: relation=nephew" in formatted
+
+    # 4. Optional edge_types filter works
+    ctx_stance_only = engine.retrieve_context(
+        step=5,
+        text="Arthur observed Mordred from across the table.",
+        mentions=["Arthur", "Mordred"],
+        edge_types=["stance"],
+    )
+    assert len(ctx_stance_only.active_edges) == 1
+    assert ctx_stance_only.active_edges[0].relation_type == "stance"
