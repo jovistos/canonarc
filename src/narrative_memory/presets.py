@@ -27,6 +27,7 @@ class SchemaPolicy:
     quality_weight: float = 0.05
     fallback_on_empty_hard_filter: bool = True
     hard_filter_mismatch_penalty: float = 0.25
+    hard_filter_fallback_note: str = "[Note: different {keys}]"
 
 
 DEFAULT_SCHEMA_POLICY = SchemaPolicy()
@@ -108,7 +109,9 @@ class InteractiveFictionPreset:
                 reg = ex.metadata.get("register", "")
                 tone = ex.metadata.get("tone", "")
                 tag = f"[{reg}, {tone}]" if (reg or tone) else ""
-                lines.append(f"- {ex.speaker_id} {tag}: \"{ex.text}\"")
+                fallback_note = ex.metadata.get("fallback_note", "")
+                note_str = f" {fallback_note}" if fallback_note else ""
+                lines.append(f"- {ex.speaker_id} {tag}{note_str}: \"{ex.text}\"")
 
         return "\n".join(lines)
 
@@ -171,7 +174,9 @@ class TranslationPreset:
             voice_lines: list[str] = ["## Character voice bank — stylistic anchor"]
             for ex in ctx.voice_exemplars:
                 reg = ex.metadata.get("register", "")
-                voice_lines.append(f'- {ex.speaker_id} ({reg}): "{ex.text}"')
+                fallback_note = ex.metadata.get("fallback_note", "")
+                note_str = f" {fallback_note}" if fallback_note else ""
+                voice_lines.append(f'- {ex.speaker_id} ({reg}){note_str}: "{ex.text}"')
             blocks.append("\n".join(voice_lines))
 
         return "\n\n".join(blocks)
@@ -206,7 +211,9 @@ class SimulationPreset:
         if ctx.voice_exemplars:
             lines.append("Past Utterance Anchors:")
             for ex in ctx.voice_exemplars:
-                lines.append(f"  {ex.speaker_id}: {ex.text}")
+                fallback_note = ex.metadata.get("fallback_note", "")
+                note_str = f" {fallback_note}" if fallback_note else ""
+                lines.append(f"  {ex.speaker_id}{note_str}: {ex.text}")
         return "\n".join(lines)
 
     def extraction_instructions(self) -> str:

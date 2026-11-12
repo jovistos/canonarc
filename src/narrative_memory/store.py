@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import sqlite3
+import threading
 import uuid
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, Literal, Protocol, Sequence
 
@@ -290,9 +293,31 @@ class CausalStore:
 
     def __init__(self, db_path: str | Path = ":memory:") -> None:
         self.db_path = str(db_path)
-        self.conn = sqlite3.connect(self.db_path)
+        self._lock = threading.RLock()
+        self._tx_depth = 0
+        self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self._init_db()
+
+    @contextlib.contextmanager
+    def transaction(self) -> Iterator[None]:
+        """Reentrant atomic SQLite transaction guarded by an RLock."""
+        with self._lock:
+            is_outermost = self._tx_depth == 0
+            if is_outermost and not self.conn.in_transaction:
+                self.conn.execute("BEGIN")
+            self._tx_depth += 1
+            try:
+                yield
+            except BaseException:
+                self._tx_depth -= 1
+                if is_outermost and self.conn.in_transaction:
+                    self.conn.rollback()
+                raise
+            else:
+                self._tx_depth -= 1
+                if is_outermost and self.conn.in_transaction:
+                    self.conn.commit()
 
     def _init_db(self) -> None:
         self.conn.execute("PRAGMA foreign_keys = ON;")
@@ -318,7 +343,8 @@ class CausalStore:
                 )
 
     def close(self) -> None:
-        self.conn.close()
+        with self._lock:
+            self.conn.close()
 
     # --- Timelines & Branching ---
 
@@ -351,7 +377,7 @@ class CausalStore:
     ) -> TimelineInfo:
         if parent_id is not None and fork_step is None:
             raise ValueError("fork_step is required when parent_id is specified.")
-        with self.conn:
+        with self.transaction():
             self.conn.execute(
                 "INSERT INTO timelines (timeline_id, parent_id, fork_step, metadata) VALUES (?, ?, ?, ?)",
                 (timeline_id, parent_id, fork_step, json.dumps(metadata or {})),
@@ -365,71 +391,73 @@ class CausalStore:
         )
 
     def get_timeline(self, timeline_id: str) -> TimelineInfo | None:
-        cursor = self.conn.cursor()
-        cursor.execute(
-            "SELECT timeline_id, parent_id, fork_step, metadata FROM timelines WHERE timeline_id = ?",
-            (timeline_id,),
-        )
-        row = cursor.fetchone()
-        if not row:
-            return None
-        return TimelineInfo(
-            timeline_id=row["timeline_id"],
-            parent_id=row["parent_id"],
-            fork_step=row["fork_step"],
-            head_step=self._compute_head_step(row["timeline_id"], row["fork_step"]),
-            metadata=json.loads(row["metadata"]),
-        )
-
-    def list_timelines(self) -> list[TimelineInfo]:
-        cursor = self.conn.cursor()
-        cursor.execute(
-            """
-            WITH all_steps AS (
-                SELECT timeline_id, MAX(step) AS max_step FROM graph_revisions GROUP BY timeline_id
-                UNION ALL
-                SELECT timeline_id, MAX(step) AS max_step FROM episodes GROUP BY timeline_id
-                UNION ALL
-                SELECT timeline_id, MAX(step) AS max_step FROM voice_exemplars GROUP BY timeline_id
-                UNION ALL
-                SELECT timeline_id, MAX(step) AS max_step FROM episode_epistemics GROUP BY timeline_id
-            ),
-            head_steps AS (
-                SELECT timeline_id, MAX(max_step) AS head_step
-                FROM all_steps
-                GROUP BY timeline_id
+        with self._lock:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                "SELECT timeline_id, parent_id, fork_step, metadata FROM timelines WHERE timeline_id = ?",
+                (timeline_id,),
             )
-            SELECT t.timeline_id, t.parent_id, t.fork_step, t.metadata,
-                   COALESCE(h.head_step, t.fork_step, 0) AS head_step
-            FROM timelines t
-            LEFT JOIN head_steps h ON h.timeline_id = t.timeline_id
-            """
-        )
-        return [
-            TimelineInfo(
+            row = cursor.fetchone()
+            if not row:
+                return None
+            return TimelineInfo(
                 timeline_id=row["timeline_id"],
                 parent_id=row["parent_id"],
                 fork_step=row["fork_step"],
-                head_step=int(row["head_step"]),
+                head_step=self._compute_head_step(row["timeline_id"], row["fork_step"]),
                 metadata=json.loads(row["metadata"]),
             )
-            for row in cursor.fetchall()
-        ]
+
+    def list_timelines(self) -> list[TimelineInfo]:
+        with self._lock:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                """
+                WITH all_steps AS (
+                    SELECT timeline_id, MAX(step) AS max_step FROM graph_revisions GROUP BY timeline_id
+                    UNION ALL
+                    SELECT timeline_id, MAX(step) AS max_step FROM episodes GROUP BY timeline_id
+                    UNION ALL
+                    SELECT timeline_id, MAX(step) AS max_step FROM voice_exemplars GROUP BY timeline_id
+                    UNION ALL
+                    SELECT timeline_id, MAX(step) AS max_step FROM episode_epistemics GROUP BY timeline_id
+                ),
+                head_steps AS (
+                    SELECT timeline_id, MAX(max_step) AS head_step
+                    FROM all_steps
+                    GROUP BY timeline_id
+                )
+                SELECT t.timeline_id, t.parent_id, t.fork_step, t.metadata,
+                       COALESCE(h.head_step, t.fork_step, 0) AS head_step
+                FROM timelines t
+                LEFT JOIN head_steps h ON h.timeline_id = t.timeline_id
+                """
+            )
+            return [
+                TimelineInfo(
+                    timeline_id=row["timeline_id"],
+                    parent_id=row["parent_id"],
+                    fork_step=row["fork_step"],
+                    head_step=int(row["head_step"]),
+                    metadata=json.loads(row["metadata"]),
+                )
+                for row in cursor.fetchall()
+            ]
 
     def rollback_to(self, step: int, *, timeline_id: str, force: bool = False) -> int:
         """Atomic rollback: deletes all revisions, exemplars, and episodes at > step for this timeline."""
-        if not force:
-            conflict = self.conn.execute(
-                "SELECT timeline_id, fork_step FROM timelines WHERE parent_id = ? AND fork_step > ?",
-                (timeline_id, step),
-            ).fetchone()
-            if conflict:
-                raise TimelineBranchConflictError(
-                    f"Cannot roll back '{timeline_id}' to step {step}: child branch "
-                    f"'{conflict['timeline_id']}' forked at step {conflict['fork_step']}. "
-                    "Pass force=True to override."
-                )
-        with self.conn:
+        with self.transaction():
+            if not force:
+                conflict = self.conn.execute(
+                    "SELECT timeline_id, fork_step FROM timelines WHERE parent_id = ? AND fork_step > ?",
+                    (timeline_id, step),
+                ).fetchone()
+                if conflict:
+                    raise TimelineBranchConflictError(
+                        f"Cannot roll back '{timeline_id}' to step {step}: child branch "
+                        f"'{conflict['timeline_id']}' forked at step {conflict['fork_step']}. "
+                        "Pass force=True to override."
+                    )
             c1 = self.conn.execute(
                 "DELETE FROM graph_revisions WHERE timeline_id = ? AND step > ?",
                 (timeline_id, step),
@@ -486,10 +514,12 @@ class CausalStore:
         extra_sql = f"WHERE {' AND '.join(filters)}" if filters else ""
         query = LINEAGE_ACTIVE_REVISIONS_CTE.replace("/*EXTRA_FILTERS*/", extra_sql)
 
-        cursor = self.conn.cursor()
-        cursor.execute(query, params)
+        with self._lock:
+            cursor = self.conn.cursor()
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
         results = []
-        for row in cursor.fetchall():
+        for row in rows:
             prior_payload = None
             prior_step = None
             if row["prior_payload"] is not None and not row["prior_is_tombstone"]:
@@ -714,7 +744,7 @@ class CausalStore:
         if entity.reason is not None:
             payload["reason"] = entity.reason
 
-        with self.conn:
+        with self.transaction():
             self.conn.execute(
                 """
                 INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, source_id, target_id, is_tombstone, payload)
@@ -742,7 +772,7 @@ class CausalStore:
         """Applies StepDelta by resolving current active state and writing complete materialized revisions."""
         committed_episodes: list[EpisodeRecord] = []
 
-        with self.conn:
+        with self.transaction():
             # 0. Process episodes first so their IDs exist if referenced by deltas in the same step
             if delta.episodes:
                 to_insert: list[tuple[EpisodeRecord, bytes]] = []
@@ -944,7 +974,7 @@ class CausalStore:
         *,
         timeline_id: str = "main",
     ) -> None:
-        with self.conn:
+        with self.transaction():
             self._insert_episodes_in_tx(episodes, timeline_id=timeline_id)
 
     def record_epistemic(
@@ -954,7 +984,7 @@ class CausalStore:
         step: int,
         timeline_id: str = "main",
     ) -> None:
-        with self.conn:
+        with self.transaction():
             self.conn.execute(
                 """
                 INSERT INTO episode_epistemics (timeline_id, step, episode_id, entity_id, epistemic, believed_summary)
@@ -1004,11 +1034,16 @@ class CausalStore:
         if episode_id is not None:
             params["episode_id"] = episode_id
 
-        cursor = self.conn.cursor()
-        cursor.execute(epistemic_query, params)
+        with self._lock:
+            cursor = self.conn.cursor()
+            cursor.execute(epistemic_query, params)
+            epistemic_rows = cursor.fetchall()
+            cursor.execute(ep_query, params)
+            ep_rows = cursor.fetchall()
+
         known_map: dict[str, dict[str, Literal["direct", "told", "deceived"]]] = {}
         believed_map: dict[str, dict[str, str]] = {}
-        for row in cursor.fetchall():
+        for row in epistemic_rows:
             ep_id = row["episode_id"]
             ent_id = row["entity_id"]
             raw_mode = row["epistemic"]
@@ -1029,10 +1064,9 @@ class CausalStore:
                 elif ep_id in believed_map and ent_id in believed_map[ep_id]:
                     believed_map[ep_id].pop(ent_id, None)
 
-        cursor.execute(ep_query, params)
         items: list[tuple[EpisodeRecord, bytes]] = []
         seen_ids: set[str] = set()
-        for row in cursor.fetchall():
+        for row in ep_rows:
             ep_id = row["episode_id"]
             if ep_id in seen_ids:
                 continue
@@ -1117,7 +1151,7 @@ class CausalStore:
         *,
         timeline_id: str = "main",
     ) -> None:
-        with self.conn:
+        with self.transaction():
             for ex, emb_bytes in exemplars:
                 self.conn.execute(
                     """
@@ -1160,11 +1194,13 @@ class CausalStore:
         ORDER BY l.depth ASC, v.step DESC;
         """
         )
-        cursor = self.conn.cursor()
-        cursor.execute(query, {"timeline_id": timeline_id, "cutoff_step": cutoff_step, "speaker_id": speaker_id})
+        with self._lock:
+            cursor = self.conn.cursor()
+            cursor.execute(query, {"timeline_id": timeline_id, "cutoff_step": cutoff_step, "speaker_id": speaker_id})
+            rows = cursor.fetchall()
         items: list[tuple[VoiceExemplar, bytes]] = []
         seen_ids: set[str] = set()
-        for row in cursor.fetchall():
+        for row in rows:
             ex_id = row["exemplar_id"]
             if ex_id in seen_ids:
                 continue
@@ -1238,9 +1274,10 @@ class CausalStore:
         }
         if record_type is not None:
             params["record_type"] = record_type
-        cursor = self.conn.cursor()
-        cursor.execute(query, params)
-        rows = cursor.fetchall()
+        with self._lock:
+            cursor = self.conn.cursor()
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
         results: list[dict[str, Any]] = []
         for r in rows:
             is_tombstone = bool(r["is_tombstone"])
@@ -1312,12 +1349,12 @@ class CausalStore:
             path.unlink()
 
         export_store = CausalStore(path)
-        active_revs = self.get_active_revisions(timeline_id, at_step)
-        lineage_episodes = self.get_lineage_episodes(timeline_id, at_step)
-
-        epistemic_query = (
-            LINEAGE_CTE_SQL
-            + """
+        with self._lock:
+            active_revs = self.get_active_revisions(timeline_id, at_step)
+            lineage_episodes = self.get_lineage_episodes(timeline_id, at_step)
+            epistemic_query = (
+                LINEAGE_CTE_SQL
+                + """
         SELECT ep.step, ep.episode_id, ep.entity_id, ep.epistemic, ep.believed_summary
         FROM episode_epistemics ep
         JOIN lineage l
@@ -1325,14 +1362,14 @@ class CausalStore:
          AND (l.max_step IS NULL OR ep.step <= l.max_step)
         ORDER BY l.depth DESC, ep.step ASC, ep.id ASC;
         """
-        )
-        epistemic_rows = self.conn.execute(
-            epistemic_query, {"timeline_id": timeline_id, "cutoff_step": at_step}
-        ).fetchall()
+            )
+            epistemic_rows = self.conn.execute(
+                epistemic_query, {"timeline_id": timeline_id, "cutoff_step": at_step}
+            ).fetchall()
 
-        voice_query = (
-            LINEAGE_CTE_SQL
-            + """
+            voice_query = (
+                LINEAGE_CTE_SQL
+                + """
         SELECT v.exemplar_id, v.step, v.speaker_id, v.addressee_id,
                v.text, v.source_text, v.metadata, v.quality_score, v.distinctiveness_score, v.embedding
         FROM voice_exemplars v
@@ -1341,10 +1378,10 @@ class CausalStore:
          AND (l.max_step IS NULL OR v.step <= l.max_step)
         ORDER BY l.depth ASC, v.step ASC;
         """
-        )
-        voice_rows = self.conn.execute(
-            voice_query, {"timeline_id": timeline_id, "cutoff_step": at_step}
-        ).fetchall()
+            )
+            voice_rows = self.conn.execute(
+                voice_query, {"timeline_id": timeline_id, "cutoff_step": at_step}
+            ).fetchall()
         lineage_exemplars: list[tuple[VoiceExemplar, bytes]] = []
         seen_exemplar_ids: set[str] = set()
         for row in voice_rows:

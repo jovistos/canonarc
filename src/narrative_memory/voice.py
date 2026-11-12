@@ -251,6 +251,7 @@ class VoiceBank:
                 meta = {k.lower(): str(v).strip().lower() for k, v in ex.metadata.items()}
                 penalty = 0.0
                 rejected = False
+                mismatched_keys: list[str] = []
                 for hk in policy.hard_filter_keys:
                     hk_lower = hk.lower()
                     req_val = norm_constraints.get(hk_lower, "")
@@ -260,6 +261,7 @@ class VoiceBank:
                             rejected = True
                             break
                         penalty += policy.hard_filter_mismatch_penalty
+                        mismatched_keys.append(hk)
                 if rejected:
                     continue
 
@@ -282,6 +284,9 @@ class VoiceBank:
                 total_score = sim + soft_bonus + addr_bonus + quality_factor - penalty
                 ex_copy = ex.model_copy()
                 ex_copy.match_score = round(total_score, 4)
+                if mismatched_keys and policy.hard_filter_fallback_note:
+                    note = policy.hard_filter_fallback_note.format(keys=", ".join(mismatched_keys))
+                    ex_copy.metadata = {**ex_copy.metadata, "fallback_note": note}
                 scored_items.append((total_score, ex_copy))
             return scored_items
 

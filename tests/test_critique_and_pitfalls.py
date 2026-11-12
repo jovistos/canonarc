@@ -374,3 +374,57 @@ def test_provenance_not_inherited_on_unrelated_state_mutation():
     assert alice.caused_by_episode_id is None
     assert alice.reason is None
     engine.close()
+
+
+def test_step_transaction_atomic_rollback_on_commit_failure(monkeypatch):
+    """If commit_step fails in StepTransaction.__exit__, rollback_to is also rolled back atomically."""
+    engine = NarrativeMemoryEngine(":memory:")
+    engine.register_entity(EntityRecord(entity_id="char_a", canonical_name="Alice", state={"hp": 10}), step=0)
+    engine.commit_step(
+        step=5,
+        delta=StepDelta(entities=[EntityDelta(entity_id="char_a", state={"hp": 5})]),
+    )
+
+    def _boom(*args, **kwargs):
+        raise RuntimeError("Simulated DB write failure")
+
+    monkeypatch.setattr(engine, "commit_step", _boom)
+
+    with pytest.raises(RuntimeError, match="Simulated DB write failure"):
+        with engine.step_transaction(step=5, rerun_clean=True) as tx:
+            tx.commit(delta=StepDelta(entities=[EntityDelta(entity_id="char_a", state={"hp": 99})]))
+
+    alice = engine.store.get_active_entity("char_a", timeline_id="main", cutoff_step=5)
+    assert alice is not None
+    assert alice.state["hp"] == 5
+    engine.close()
+
+
+def test_causal_store_thread_safety_and_asyncio_to_thread(tmp_path):
+    """NarrativeMemoryEngine can be used across worker threads and asyncio.to_thread without ProgrammingError."""
+    import asyncio
+    from concurrent.futures import ThreadPoolExecutor
+
+    engine = NarrativeMemoryEngine(tmp_path / "threaded.db")
+    engine.register_entity(EntityRecord(entity_id="char_a", canonical_name="Alice", state={"hp": 100}), step=0)
+
+    def worker(step_num: int) -> str:
+        engine.commit_step(
+            step=step_num,
+            delta=StepDelta(entities=[EntityDelta(entity_id="char_a", state={"hp": 100 - step_num})]),
+        )
+        ctx = engine.retrieve_context(step=step_num, text="Alice", inclusive=True)
+        return ctx.entities[0].entity_id
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        results = list(pool.map(worker, range(1, 9)))
+    assert results == ["char_a"] * 8
+
+    async def async_check() -> str:
+        return await asyncio.to_thread(worker, 9)
+
+    assert asyncio.run(async_check()) == "char_a"
+    alice = engine.store.get_active_entity("char_a", timeline_id="main", cutoff_step=9)
+    assert alice is not None
+    assert alice.state["hp"] == 91
+    engine.close()

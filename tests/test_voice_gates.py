@@ -160,3 +160,56 @@ def test_dialogue_candidate_speaker_attribution_and_indexing():
     assert indexed[0].speaker_id == "char_merlin"
     assert indexed[1].speaker_id == "char_arthur"
     engine.close()
+
+
+def test_voice_bank_register_fallback_note_and_disable():
+    """Switching to a new register falls back with a warning note by default, or returns [] if disabled."""
+    from narrative_memory.models import StepContext
+    from narrative_memory.presets import (
+        InteractiveFictionPreset,
+        SchemaPolicy,
+        SimulationPreset,
+        TranslationPreset,
+    )
+
+    embedder = OfflineNgramEmbedder()
+    bank = VoiceBank(embedder=embedder)
+
+    ex_formal = VoiceExemplar(
+        exemplar_id="ex_formal_only",
+        step=1,
+        speaker_id="char_arthur",
+        text="I beseech your wisdom, venerable master of the council.",
+        metadata={"register": "formal", "tone": "respectful"},
+        quality_score=9.0,
+    )
+    candidates = [(ex_formal, embedder.embed_text(ex_formal.text).tobytes())]
+
+    # Default policy: falls back to formal exemplar and tags it with [Note: different register]
+    ranked = bank.rank_exemplars(
+        query_text="Hey buddy!",
+        candidates=candidates,
+        target_register="informal",
+        top_k=2,
+    )
+    assert len(ranked) == 1
+    assert ranked[0].exemplar_id == "ex_formal_only"
+    assert ranked[0].metadata.get("fallback_note") == "[Note: different register]"
+    # Original exemplar metadata was not mutated
+    assert "fallback_note" not in ex_formal.metadata
+
+    ctx = StepContext(timeline_id="main", step=2, voice_exemplars=ranked)
+    for preset in (InteractiveFictionPreset(), TranslationPreset(), SimulationPreset()):
+        rendered = preset.format_prompt_context(ctx)
+        assert "[Note: different register]" in rendered
+
+    # Strict policy with fallback disabled returns []
+    strict_policy = SchemaPolicy(fallback_on_empty_hard_filter=False)
+    strict_ranked = bank.rank_exemplars(
+        query_text="Hey buddy!",
+        candidates=candidates,
+        target_register="informal",
+        policy=strict_policy,
+        top_k=2,
+    )
+    assert strict_ranked == []

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import re
 import uuid
+from contextlib import AbstractContextManager
 from pathlib import Path
 from typing import Any, Literal, Protocol, Sequence
 
@@ -255,17 +257,18 @@ class StepTransaction:
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         if exc_type is None:
-            if self.rerun_clean:
-                self.engine.rollback_to(self.step - 1, timeline_id=self.timeline_id)
-            if self._staged_delta or self._staged_exemplars or self._staged_episodes:
-                self.engine.commit_step(
-                    self.step,
-                    delta=self._staged_delta,
-                    exemplars=self._staged_exemplars,
-                    episodes=self._staged_episodes,
-                    bypass_gate=self._bypass_gate,
-                    timeline_id=self.timeline_id,
-                )
+            with self.engine._store_transaction():
+                if self.rerun_clean:
+                    self.engine.rollback_to(self.step - 1, timeline_id=self.timeline_id)
+                if self._staged_delta or self._staged_exemplars or self._staged_episodes:
+                    self.engine.commit_step(
+                        self.step,
+                        delta=self._staged_delta,
+                        exemplars=self._staged_exemplars,
+                        episodes=self._staged_episodes,
+                        bypass_gate=self._bypass_gate,
+                        timeline_id=self.timeline_id,
+                    )
 
 
 class NarrativeMemoryEngine:
@@ -932,6 +935,10 @@ class NarrativeMemoryEngine:
             self.store.insert_voice_exemplars(to_store, timeline_id=tl)
         return indexed
 
+    def _store_transaction(self) -> AbstractContextManager[None]:
+        tx_fn = getattr(self.store, "transaction", None)
+        return tx_fn() if callable(tx_fn) else contextlib.nullcontext()
+
     def commit_step(
         self,
         step: int,
@@ -943,14 +950,15 @@ class NarrativeMemoryEngine:
         timeline_id: str | None = None,
     ) -> list[VoiceExemplar]:
         tl = timeline_id or self.active_timeline
-        if delta:
-            self.apply_delta(step, delta, timeline_id=tl)
-        if episodes:
-            self.index_episodes(step, episodes, timeline_id=tl)
-        indexed: list[VoiceExemplar] = []
-        if exemplars:
-            indexed = self.index_voice_exemplars(step, exemplars, bypass_gate=bypass_gate, timeline_id=tl)
-        return indexed
+        with self._store_transaction():
+            if delta:
+                self.apply_delta(step, delta, timeline_id=tl)
+            if episodes:
+                self.index_episodes(step, episodes, timeline_id=tl)
+            indexed: list[VoiceExemplar] = []
+            if exemplars:
+                indexed = self.index_voice_exemplars(step, exemplars, bypass_gate=bypass_gate, timeline_id=tl)
+            return indexed
 
     # --- Time-Travel Operations ---
 
