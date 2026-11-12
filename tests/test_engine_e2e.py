@@ -138,7 +138,7 @@ def test_step_transaction():
         )
 
     # After transaction, step 11 sees the updated state
-    ctx11 = engine.retrieve_context(step=11)
+    ctx11 = engine.retrieve_context(step=11, mentions=["Alice"])
     assert ctx11.entities[0].state["mood"] == "surprised"
 
 

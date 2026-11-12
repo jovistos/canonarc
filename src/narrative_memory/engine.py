@@ -44,18 +44,26 @@ class DeltaExtractor(Protocol):
     def extract_delta(self, prompt: str, scene_text: str) -> StepDelta: ...
 
 
+_CJK_CHAR_RE = re.compile(r"[\u3040-\u309f\u30a0-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af]")
+
+
 class DefaultLexicalResolver:
     """Word-boundary lexical + alias resolver with optional rapidfuzz inflection fallback."""
 
-    def __init__(self, fuzzy_threshold: float | None = None) -> None:
+    def __init__(self, fuzzy_threshold: float | None = 88.0) -> None:
         self.fuzzy_threshold = fuzzy_threshold
 
     @staticmethod
-    def _find_whole_phrase(text_lower: str, phrase_lower: str) -> int:
+    def _phrase_pattern(phrase_lower: str) -> str:
+        prefix = "" if _CJK_CHAR_RE.match(phrase_lower[0]) else r"(?<!\w)"
+        suffix = "" if _CJK_CHAR_RE.match(phrase_lower[-1]) else r"(?!\w)"
+        return rf"{prefix}{re.escape(phrase_lower)}{suffix}"
+
+    @classmethod
+    def _find_whole_phrase(cls, text_lower: str, phrase_lower: str) -> int:
         if not phrase_lower:
             return -1
-        pattern = rf"(?<!\w){re.escape(phrase_lower)}(?!\w)"
-        match = re.search(pattern, text_lower)
+        match = re.search(cls._phrase_pattern(phrase_lower), text_lower)
         return match.start() if match else -1
 
     def resolve(
@@ -69,7 +77,10 @@ class DefaultLexicalResolver:
         seen_pairs: set[tuple[str, str]] = set()  # (entity_id, surface_lower)
 
         name_to_id = {e.canonical_name.lower(): e.entity_id for e in entities if e.canonical_name}
-        alias_map = {a.alias.lower(): a for a in aliases if a.alias}
+        alias_map: dict[str, list[AliasRecord]] = {}
+        for a in aliases:
+            if a.alias:
+                alias_map.setdefault(a.alias.lower(), []).append(a)
 
         def _add(surface: str, entity_id: str, via: Literal["canonical", "alias", "fuzzy"], conf: float = 1.0) -> None:
             key = (entity_id, surface.strip().lower())
@@ -93,7 +104,8 @@ class DefaultLexicalResolver:
             if m_clean in name_to_id:
                 _add(m, name_to_id[m_clean], "canonical")
             elif m_clean in alias_map:
-                _add(m, alias_map[m_clean].entity_id, "alias")
+                for alias_rec in alias_map[m_clean]:
+                    _add(m, alias_rec.entity_id, "alias")
 
         # 2. Word-boundary text scan (longest phrases first to avoid partial shadowing)
         if text:
@@ -101,21 +113,22 @@ class DefaultLexicalResolver:
             candidates: list[tuple[str, str, Literal["canonical", "alias"]]] = []
             for name, ent_id in name_to_id.items():
                 candidates.append((name, ent_id, "canonical"))
-            for alias_str, alias_rec in alias_map.items():
-                candidates.append((alias_str, alias_rec.entity_id, "alias"))
+            for alias_str, alias_recs in alias_map.items():
+                for alias_rec in alias_recs:
+                    candidates.append((alias_str, alias_rec.entity_id, "alias"))
             candidates.sort(key=lambda item: len(item[0]), reverse=True)
 
             matched_spans: list[tuple[int, int]] = []
             for phrase, ent_id, via in candidates:
-                pattern = rf"(?<!\w){re.escape(phrase)}(?!\w)"
-                match = re.search(pattern, text_lower)
-                if match:
+                pattern = self._phrase_pattern(phrase)
+                for match in re.finditer(pattern, text_lower):
                     start, end = match.start(), match.end()
                     # Avoid matching a shorter sub-phrase inside an already-matched longer phrase
-                    if via == "canonical" and any(s <= start and end <= e for s, e in matched_spans):
+                    if any(s <= start and end <= e for s, e in matched_spans):
                         continue
                     matched_spans.append((start, end))
                     _add(phrase, ent_id, via)
+                    break
 
             # 3. Optional fuzzy fallback for inflected languages / typos
             if self.fuzzy_threshold is not None:
@@ -322,7 +335,7 @@ class NarrativeMemoryEngine:
         edge_types: Sequence[str] | None = None,
         inclusive: bool = False,
         timeline_id: str | None = None,
-        fallback_on_empty_mentions: Literal["all", "pov_only", "none"] = "all",
+        fallback_on_empty_mentions: Literal["all", "pov_only", "none"] = "pov_only",
     ) -> StepContext:
         tl = timeline_id or self.active_timeline
         policy = self._policy
@@ -348,6 +361,7 @@ class NarrativeMemoryEngine:
             raw_mentions=raw_mentions,
             aliases=active_aliases,
             pov_set=pov_set,
+            pov_mode=pov_mode,
         )
 
         resolved_entity_ids = {m.entity_id for m in resolved_mentions}
@@ -391,11 +405,18 @@ class NarrativeMemoryEngine:
         )
         pov_known_episode_ids: set[str] = set()
         if pov_set and candidate_episodes:
-            pov_known_episode_ids = {
-                ep.episode_id
-                for ep, _ in candidate_episodes
-                if pov_set & set(ep.known_by.keys())
-            }
+            if pov_mode == "all":
+                pov_known_episode_ids = {
+                    ep.episode_id
+                    for ep, _ in candidate_episodes
+                    if pov_set.issubset(ep.known_by.keys())
+                }
+            else:
+                pov_known_episode_ids = {
+                    ep.episode_id
+                    for ep, _ in candidate_episodes
+                    if pov_set & set(ep.known_by.keys())
+                }
 
         # Project entities and edges through POV epistemic lens
         projected_entities, projected_edges = self._project_pov_state(
@@ -403,6 +424,7 @@ class NarrativeMemoryEngine:
             scene_edges=scene_edges,
             all_active_edges=active_edges,
             pov_set=pov_set,
+            pov_mode=pov_mode,
             pov_known_episode_ids=pov_known_episode_ids,
             disguise_masks=disguise_masks,
             pierced_disguises=pierced_disguises,
@@ -569,6 +591,7 @@ class NarrativeMemoryEngine:
         scene_edges: Sequence[DirectedEdgeRecord],
         all_active_edges: Sequence[DirectedEdgeRecord],
         pov_set: set[str],
+        pov_mode: Literal["any", "all"] = "any",
         pov_known_episode_ids: set[str],
         disguise_masks: dict[str, AliasRecord],
         pierced_disguises: dict[str, AliasRecord],
@@ -603,7 +626,7 @@ class NarrativeMemoryEngine:
                 ent_copy.disguised_as = alias_rec.persona_name or alias_rec.alias
 
             if pov_set:
-                if ent_copy.entity_id not in pov_set:
+                if ent_copy.entity_id not in pov_set or (len(pov_set) > 1 and pov_mode == "all"):
                     ent_copy.private_state = {}
                     if (
                         ent_copy.caused_by_episode_id
@@ -656,6 +679,7 @@ class NarrativeMemoryEngine:
         raw_mentions: Sequence[ResolvedMention],
         aliases: Sequence[AliasRecord],
         pov_set: set[str] | None = None,
+        pov_mode: Literal["any", "all"] = "any",
     ) -> tuple[list[ResolvedMention], dict[str, AliasRecord], dict[str, AliasRecord]]:
         """Applies POV-aware disguise masking & piercing on top of pluggable mention matches."""
         resolved: list[ResolvedMention] = []
@@ -663,7 +687,12 @@ class NarrativeMemoryEngine:
         disguise_masks: dict[str, AliasRecord] = {}
         pierced_disguises: dict[str, AliasRecord] = {}
 
-        alias_map = {a.alias.lower(): a for a in aliases if a.alias}
+        alias_by_key: dict[tuple[str, str], AliasRecord] = {
+            (a.entity_id, a.alias.lower()): a for a in aliases if a.alias
+        }
+        alias_by_surface: dict[str, AliasRecord] = {
+            a.alias.lower(): a for a in aliases if a.alias
+        }
 
         # Process alias matches first (especially disguises) so canonical matches don't shadow them
         ordered_mentions = sorted(
@@ -672,24 +701,36 @@ class NarrativeMemoryEngine:
         )
 
         for m in ordered_mentions:
-            alias_rec = alias_map.get(m.surface_text.strip().lower()) if m.matched_via == "alias" else None
+            surface_lower = m.surface_text.strip().lower()
+            alias_rec = (
+                alias_by_key.get((m.entity_id, surface_lower)) or alias_by_surface.get(surface_lower)
+                if m.matched_via == "alias"
+                else None
+            )
             if alias_rec is not None and alias_rec.kind == "disguise":
                 ent_id = alias_rec.entity_id
                 is_scoped_disguise = alias_rec.known_to is not None and bool(pov_set)
-                if is_scoped_disguise and not (pov_set & set(alias_rec.known_to or ())):
-                    masked_id = f"masked:{ent_id}"
-                    if masked_id not in seen_entities:
-                        seen_entities.add(masked_id)
-                        disguise_masks[ent_id] = alias_rec
-                        resolved.append(
-                            ResolvedMention(
-                                surface_text=m.surface_text,
-                                entity_id=masked_id,
-                                matched_via="alias",
-                                confidence=m.confidence,
+                if is_scoped_disguise:
+                    known_set = set(alias_rec.known_to or ())
+                    pierced = (
+                        pov_set.issubset(known_set)
+                        if pov_mode == "all"
+                        else bool(pov_set & known_set)
+                    )
+                    if not pierced:
+                        masked_id = f"masked:{ent_id}"
+                        if masked_id not in seen_entities:
+                            seen_entities.add(masked_id)
+                            disguise_masks[ent_id] = alias_rec
+                            resolved.append(
+                                ResolvedMention(
+                                    surface_text=m.surface_text,
+                                    entity_id=masked_id,
+                                    matched_via="alias",
+                                    confidence=m.confidence,
+                                )
                             )
-                        )
-                    continue
+                        continue
                 pierced_disguises[ent_id] = alias_rec
 
             if m.entity_id not in seen_entities:

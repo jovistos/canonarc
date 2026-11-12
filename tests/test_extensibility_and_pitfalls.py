@@ -125,6 +125,19 @@ def test_word_boundary_and_fuzzy_mention_resolver():
     assert [m.entity_id for m in ctx_inflected.resolved_mentions] == ["char_artur"]
     assert ctx_inflected.resolved_mentions[0].matched_via == "fuzzy"
 
+    # Default engine (without explicit fallback_on_empty_mentions) must NOT dump all entities on empty match
+    default_engine = NarrativeMemoryEngine(":memory:")
+    default_engine.register_entity(EntityRecord(entity_id="char_art", canonical_name="Art"), step=0)
+    default_engine.register_entity(EntityRecord(entity_id="char_zh", canonical_name="李雷"), step=0)
+
+    ctx_empty = default_engine.retrieve_context(step=1, text="The storm started at midnight.")
+    assert ctx_empty.entities == []
+
+    # CJK entity without spaces around it should still match
+    ctx_zh = default_engine.retrieve_context(step=1, text="李雷去了学校。")
+    assert [e.entity_id for e in ctx_zh.entities] == ["char_zh"]
+    default_engine.close()
+
 
 def test_custom_mention_resolver_and_pov_fallback():
     class StubNERResolver:
