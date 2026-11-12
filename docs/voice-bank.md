@@ -39,17 +39,33 @@ Indexed into Tier 5 Voice Bank
 
 ---
 
-## Voice Bank Retrieval: Hard-Register / Soft-Tone Cascade
+## Voice Bank Retrieval: Policy-Driven Hard-Filter / Soft-Boost Cascade
 
-When retrieving exemplars for a character, the Voice Bank applies a multi-priority ranking cascade:
+When retrieving exemplars for a character or agent, the Voice Bank applies a multi-priority ranking cascade driven by `SchemaPolicy` (defaulting to `register` hard-filter and `tone` soft-boost):
 
-1. **Causal Filter**: Only exemplars visible along the lineage with `exemplar.step < current_step`.
-2. **Hard Register Filter**:
-   - If the active directed edge specifies a grammatical register (e.g. `formal` vs. `informal`, `ti` vs. `Vi`, `tu` vs. `vous`), exemplars with a conflicting register are **strictly excluded**.
-   - *Why:* Injecting an informal exemplar into a formal dialogue scene causes grammatical hallucinations.
+1. **Causal Filter**: Only exemplars visible along the lineage with `exemplar.step <= cutoff_step`.
+2. **Hard Attribute Filter** (`policy.hard_filter_keys`, default `("register",)`):
+   - If the active directed edge specifies a value for a hard-filter key (e.g. `register`: `formal` vs. `informal`, `ti` vs. `Vi`; or `channel`: `slack` vs. `email`), exemplars with a conflicting value are **excluded**.
+   - **Sparse Fallback**: If strict filtering leaves zero candidates and `policy.fallback_on_empty_hard_filter=True`, the ranker falls back to mismatched candidates with a configurable penalty (`policy.hard_filter_mismatch_penalty`) rather than returning an empty voice bank.
 3. **Composite Scoring**:
-   For candidate exemplars in the valid register:
-   $$\text{Score} = \text{CosineSim}(q, e) + 0.15 \cdot \mathbb{I}(\text{tone match}) + 0.10 \cdot \mathbb{I}(\text{addressee match}) + 0.05 \cdot \left(\frac{\text{quality}}{10}\right)$$
+   For candidate exemplars:
+   $$\text{Score} = \text{CosineSim}(q, e) + \sum_{k \in \text{soft\_boost\_weights}} w_k \cdot \mathbb{I}(\text{match}_k) + w_{\text{addr}} \cdot \mathbb{I}(\text{addressee match}) + w_{\text{qual}} \cdot \left(\frac{\text{quality}}{10}\right) - \text{penalty}$$
+
+---
+
+## Multi-Party Dyadic Voice Resolution
+
+In scenes with multiple co-present characters (e.g., Arthur in a room with both Merlin in `ti`/`furious` and the Queen in `Vi`/`reverent`), collapsing a speaker's outgoing edges to a single arbitrary target would lock the speaker into one register and hard-filter out all other co-present registers.
+
+`NarrativeMemoryEngine.retrieve_context` and `VoiceBank.rank_exemplars_for_targets` resolve voice targets **per dyad** instead:
+
+1. **In-Scene Target Prioritization**: Outgoing edges directed to co-present characters in the scene (`in_scene_ids`) are prioritized over off-screen 1-hop neighbors. An active `facade` toward an absent character never overrides an in-scene `stance`.
+2. **Per-Pair Layer Merging (`base < stance < facade`)**: Edges are grouped by `(speaker_id, target_id)` and merged from lowest to highest priority (`kinship`/base $\to$ `stance` $\to$ `facade`).
+   - Split attributes (e.g., `register` on a `kinship` edge and `tone` on a `stance` edge) combine cleanly for that pair.
+   - A `facade` edge overrides outward `register`/`tone` **only for that specific addressee**, without contaminating the speaker's `stance` toward other characters in the room.
+   - Masked speakers (`masked:<id>`) are restricted to outward `facade` edges only so hidden `stance` state is never leaked.
+3. **Deterministic Dyad Ordering**: Co-present targets are ordered by first mention position in `text`, then edge `valid_from_step` recency, then canonical `target_id`.
+4. **Round-Robin Exemplar Allocation**: When multiple dyads are active, `VoiceBank.rank_exemplars_for_targets` scores each `(addressee_id, register, tone)` target independently, tags returned copies with `metadata["for_addressee"]`, and interleaves them via Round-Robin (deduplicated by `exemplar_id`) up to `top_k_voice`. Single-target scenes use `rank_exemplars` directly.
 
 ---
 
@@ -58,5 +74,6 @@ When retrieving exemplars for a character, the Voice Bank applies a multi-priori
 By default, `narrative-memory` ships with `OfflineNgramEmbedder`:
 - Zero external dependencies.
 - 128-dimensional float32 normalized vectors.
-- Hashes word tokens and character 3-grams to measure lexical and stylistic similarity.
+- Uses deterministic CRC32 feature hashing (`zlib.crc32`) over word tokens and character 3-grams so persisted SQLite embeddings remain consistent across Python processes.
+- Automatic dimension-mismatch guard: if you switch embedders on an existing database, `VoiceBank` automatically re-embeds mismatched stored vectors on the fly.
 - Pluggable: Pass any custom embedding class satisfying the `Embedder` protocol (`embed_text(str) -> np.ndarray`) to use OpenAI, LM Studio, or Sentence-Transformers.

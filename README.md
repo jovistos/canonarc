@@ -1,10 +1,11 @@
 # `narrative-memory`
 
 <p align="center">
-  <strong>Tier 1–5 Temporal Graph, Voice Bank & Causal Time-Travel Engine for LLMs</strong>
+  <strong>Tier 1–6 Temporal Graph, Episodic Ledger, Voice Bank & Causal Time-Travel Engine for LLMs</strong>
 </p>
 
 <p align="center">
+  <a href="docs/tutorial-and-study-book.md"><strong>Study Book & Deep Tutorial</strong></a> &bull;
   <a href="docs/architecture.md">Architecture</a> &bull;
   <a href="docs/time-travel.md">Time Travel Guide</a> &bull;
   <a href="docs/voice-bank.md">Voice Bank & Anti-Drift</a> &bull;
@@ -19,10 +20,11 @@
 Most LLM memory frameworks (`mem0`, `zep`, `langmem`) are designed for **conversational chatbots** operating in continuous wall-clock time. They fall short when building **Interactive Fiction, Visual Novels (Ren'Py / Ink), Multi-Agent Simulations, Creative Writing Co-Pilots, and Sequential Localization Pipelines**, where time moves in discrete **causal steps** (turns, scenes, ticks, or chunks) and narrative state must be **rewindable, branchable, and spoiler-free**.
 
 `narrative-memory` gives your application:
-- **Tiers 1–4 Temporal Property Graph**: Tracks immutable base attributes (gender, declension, archetypes), asymmetric directed relationships (`A -> B != B -> A`), 1-hop coreference aliases (`"the old wizard"` -> `char_merlin`), and rolling state deltas.
+- **Tiers 1–4 Temporal Property Graph**: Tracks immutable base attributes (gender, declension, archetypes), asymmetric directed relationships (`A -> B != B -> A`), 1-hop coreference aliases (`"the old wizard"` -> `char_merlin`), and rolling state deltas with trajectory history (`prior_state`, `revision_count`).
 - **Tier 5 Gated Dynamic Voice Bank**: Anchors dialogue style and syntax using historical in-character lines without "error compounding" or self-conditioning drift.
+- **Tier 6 Episodic Event Ledger & Epistemic Visibility**: Tracks N-ary plot events (actions, betrayals, item transfers), causal provenance pointers (`caused_by_episode_id`), and POV witness tracking (`"direct"` vs. `"told"`) to eliminate metagaming and state-dict bloat.
 - **First-Class Causal Time Travel**: Atomic `< 1ms` rollback (`rollback_to(step)`) and zero-copy branching (`branch(at_step, name)`) via an append-only SQLite lineage tree.
-- **Single-File Portability**: The entire multiverse of timelines, graph revisions, and vector embeddings lives inside a **single `.sqlite` file** (or `:memory:`).
+- **Single-File Portability**: The entire multiverse of timelines, graph revisions, episodic events, and vector embeddings lives inside a **single `.sqlite` file** (or `:memory:`).
 
 ---
 
@@ -47,6 +49,7 @@ from narrative_memory import (
     StepDelta,
     EntityDelta,
     EdgeDelta,
+    EpisodeRecord,
     VoiceExemplar,
 )
 
@@ -102,40 +105,61 @@ engine.index_voice_exemplars(
 
 ---
 
-### Step 82 Argument & Step 85 Retrieval
+### Step 82 Argument & Step 85 Retrieval (With Tier 6 Episodic Ledger)
 
 ```python
-# Step 82: Argument occurs -> Arthur's mood shifts and he switches to informal contempt
+# Step 82: Argument occurs -> Arthur's mood shifts, stance changes, and an episode is recorded
 engine.commit_step(
     step=82,
     delta=StepDelta(
-        entities=[EntityDelta(entity_id="char_arthur", state={"mood": "furious"})],
+        entities=[
+            EntityDelta(
+                entity_id="char_arthur",
+                state={"mood": "furious"},
+                reason="Discovered Merlin concealed the prophecy",
+            )
+        ],
         edges=[
             EdgeDelta(
                 source_id="char_arthur",
                 target_id="char_merlin",
                 state={"register": "informal", "tone": "furious"},
+                caused_by_episode_id="ep_step82_prophecy_dispute",
+            )
+        ],
+        episodes=[
+            EpisodeRecord(
+                episode_id="ep_step82_prophecy_dispute",
+                predicate="argument",
+                summary="Arthur confronted Merlin over the concealed dragon prophecy in the council chamber.",
+                participants={"char_arthur": "actor", "char_merlin": "target"},
+                salience=8.5,
             )
         ],
     ),
 )
 
-# Step 85: Unified Tier 1-5 Retrieval Pass
+# Step 85: Unified Tier 1-6 Retrieval Pass
 context = engine.retrieve_context(
     step=85,
     text='Arthur glared at the old wizard. "Speak truth now!"',
     mentions=["Arthur", "the old wizard"],
     top_k_voice=3,
+    top_k_episodes=5,
 )
 
 # 1. 1-Hop Coreference: "the old wizard" -> char_merlin
 assert any(m.entity_id == "char_merlin" for m in context.resolved_mentions)
 
-# 2. Temporal Edge: Arthur -> Merlin is informal & furious
+# 2. Temporal Edge: Arthur -> Merlin is informal & furious with causal link
 edge = context.active_edges[0]
 print(edge.state)  # {'register': 'informal', 'tone': 'furious'}
+print(edge.caused_by_episode_id)  # 'ep_step82_prophecy_dispute'
 
-# 3. Formatted Prompt for LLM Injection
+# 3. Tier 6 Episodic Memory: Pinpointed relevant narrative episode
+assert context.episodes[0].episode_id == "ep_step82_prophecy_dispute"
+
+# 4. Formatted Prompt for LLM Injection
 print(engine.format_context(context))
 ```
 
@@ -150,11 +174,11 @@ engine.branch(at_step=50, name="reconciliation_route")
 # Switch to the new branch
 engine.checkout("reconciliation_route")
 
-# The branch inherits state up to Step 50, but ignores the Step 82 argument on 'main'!
+# The branch inherits state and episodes up to Step 50, but ignores Step 82 on 'main'!
 branch_context = engine.retrieve_context(step=85)
 assert branch_context.active_edges[0].state["register"] == "formal"
 
-# Rewind 'main' back to Step 10 in < 1ms
+# Rewind 'main' back to Step 10 in < 1ms (revisions and episodes at > 10 atomically deleted)
 engine.rollback_to(step=10, timeline_id="main")
 ```
 
@@ -173,10 +197,11 @@ with engine.step_transaction(step=85, text=scene_text) as tx:
     # 2. Call your LLM
     response = call_llm(prompt)
 
-    # 3. Extract deltas & voice lines, then stage for atomic commit
+    # 3. Extract deltas, episodes & voice lines, then stage for atomic commit
     tx.commit(
         delta=extracted_delta,
         exemplars=candidate_lines,
+        episodes=extracted_episodes,
     )
 # Automatically commits on exit or rolls back if an exception occurs
 ```
@@ -185,7 +210,8 @@ with engine.step_transaction(step=85, text=scene_text) as tx:
 
 ## Documentation
 
-- [**Architecture Guide**](docs/architecture.md): Deep dive into the 5-tier state superset and SQLite schema.
+- [**Comprehensive Tutorial & Study Book**](docs/tutorial-and-study-book.md): Masterclass guide covering ontology, motivation, recursive CTE lineage, anti-drift gates, episodic recall, and end-to-end examples.
+- [**Architecture Guide**](docs/architecture.md): Deep dive into the 6-tier state superset and SQLite schema.
 - [**Causal Time Travel**](docs/time-travel.md): Lineage trees, copy-on-write branching, atomic rollback, and save-slot exports.
 - [**Voice Bank & Anti-Drift**](docs/voice-bank.md): The 2-stage ingestion gate, n-gram vector retrieval, and hard-register cascade.
 - [**Domain Presets**](docs/presets.md): Pre-built prompt formatters for Interactive Fiction, Localization, and Multi-Agent Simulations.

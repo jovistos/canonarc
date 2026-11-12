@@ -1,18 +1,20 @@
 # Architecture & Storage Philosophy
 
-`narrative-memory` models narrative worlds as a **Tier 1–5 superset** organized along a causal timeline tree.
+`narrative-memory` models narrative worlds as a **Tier 1–6 superset** organized along a causal timeline tree.
 
 ---
 
-## 1. The 5-Tier Architectural Superset
+## 1. The 6-Tier Architectural Superset
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
+│ Tier 6: Episodic Event Ledger (Causal & Epistemic History)  │
+├─────────────────────────────────────────────────────────────┤
 │ Tier 5: Gated Voice Bank (Empirical Style & Syntax Anchors) │
 ├─────────────────────────────────────────────────────────────┤
 │ Tier 4: Temporal Versioning & 1-Hop Alias Coreference       │
 ├─────────────────────────────────────────────────────────────┤
-│ Tier 3: Rolling State Deltas (Resolve-on-Write Materialized)│
+│ Tier 3: Rolling State Deltas & Windowed Trajectories        │
 ├─────────────────────────────────────────────────────────────┤
 │ Tier 2: Pairwise Stance & Register (Asymmetric A -> B)      │
 ├─────────────────────────────────────────────────────────────┤
@@ -29,9 +31,10 @@
 - Interpersonal relationships are **directed** (`source_id -> target_id`).
 - Arthur's register toward Merlin (`informal, contemptuous`) is independent of Merlin's register toward Arthur (`formal, patient`).
 
-### Tier 3: Rolling State Deltas
+### Tier 3: Rolling State Deltas & Windowed Trajectory
 - Ingestion pipeline extracts JSON diffs (`StepDelta`) after each scene or chunk.
 - **Resolve-on-Write**: Instead of storing unmerged deltas, `apply_delta()` resolves the active state at `step` and materializes the complete state dictionary into a new revision row.
+- **Windowed Trajectory Tracking**: The query engine uses `LEAD(...) OVER` and `COUNT(*) OVER` window functions to attach `prior_state`, `prior_step`, and `revision_count` directly to active entity and edge records. State resets (e.g. Arthur's mood cooling from `"furious"` back to `"calm"`) do not erase knowledge of the prior emotional state.
 
 ### Tier 4: Temporal Versioning & 1-Hop Expansion
 - All revisions are indexed by `step: int`.
@@ -43,36 +46,51 @@
 - Filtered by active graph properties (`speaker_id`, `register`, `tone`, `step < current_step`).
 - Protected by a 2-stage anti-drift gate to prevent bad generations from compounding.
 
+### Tier 6: Episodic Event Ledger & Epistemic Visibility
+- Stores discrete, N-ary plot events (betrayals, arguments, item transfers, discoveries) anchored at `step`.
+- **Causal Provenance**: Entities and edges point to triggering episodes via `caused_by_episode_id` and `reason`, ensuring the LLM knows *why* a character is furious or untrusting.
+- **Epistemic Tracking & POV Projection**:
+  - Tracks who witnessed an event (`"direct"`), who learned secondhand (`"told"`), and who holds a false belief (`"deceived"` with `believed_summary` via `InformDelta`).
+  - When `pov_entity_ids` is specified in `retrieve_context()`, the engine projects Tiers 1–6 through the observer's epistemic lens: unpierced `disguise` aliases (`AliasRecord.known_to`) are masked to `persona_name`, `private_state` and unwitnessed causal provenance (`reason` / `caused_by_episode_id`) are redacted, `belief_state` edges override stale ground-truth state, and `facade` edges hide private `stance` edges while driving outward voice exemplar selection.
+- **Hybrid 4-Signal Scorer**: Ranks candidate episodes using POV visibility, causal provenance pinning, entity/location cue overlap, semantic cosine similarity, and salience-modulated recency decay.
+
 ---
 
-## 2. Storage Architecture: Unified 3-Table SQLite Schema
+## 2. Storage Architecture: SQLite Schema
 
-Rather than spreading state across multiple tables, `narrative-memory` uses three lean tables:
+Rather than spreading state across disconnected services, `narrative-memory` maintains its temporal graph and episodic multiverse in a single `.sqlite` database:
 
 ```sql
 -- 1. Copy-on-Write Timeline Tree
-CREATE TABLE timelines (
+CREATE TABLE IF NOT EXISTS timelines (
     timeline_id TEXT PRIMARY KEY,
     parent_id   TEXT REFERENCES timelines(timeline_id),
     fork_step   INTEGER,
     metadata    TEXT NOT NULL DEFAULT '{}'
 );
 
--- 2. Unified Append-Only Materialized Revisions
-CREATE TABLE graph_revisions (
-    revision_id  INTEGER PRIMARY KEY AUTOINCREMENT,
-    timeline_id  TEXT NOT NULL REFERENCES timelines(timeline_id),
-    step         INTEGER NOT NULL,
-    record_type  TEXT NOT NULL, -- 'entity' | 'edge' | 'alias'
-    subject_key  TEXT NOT NULL, -- 'char_arthur', 'char_arthur->char_merlin', 'the old wizard'
-    source_id    TEXT,          -- entity_id for entity/alias; source_id for edge
-    target_id    TEXT,          -- target_id for edge
-    is_tombstone INTEGER NOT NULL DEFAULT 0,
-    payload      TEXT NOT NULL  -- Full materialized JSON
+-- 2. Unified Append-Only Materialized Revisions (Typed Multigraph)
+CREATE TABLE IF NOT EXISTS graph_revisions (
+    revision_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    timeline_id   TEXT NOT NULL REFERENCES timelines(timeline_id),
+    step          INTEGER NOT NULL,
+    record_type   TEXT NOT NULL, -- 'entity' | 'edge' | 'alias'
+    subject_key   TEXT NOT NULL, -- 'char_arthur', 'char_arthur:stance->char_merlin', 'the old wizard'
+    relation_type TEXT,          -- predicate for 'edge' ('stance', 'kinship', 'debt'); NULL for entity/alias
+    source_id     TEXT,          -- entity_id for entity/alias; source_id for edge
+    target_id     TEXT,          -- target_id for edge
+    is_tombstone  INTEGER NOT NULL DEFAULT 0,
+    payload       TEXT NOT NULL  -- Full materialized JSON
 );
 
+CREATE INDEX IF NOT EXISTS idx_revisions_lookup
+    ON graph_revisions(timeline_id, record_type, subject_key, step DESC, revision_id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_revisions_edge_type
+    ON graph_revisions(timeline_id, record_type, relation_type, source_id, target_id);
+
 -- 3. Tier 5 Voice Exemplars
-CREATE TABLE voice_exemplars (
+CREATE TABLE IF NOT EXISTS voice_exemplars (
     exemplar_id           TEXT PRIMARY KEY,
     timeline_id           TEXT NOT NULL REFERENCES timelines(timeline_id),
     step                  INTEGER NOT NULL,
@@ -85,13 +103,48 @@ CREATE TABLE voice_exemplars (
     distinctiveness_score REAL NOT NULL,
     embedding             BLOB NOT NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_voice_lookup
+    ON voice_exemplars(timeline_id, speaker_id, step DESC);
+
+-- 4. Tier 6 Episodic Event Ledger
+CREATE TABLE IF NOT EXISTS episodes (
+    episode_id   TEXT PRIMARY KEY,
+    timeline_id  TEXT NOT NULL REFERENCES timelines(timeline_id),
+    step         INTEGER NOT NULL,
+    predicate    TEXT NOT NULL DEFAULT 'event',
+    summary      TEXT NOT NULL,
+    location_id  TEXT,
+    salience     REAL NOT NULL DEFAULT 5.0,
+    participants TEXT NOT NULL DEFAULT '{}', -- JSON map: entity_id -> role
+    witnesses    TEXT NOT NULL DEFAULT '[]', -- JSON list of entity_ids
+    metadata     TEXT NOT NULL DEFAULT '{}',
+    embedding    BLOB NOT NULL DEFAULT X''
+);
+
+CREATE INDEX IF NOT EXISTS idx_episodes_lookup
+    ON episodes(timeline_id, step DESC);
+
+-- 5. Tier 6 Epistemic Awareness Join Table
+CREATE TABLE IF NOT EXISTS episode_epistemics (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    timeline_id      TEXT NOT NULL REFERENCES timelines(timeline_id),
+    step             INTEGER NOT NULL,
+    episode_id       TEXT NOT NULL,
+    entity_id        TEXT NOT NULL,
+    epistemic        TEXT NOT NULL DEFAULT 'direct', -- 'direct' | 'told' | 'deceived'
+    believed_summary TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_episode_epistemics_lookup
+    ON episode_epistemics(timeline_id, episode_id, step DESC);
 ```
 
 ---
 
-## 3. The Recursive CTE Lineage Engine
+## 3. The Recursive CTE Lineage Engine with Windowed Trajectory
 
-Point-in-time state resolution is executed in a single recursive CTE:
+Point-in-time state resolution is executed in a single recursive CTE that simultaneously resolves active records (`rn = 1`) and extracts historical trajectory:
 
 ```sql
 WITH RECURSIVE lineage(timeline_id, parent_id, max_step, depth) AS (
@@ -111,22 +164,58 @@ WITH RECURSIVE lineage(timeline_id, parent_id, max_step, depth) AS (
 ),
 ranked_revisions AS (
     SELECT
-        r.*,
+        r.revision_id,
+        r.timeline_id,
+        r.step AS valid_from_step,
+        r.record_type,
+        r.subject_key,
+        r.relation_type,
+        r.source_id,
+        r.target_id,
+        r.is_tombstone,
+        r.payload,
         ROW_NUMBER() OVER (
             PARTITION BY r.record_type, r.subject_key
             ORDER BY l.depth ASC, r.step DESC, r.revision_id DESC
-        ) AS rn
+        ) AS rn,
+        COUNT(*) OVER (
+            PARTITION BY r.record_type, r.subject_key
+        ) AS revision_count,
+        LEAD(r.payload) OVER (
+            PARTITION BY r.record_type, r.subject_key
+            ORDER BY l.depth ASC, r.step DESC, r.revision_id DESC
+        ) AS prior_payload,
+        LEAD(r.step) OVER (
+            PARTITION BY r.record_type, r.subject_key
+            ORDER BY l.depth ASC, r.step DESC, r.revision_id DESC
+        ) AS prior_step,
+        LEAD(r.is_tombstone) OVER (
+            PARTITION BY r.record_type, r.subject_key
+            ORDER BY l.depth ASC, r.step DESC, r.revision_id DESC
+        ) AS prior_is_tombstone
     FROM graph_revisions r
     JOIN lineage l
       ON r.timeline_id = l.timeline_id
      AND r.step <= l.max_step
 )
-SELECT record_type, subject_key, source_id, target_id, step AS valid_from_step, payload
+SELECT
+    record_type,
+    subject_key,
+    relation_type,
+    source_id,
+    target_id,
+    valid_from_step,
+    payload,
+    revision_count,
+    prior_payload,
+    prior_step,
+    prior_is_tombstone
 FROM ranked_revisions
 WHERE rn = 1 AND is_tombstone = 0;
 ```
 
-### Why this query is fast and robust:
+### Why this architecture is fast and robust:
 1. `depth ASC`: Revisions made on the child branch (`depth = 0`) strictly supersede parent revisions.
 2. `r.step <= l.max_step`: Parent revisions committed *after* `fork_step` are completely invisible to the child branch.
-3. `rn = 1`: Picks the latest revision for each key in sub-millisecond execution.
+3. `rn = 1`: Picks the latest revision for each key in sub-millisecond execution while `prior_payload` preserves the preceding state without requiring a second database query.
+4. **Episodic Isolation**: Events are not forced into key-value entity states, eliminating prompt bloat and schema decay.
