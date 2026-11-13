@@ -47,12 +47,13 @@
 - Protected by a 2-stage anti-drift gate to prevent bad generations from compounding.
 
 ### Tier 6: Episodic Event Ledger & Epistemic Visibility
-- Stores discrete, N-ary plot events (betrayals, arguments, item transfers, discoveries) anchored at `step`.
+- Stores discrete, N-ary plot events (betrayals, arguments, item transfers, discoveries) anchored at `step`, with optional non-linear narrative coordinates (`story_time`, `chapter_id`, `scene_id`) and flashback-safe ingestion (`StepDelta.is_flashback=True`).
 - **Causal Provenance**: Entities and edges point to triggering episodes via `caused_by_episode_id` and `reason`, ensuring the LLM knows *why* a character is furious or untrusting.
-- **Epistemic Tracking & POV Projection**:
-  - Tracks who witnessed an event (`"direct"`), who learned secondhand (`"told"`), and who holds a false belief (`"deceived"` with `believed_summary` via `InformDelta`).
-  - When `pov_entity_ids` is specified in `retrieve_context()`, the engine projects Tiers 1–6 through the observer's epistemic lens: unpierced `disguise` aliases (`AliasRecord.known_to`) are masked to `persona_name`, `private_state` and unwitnessed causal provenance (`reason` / `caused_by_episode_id`) are redacted, `belief_state` edges override stale ground-truth state, and `facade` edges hide private `stance` edges while driving outward voice exemplar selection.
-- **Hybrid 4-Signal Scorer**: Ranks candidate episodes using POV visibility, causal provenance pinning, entity/location cue overlap, semantic cosine similarity, and salience-modulated recency decay.
+- **Epistemic Tracking, Retraction & POV Projection**:
+  - Tracks who witnessed an event (`"direct"`), who learned secondhand (`"told"`), who holds a false belief (`"deceived"` with `believed_summary`), and who later forgot or had memory erased (`"forgotten"` / `"suppressed"` via `InformDelta`).
+  - When `pov_entity_ids` is specified in `retrieve_context()`, the engine projects Tiers 1–6 through the observer's epistemic lens (`pov_mode="any"` or shared intersection `pov_mode="all"`): unpierced `disguise` aliases (`AliasRecord.known_to`) are masked to `persona_name`, `private_state` and unwitnessed causal provenance (`reason` / `caused_by_episode_id`) are redacted, `belief_state` edges override stale ground-truth state, and `facade` edges hide private `stance` edges while driving outward voice exemplar selection.
+  - **Deceived-POV Vector Isolation**: For deceived observers, `DefaultEpisodeRanker` embeds `believed_summary` rather than ground-truth `emb_bytes` so secret event vectors never leak into semantic retrieval.
+- **Hybrid 4-Signal Scorer & Compaction**: `DefaultEpisodeRanker` (configured via `EpisodicScoringPolicy`) ranks candidate episodes using POV visibility, causal provenance pinning, entity/location cue overlap, semantic cosine similarity, and salience-modulated recency decay. Older low-salience episodes can be compacted into summary episodes via `consolidate_episodes()` (`consolidated_from`).
 
 ---
 
@@ -132,7 +133,7 @@ CREATE TABLE IF NOT EXISTS episode_epistemics (
     step             INTEGER NOT NULL,
     episode_id       TEXT NOT NULL,
     entity_id        TEXT NOT NULL,
-    epistemic        TEXT NOT NULL DEFAULT 'direct', -- 'direct' | 'told' | 'deceived'
+    epistemic        TEXT NOT NULL DEFAULT 'direct', -- 'direct' | 'told' | 'deceived' | 'forgotten' | 'suppressed'
     believed_summary TEXT
 );
 
@@ -155,18 +156,22 @@ WITH RECURSIVE lineage(timeline_id, parent_id, max_step, depth) AS (
     SELECT
         t.timeline_id,
         t.parent_id,
-        MIN(l.max_step, t_child.fork_step),
+        CASE
+            WHEN l.max_step IS NULL THEN t_child.fork_step
+            WHEN t_child.fork_step IS NULL THEN l.max_step
+            ELSE MIN(l.max_step, t_child.fork_step)
+        END,
         l.depth + 1
     FROM lineage l
     JOIN timelines t_child ON t_child.timeline_id = l.timeline_id
     JOIN timelines t       ON t.timeline_id = l.parent_id
     WHERE l.parent_id IS NOT NULL
 ),
-ranked_revisions AS (
+step_deduped AS (
     SELECT
         r.revision_id,
         r.timeline_id,
-        r.step AS valid_from_step,
+        r.step,
         r.record_type,
         r.subject_key,
         r.relation_type,
@@ -174,29 +179,49 @@ ranked_revisions AS (
         r.target_id,
         r.is_tombstone,
         r.payload,
+        l.depth,
         ROW_NUMBER() OVER (
-            PARTITION BY r.record_type, r.subject_key
-            ORDER BY l.depth ASC, r.step DESC, r.revision_id DESC
-        ) AS rn,
-        COUNT(*) OVER (
-            PARTITION BY r.record_type, r.subject_key
-        ) AS revision_count,
-        LEAD(r.payload) OVER (
-            PARTITION BY r.record_type, r.subject_key
-            ORDER BY l.depth ASC, r.step DESC, r.revision_id DESC
-        ) AS prior_payload,
-        LEAD(r.step) OVER (
-            PARTITION BY r.record_type, r.subject_key
-            ORDER BY l.depth ASC, r.step DESC, r.revision_id DESC
-        ) AS prior_step,
-        LEAD(r.is_tombstone) OVER (
-            PARTITION BY r.record_type, r.subject_key
-            ORDER BY l.depth ASC, r.step DESC, r.revision_id DESC
-        ) AS prior_is_tombstone
+            PARTITION BY r.record_type, r.subject_key, r.step
+            ORDER BY l.depth ASC, r.revision_id DESC
+        ) AS step_rn
     FROM graph_revisions r
     JOIN lineage l
       ON r.timeline_id = l.timeline_id
-     AND r.step <= l.max_step
+     AND (l.max_step IS NULL OR r.step <= l.max_step)
+),
+ranked_revisions AS (
+    SELECT
+        revision_id,
+        timeline_id,
+        step AS valid_from_step,
+        record_type,
+        subject_key,
+        relation_type,
+        source_id,
+        target_id,
+        is_tombstone,
+        payload,
+        ROW_NUMBER() OVER (
+            PARTITION BY record_type, subject_key
+            ORDER BY depth ASC, step DESC, revision_id DESC
+        ) AS rn,
+        COUNT(*) OVER (
+            PARTITION BY record_type, subject_key
+        ) AS revision_count,
+        LEAD(payload) OVER (
+            PARTITION BY record_type, subject_key
+            ORDER BY depth ASC, step DESC, revision_id DESC
+        ) AS prior_payload,
+        LEAD(step) OVER (
+            PARTITION BY record_type, subject_key
+            ORDER BY depth ASC, step DESC, revision_id DESC
+        ) AS prior_step,
+        LEAD(is_tombstone) OVER (
+            PARTITION BY record_type, subject_key
+            ORDER BY depth ASC, step DESC, revision_id DESC
+        ) AS prior_is_tombstone
+    FROM step_deduped
+    WHERE step_rn = 1
 )
 SELECT
     record_type,
@@ -215,7 +240,26 @@ WHERE rn = 1 AND is_tombstone = 0;
 ```
 
 ### Why this architecture is fast and robust:
-1. `depth ASC`: Revisions made on the child branch (`depth = 0`) strictly supersede parent revisions.
-2. `r.step <= l.max_step`: Parent revisions committed *after* `fork_step` are completely invisible to the child branch.
-3. `rn = 1`: Picks the latest revision for each key in sub-millisecond execution while `prior_payload` preserves the preceding state without requiring a second database query.
-4. **Episodic Isolation**: Events are not forced into key-value entity states, eliminating prompt bloat and schema decay.
+1. `step_deduped` (`step_rn = 1`): If a child branch overrides a record at the exact same `step` as its parent, the parent row at that `step` is deduplicated before windowing so `prior_payload` and `revision_count` remain uncorrupted.
+2. `depth ASC`: Revisions made on the child branch (`depth = 0`) strictly supersede parent revisions.
+3. `r.step <= l.max_step`: Parent revisions committed *after* `fork_step` are completely invisible to the child branch.
+4. `rn = 1`: Picks the latest revision for each key in sub-millisecond execution while `prior_payload` preserves the preceding state without requiring a second database query.
+5. **Episodic Isolation**: Events are not forced into key-value entity states, eliminating prompt bloat and schema decay.
+
+---
+
+## 4. Modular Subsystem Map (`src/narrative_memory/`)
+
+| Module | Responsibility |
+| :--- | :--- |
+| `models.py` | Pydantic v2 schemas for Tiers 1–6, `EpistemicMode`, `StepDelta`, `StepContext`, and `ResolvedMention` |
+| `store.py` | `MemoryStore` protocol & SQLite `CausalStore` (lineage CTEs, snapshots, deletions, transactions) |
+| `embedders.py` | `Embedder` protocol, `OfflineNgramEmbedder` (CJK + signed hashing), `CallableEmbedder`, `OpenAICompatibleEmbedder`, `OllamaEmbedder` |
+| `voice.py` | `IngestionGate` & `VoiceBank` (2-stage anti-drift gate and policy-driven exemplar retrieval) |
+| `episodic.py` | `EpisodeRanker`, `DefaultEpisodeRanker`, and `EpisodicScoringPolicy` (Tier 6 hybrid 4-signal scorer) |
+| `resolver.py` | `MentionResolver` & `DefaultLexicalResolver` (word-boundary, fuzzy inflection, alias span matching) |
+| `extractors.py` | `DeltaExtractor`, `CallableExtractor`, and `OpenAICompatibleExtractor` for LLM delta extraction |
+| `hooks.py` | `EngineHooks` & `BaseEngineHooks` lifecycle callbacks (commit, rollback, branch, gate rejection) |
+| `presets.py` | `SchemaPolicy`, `InteractiveFictionPreset`, `TranslationPreset`, and `SimulationPreset` |
+| `engine.py` | `NarrativeMemoryEngine`, `StepTransaction`, `TimelineSession` (`contextvars`), POV projection & consolidation |
+| `cli.py` | `narrative-memory` CLI inspector (`tree`, `inspect`, `diff`, `history`) |

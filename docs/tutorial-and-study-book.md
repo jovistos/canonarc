@@ -135,7 +135,7 @@ Tier 4 resolves epithets and titles (`"the old wizard"` $\to$ `char_merlin`) and
 Vetted dialogue exemplars filtered by hard grammatical register and cosine similarity anchor character style.
 
 ### Tier 6: Episodic Event Ledger
-Stores immutable N-ary narrative events with semantic roles, causal provenance pointers (`caused_by_episode_id`), and epistemic visibility tags (`"direct"` vs. `"told"`).
+Stores immutable N-ary narrative events with semantic roles, optional narrative coordinates (`story_time`, `chapter_id`, `scene_id`), causal provenance pointers (`caused_by_episode_id`), and epistemic visibility tags (`"direct"`, `"told"`, `"deceived"`, `"forgotten"`, `"suppressed"`).
 
 ---
 
@@ -149,7 +149,7 @@ The database tracks:
 2. `graph_revisions`: Append-only materialized snapshots of entities, typed edges, and aliases.
 3. `voice_exemplars`: Historical dialogue exemplars with vector embeddings.
 4. `episodes`: Discrete plot episodes with semantic participant maps, locations, salience, and embeddings.
-5. `episode_epistemics`: Join table recording who knows which episode (`"direct"` vs. `"told"`).
+5. `episode_epistemics`: Join table recording who knows which episode (`"direct"`, `"told"`, `"deceived"`, `"forgotten"`, `"suppressed"`).
 
 ### 2.2 The Lineage Resolution CTE: Point-in-Time Resolution with Windowed Trajectory
 ```sql
@@ -161,41 +161,65 @@ WITH RECURSIVE lineage(timeline_id, parent_id, max_step, depth) AS (
     SELECT
         t.timeline_id,
         t.parent_id,
-        MIN(l.max_step, t_child.fork_step),
+        CASE
+            WHEN l.max_step IS NULL THEN t_child.fork_step
+            WHEN t_child.fork_step IS NULL THEN l.max_step
+            ELSE MIN(l.max_step, t_child.fork_step)
+        END,
         l.depth + 1
     FROM lineage l
     JOIN timelines t_child ON t_child.timeline_id = l.timeline_id
     JOIN timelines t       ON t.timeline_id = l.parent_id
     WHERE l.parent_id IS NOT NULL
 ),
-ranked_revisions AS (
+step_deduped AS (
     SELECT
         r.*,
+        l.depth,
         ROW_NUMBER() OVER (
-            PARTITION BY r.record_type, r.subject_key
-            ORDER BY l.depth ASC, r.step DESC, r.revision_id DESC
-        ) AS rn,
-        COUNT(*) OVER (
-            PARTITION BY r.record_type, r.subject_key
-        ) AS revision_count,
-        LEAD(r.payload) OVER (
-            PARTITION BY r.record_type, r.subject_key
-            ORDER BY l.depth ASC, r.step DESC, r.revision_id DESC
-        ) AS prior_payload,
-        LEAD(r.step) OVER (
-            PARTITION BY r.record_type, r.subject_key
-            ORDER BY l.depth ASC, r.step DESC, r.revision_id DESC
-        ) AS prior_step,
-        LEAD(r.is_tombstone) OVER (
-            PARTITION BY r.record_type, r.subject_key
-            ORDER BY l.depth ASC, r.step DESC, r.revision_id DESC
-        ) AS prior_is_tombstone
+            PARTITION BY r.record_type, r.subject_key, r.step
+            ORDER BY l.depth ASC, r.revision_id DESC
+        ) AS step_rn
     FROM graph_revisions r
     JOIN lineage l
       ON r.timeline_id = l.timeline_id
-     AND r.step <= l.max_step
+     AND (l.max_step IS NULL OR r.step <= l.max_step)
+),
+ranked_revisions AS (
+    SELECT
+        revision_id,
+        timeline_id,
+        step AS valid_from_step,
+        record_type,
+        subject_key,
+        relation_type,
+        source_id,
+        target_id,
+        is_tombstone,
+        payload,
+        ROW_NUMBER() OVER (
+            PARTITION BY record_type, subject_key
+            ORDER BY depth ASC, step DESC, revision_id DESC
+        ) AS rn,
+        COUNT(*) OVER (
+            PARTITION BY record_type, subject_key
+        ) AS revision_count,
+        LEAD(payload) OVER (
+            PARTITION BY record_type, subject_key
+            ORDER BY depth ASC, step DESC, revision_id DESC
+        ) AS prior_payload,
+        LEAD(step) OVER (
+            PARTITION BY record_type, subject_key
+            ORDER BY depth ASC, step DESC, revision_id DESC
+        ) AS prior_step,
+        LEAD(is_tombstone) OVER (
+            PARTITION BY record_type, subject_key
+            ORDER BY depth ASC, step DESC, revision_id DESC
+        ) AS prior_is_tombstone
+    FROM step_deduped
+    WHERE step_rn = 1
 )
-SELECT record_type, subject_key, relation_type, source_id, target_id, step AS valid_from_step,
+SELECT record_type, subject_key, relation_type, source_id, target_id, valid_from_step,
        payload, revision_count, prior_payload, prior_step, prior_is_tombstone
 FROM ranked_revisions
 WHERE rn = 1 AND is_tombstone = 0;
@@ -206,10 +230,11 @@ WHERE rn = 1 AND is_tombstone = 0;
 ## Chapter 3: Causal Time Travel, Branching & Counterfactuals
 
 Branching (`branch(at_step, name)`) inserts a child timeline row pointing to its parent at `fork_step`.
-Rollback (`rollback_to(step)`) deletes records at `step > cutoff` across all tables:
+Rollback (`rollback_to(step)`) deletes records at `step > cutoff` across all tables (raising `TimelineBranchConflictError` if descendant branches forked after `step` unless `force=True`):
 ```python
 engine.rollback_to(step=10, timeline_id="main")
 ```
+You can also prune finished branches with `delete_timeline("route_a", cascade=True)`, isolate concurrent async requests via `with engine.use_timeline("route_a"):` or `engine.session("route_a")`, and record non-linear flashbacks without overwriting present entity state via `StepDelta(is_flashback=True, story_time=...)`.
 Counterfactual inspection (`diff_timelines`) and standalone export (`export_snapshot`) work seamlessly across both graph states and episodic events.
 
 ---
@@ -217,9 +242,9 @@ Counterfactual inspection (`diff_timelines`) and standalone export (`export_snap
 ## Chapter 4: The Voice Bank, Anti-Drift Gates & Stylistic Retrieval
 
 The 2-stage ingestion gate prevents generation drift:
-1. **Gate 1:** Regex extraction across quotation styles (`"..."`, `«...»`, `— ...`), word count ($12 \le N \le 60$), Root-TTR distinctiveness, and long-word density.
+1. **Gate 1:** Regex extraction across quotation styles (`"..."`, `«...»`, `— ...`), word count ($12 \le N \le 60$), Root-TTR distinctiveness, and long-word density (with optional `on_rejected` telemetry callbacks).
 2. **Gate 2:** Post-polish quality score ($\ge 8.0$).
-3. **Retrieval Cascade:** Strict hard register filtering $\to$ soft tone bonus $\to$ cosine similarity over n-gram hash vectors.
+3. **Retrieval Cascade:** Strict hard register filtering $\to$ soft tone bonus $\to$ cosine similarity over Weinberger signed-CRC32 n-gram/CJK hash vectors (`narrative_memory.embedders`), with batch vectorization (`embed_batch()`) and built-in `CallableEmbedder`, `OpenAICompatibleEmbedder`, and `OllamaEmbedder` adapters.
 
 ---
 
@@ -227,16 +252,16 @@ The 2-stage ingestion gate prevents generation drift:
 
 ### 5.1 Solving the 6 Episodic Pitfalls
 
-1. **State-Dict Stuffing:** Events are stored in `episodes`, not stuffed into `entity.state`. The entity state remains lean (`{"mood": "calm"}`).
+1. **State-Dict Stuffing:** Events are stored in `episodes`, not stuffed into `entity.state`. The entity state remains lean (`{"mood": "calm"}`). Older low-salience events can also be compacted into summary episodes via `consolidate_episodes()`.
 2. **Causal Provenance:** Edges and entities link to triggering events via `caused_by_episode_id="ep_82"` and `reason="Sabotaged lance"`. The LLM knows *why* a state exists.
 3. **N-Ary Hyperedges:** Events link arbitrary actors, targets, instruments, and locations via semantic role dictionaries (`participants={"char_arthur": "giver", "item_excalibur": "instrument", "char_lancelot": "recipient"}`).
 4. **Epistemic Metagaming & Asymmetric Information:**
-   - **Episodes:** Characters only recall episodes where they were present (`"direct"`), explicitly informed (`"told"`), or misled (`"deceived"` with a `believed_summary` via `InformDelta`).
-   - **Scoped Disguises:** `AliasRecord(kind="disguise", known_to=[...], persona_name="...")` masks true identity, edges, and voice for fooled observers while annotating `(pierced)` for observers in `known_to`.
+   - **Episodes:** Characters only recall episodes where they were present (`"direct"`), explicitly informed (`"told"`), or misled (`"deceived"` with a `believed_summary` via `InformDelta`), and can lose access later via `"forgotten"` / `"suppressed"`. For deceived observers, `DefaultEpisodeRanker` embeds `believed_summary` instead of hidden ground-truth `emb_bytes`.
+   - **Scoped Disguises & Multi-POV Intersection:** `AliasRecord(kind="disguise", known_to=[...], persona_name="...")` masks true identity, edges, and voice for fooled observers while annotating `(pierced)` for observers in `known_to`. Multi-character scenes support `pov_mode="any"` or shared `pov_mode="all"` across disguises, `belief_state`, `facade`, and provenance.
    - **Private State & Provenance Redaction:** `EntityRecord.private_state` and unwitnessed `reason`/`caused_by_episode_id` fields are automatically redacted for non-POV observers.
    - **Stale Beliefs & Facades:** `relation_type="belief_state"` edges override distant ground-truth changes for ignorant observers, while `relation_type="facade"` edges drive outward voice selection and conceal private `stance` edges.
 5. **Trajectory Queries:** `prior_state`, `prior_step`, and `revision_count` let prompts explain that Arthur cooled down from a prior argument. Structured queries (`query_episodes`) allow calculating betrayal frequencies and timelines.
-6. **Cue-Based Plot Recall:** Hybrid 4-signal scoring blends POV access, causal pinning, entity/location overlap, semantic similarity, and salience-modulated recency decay ($e^{-\lambda \cdot \Delta\text{step}}$).
+6. **Cue-Based Plot Recall:** `DefaultEpisodeRanker` (configurable via `EpisodicScoringPolicy`) blends POV access, causal pinning, entity/location overlap, semantic similarity, and salience-modulated recency decay ($e^{-\lambda \cdot \Delta\text{step}}$).
 
 ---
 
@@ -264,39 +289,53 @@ See [`tests/test_episodic_memory.py`](../tests/test_episodic_memory.py) for the 
 
 | Subsystem | Primary Code File | Key Classes & Functions | Responsibility |
 | :--- | :--- | :--- | :--- |
-| **Data Models** | [`src/narrative_memory/models.py`](../src/narrative_memory/models.py) | `EntityRecord`, `DirectedEdgeRecord`, `EpisodeRecord`, `InformDelta`, `VoiceExemplar`, `StepDelta` | Pydantic v2 schemas modeling Tiers 1–6 |
-| **Storage & Causal Graph** | [`src/narrative_memory/store.py`](../src/narrative_memory/store.py) | `CausalStore`, Recursive CTE | 5-table SQLite storage, lineage traversal, windowed trajectories, atomic rollbacks |
-| **Voice & Episodic Ranking** | [`src/narrative_memory/voice.py`](../src/narrative_memory/voice.py) | `VoiceBank`, `IngestionGate`, `OfflineNgramEmbedder` | Multi-alphabet regex extraction, Root-TTR, hard-register cascade, hybrid 4-signal episode scorer |
-| **Engine Facade** | [`src/narrative_memory/engine.py`](../src/narrative_memory/engine.py) | `NarrativeMemoryEngine`, `StepTransaction` | High-level API, 1-hop coreference, episodic recall, transaction context manager |
-| **Domain Presets** | [`src/narrative_memory/presets.py`](../src/narrative_memory/presets.py) | `InteractiveFictionPreset`, `TranslationPreset`, `SimulationPreset` | Prompt engineering templates for game engines, translation, and simulations |
+| **Data Models** | [`src/narrative_memory/models.py`](../src/narrative_memory/models.py) | `EntityRecord`, `DirectedEdgeRecord`, `EpisodeRecord`, `InformDelta`, `VoiceExemplar`, `StepDelta`, `ResolvedMention` | Pydantic v2 schemas modeling Tiers 1–6 & `EpistemicMode` |
+| **Storage & Causal Graph** | [`src/narrative_memory/store.py`](../src/narrative_memory/store.py) | `MemoryStore`, `CausalStore`, Recursive CTE | 5-table SQLite storage, lineage traversal, snapshots, timeline deletions, atomic rollbacks |
+| **Embedders** | [`src/narrative_memory/embedders.py`](../src/narrative_memory/embedders.py) | `Embedder`, `OfflineNgramEmbedder`, `CallableEmbedder`, `OpenAICompatibleEmbedder`, `OllamaEmbedder` | Pluggable vectorizers with CJK tokenization, signed CRC32 hashing, and batching |
+| **Voice Bank & Gates** | [`src/narrative_memory/voice.py`](../src/narrative_memory/voice.py) | `VoiceBank`, `IngestionGate` | Multi-alphabet regex extraction, Root-TTR gate, hard-register cascade |
+| **Episodic Ranker** | [`src/narrative_memory/episodic.py`](../src/narrative_memory/episodic.py) | `EpisodeRanker`, `DefaultEpisodeRanker`, `EpisodicScoringPolicy` | Deceived-POV safe hybrid 4-signal Tier 6 scorer |
+| **Mention Resolver** | [`src/narrative_memory/resolver.py`](../src/narrative_memory/resolver.py) | `MentionResolver`, `DefaultLexicalResolver` | Word-boundary, shared alias span, and fuzzy inflection resolution |
+| **LLM Extractors** | [`src/narrative_memory/extractors.py`](../src/narrative_memory/extractors.py) | `DeltaExtractor`, `CallableExtractor`, `OpenAICompatibleExtractor` | JSON-fence stripping and Pydantic validation retry loop for `StepDelta` |
+| **Lifecycle Hooks** | [`src/narrative_memory/hooks.py`](../src/narrative_memory/hooks.py) | `EngineHooks`, `BaseEngineHooks` | Observability callbacks for commit, rollback, branch, and gate rejections |
+| **Domain Presets** | [`src/narrative_memory/presets.py`](../src/narrative_memory/presets.py) | `SchemaPolicy`, `InteractiveFictionPreset`, `TranslationPreset`, `SimulationPreset` | Prompt engineering templates for game engines, translation, and simulations |
+| **Engine Facade** | [`src/narrative_memory/engine.py`](../src/narrative_memory/engine.py) | `NarrativeMemoryEngine`, `StepTransaction`, `TimelineSession` | High-level API, POV projection, consolidation, `contextvars` sessions, transactions |
+| **CLI Inspector** | [`src/narrative_memory/cli.py`](../src/narrative_memory/cli.py) | `narrative-memory tree / inspect / diff / history` | Terminal inspection of `.sqlite` timelines, state, diffs, and revisions |
 
-### Key API Cheatsheet
+### Key API & CLI Cheatsheet
 
 ```python
-# Initialization
-engine = NarrativeMemoryEngine("save.sqlite")
+# Initialization & Concurrency-Safe Sessions
+with NarrativeMemoryEngine("save.sqlite") as engine:
+    # Transactional Game Loop (Auto-rollback on error)
+    with engine.step_transaction(step=current_step, text=scene_text, top_k_episodes=5) as tx:
+        ctx = tx.context
+        prompt = engine.format_context(ctx)
+        response = call_llm(prompt)
+        tx.commit(
+            delta=extracted_delta,
+            exemplars=extracted_lines,
+            episodes=extracted_episodes,
+        )
 
-# Transactional Game Loop (Auto-rollback on error)
-with engine.step_transaction(step=current_step, text=scene_text, top_k_episodes=5) as tx:
-    ctx = tx.context
-    prompt = engine.format_context(ctx)
-    response = call_llm(prompt)
-    tx.commit(
-        delta=extracted_delta,
-        exemplars=extracted_lines,
-        episodes=extracted_episodes,
+    # Branching, Session Isolation, Pruning & Rollback
+    engine.branch(at_step=20, name="alternate_route", switch=True)
+    with engine.use_timeline("alternate_route"):
+        ...
+    engine.rollback_to(step=10, timeline_id="main")
+    engine.delete_timeline("alternate_route", cascade=True)
+
+    # Episodic Querying, Epistemic Updates & Compaction
+    episodes = engine.query_episodes(
+        participants=["char_arthur", "char_merlin"],
+        predicate="argument",
     )
+    engine.inform_entity(step=60, episode_id="ep_secret_betrayal", entity_id="char_guinevere")
+    engine.consolidate_episodes(step=100, before_step=50, summary="Act I summary")
+```
 
-# Branching & Rollback
-engine.branch(at_step=20, name="alternate_route", switch=True)
-engine.rollback_to(step=10)
-
-# Episodic Querying
-episodes = engine.query_episodes(
-    participants=["char_arthur", "char_merlin"],
-    predicate="argument",
-)
-
-# Secondhand Epistemic Information
-engine.inform_entity(step=60, episode_id="ep_secret_betrayal", entity_id="char_guinevere")
+```bash
+narrative-memory tree save.sqlite
+narrative-memory inspect save.sqlite --timeline main --step 85 --pov char_arthur
+narrative-memory diff save.sqlite main alternate_route --step 85
+narrative-memory history save.sqlite char_arthur --timeline main
 ```

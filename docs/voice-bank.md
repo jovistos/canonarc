@@ -37,6 +37,8 @@ CandidateDialogueSpans
 Indexed into Tier 5 Voice Bank
 ```
 
+Rejected Gate 1 / Gate 2 candidates can be observed for diagnostics via `IngestionGate.extract_candidates(..., on_rejected=callback)` or the `on_gate_rejected` hook in `BaseEngineHooks`.
+
 ---
 
 ## Voice Bank Retrieval: Policy-Driven Hard-Filter / Soft-Boost Cascade
@@ -69,11 +71,17 @@ In scenes with multiple co-present characters (e.g., Arthur in a room with both 
 
 ---
 
-## Offline Hybrid N-Gram Embedder
+## Embedders & Adapters (`narrative_memory.embedders`)
 
 By default, `narrative-memory` ships with `OfflineNgramEmbedder`:
-- Zero external dependencies.
-- 128-dimensional float32 normalized vectors.
-- Uses deterministic CRC32 feature hashing (`zlib.crc32`) over word tokens and character 3-grams so persisted SQLite embeddings remain consistent across Python processes.
-- Automatic dimension-mismatch guard: if you switch embedders on an existing database, `VoiceBank` automatically re-embeds mismatched stored vectors on the fly.
-- Pluggable: Pass any custom embedding class satisfying the `Embedder` protocol (`embed_text(str) -> np.ndarray`) to use OpenAI, LM Studio, or Sentence-Transformers.
+- **Zero external dependencies**, 128-dimensional L2-normalized `float32` vectors.
+- **Unicode & CJK-aware tokenization** (`_tokenize_units`): Tokenizes Latin/Cyrillic alphanumeric words as well as CJK ideographs, Hiragana/Katakana, and Hangul syllables + adjacent character bigrams so non-space-delimited languages work out of the box.
+- **Weinberger signed CRC32 feature hashing**: Uses `zlib.crc32` for both bucket index and a `±1` sign bit to cancel hash-collision bias cleanly across Python processes.
+- **Batch Embedding**: Implements `embed_batch(texts)` (with `embed_texts_batch()` helper) so committing batches of voice exemplars or episodes uses a single vectorized call when backed by remote/GPU embedders.
+- **Automatic dimension-mismatch guard**: If you switch embedders on an existing database, `VoiceBank` and `DefaultEpisodeRanker` automatically re-embed mismatched stored vectors on the fly.
+
+### Built-in Adapters
+- `CallableEmbedder(fn, batch_fn=...)`: Wrap any custom Python function or local Sentence-Transformers model.
+- `OpenAICompatibleEmbedder(model=..., base_url=..., api_key=...)`: Zero-dependency `urllib.request` client for OpenAI, LM Studio, vLLM, or OpenRouter `/v1/embeddings` endpoints.
+- `OllamaEmbedder(model=..., base_url=...)`: Local Ollama `/api/embed` client with batch support.
+- Or implement the `Embedder` protocol directly (`embed_text(str) -> np.ndarray`, optionally `embed_batch(Sequence[str]) -> list[np.ndarray]`).

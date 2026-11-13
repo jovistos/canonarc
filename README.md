@@ -208,6 +208,28 @@ with engine.step_transaction(step=85, text=scene_text) as tx:
 
 ---
 
+## CLI Timeline Inspector
+
+Inspect branching timelines, world state, diffs, and entity trajectories directly from `.sqlite` saves:
+
+```bash
+narrative-memory tree story_save.sqlite
+narrative-memory inspect story_save.sqlite --timeline main --step 85 --pov char_arthur
+narrative-memory diff story_save.sqlite main reconciliation_route --step 85
+narrative-memory history story_save.sqlite char_arthur --timeline main
+```
+
+---
+
+## Plug-and-Play Adapters, Sessions & Lifecycle Hooks
+
+- **Zero-dependency Embedders** (`narrative_memory.embedders`): `OfflineNgramEmbedder` (with CJK tokenization & signed feature hashing), `CallableEmbedder`, `OpenAICompatibleEmbedder`, and `OllamaEmbedder` with `embed_batch()` support.
+- **Zero-dependency Extractors** (`narrative_memory.extractors`): `CallableExtractor` and `OpenAICompatibleExtractor` with JSON-fence stripping and schema validation retries.
+- **Tier 6 Episodic Policy & Consolidation** (`narrative_memory.episodic`): Tunable `EpisodicScoringPolicy`, `DefaultEpisodeRanker`, flashback-safe `StepDelta(is_flashback=True)`, `"forgotten"` / `"suppressed"` epistemic updates, and `engine.consolidate_episodes(...)`.
+- **Concurrency-Safe Sessions & Hooks** (`narrative_memory.hooks`): Use `with NarrativeMemoryEngine("save.sqlite") as engine:`, `engine.session("branch_a")`, `with engine.use_timeline("branch_a"):`, and `BaseEngineHooks` (`on_before_commit`, `on_after_commit`, `on_rollback`, `on_branch`, `on_gate_rejected`).
+
+---
+
 ## Documentation
 
 - [**Comprehensive Tutorial & Study Book**](docs/tutorial-and-study-book.md): Masterclass guide covering ontology, motivation, recursive CTE lineage, anti-drift gates, episodic recall, and end-to-end examples.
