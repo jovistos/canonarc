@@ -29,6 +29,9 @@ dev = [
     "mypy>=1.10",
 ]
 
+[project.scripts]
+narrative-memory = "narrative_memory.cli:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
