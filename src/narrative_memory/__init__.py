@@ -1,12 +1,29 @@
 from __future__ import annotations
 
+from .embedders import (
+    CallableEmbedder,
+    Embedder,
+    OfflineNgramEmbedder,
+    OllamaEmbedder,
+    OpenAICompatibleEmbedder,
+    embed_texts_batch,
+)
 from .engine import (
     DefaultLexicalResolver,
     DeltaExtractor,
     MentionResolver,
     NarrativeMemoryEngine,
     StepTransaction,
+    TimelineSession,
 )
+from .episodic import (
+    DEFAULT_EPISODIC_POLICY,
+    DefaultEpisodeRanker,
+    EpisodeRanker,
+    EpisodicScoringPolicy,
+)
+from .extractors import CallableExtractor, OpenAICompatibleExtractor
+from .hooks import BaseEngineHooks, EngineHooks
 from .models import (
     AliasRecord,
     DialogueCandidate,
@@ -15,6 +32,7 @@ from .models import (
     EntityDelta,
     EntityRecord,
     EpisodeRecord,
+    EpistemicMode,
     InformDelta,
     ResolvedMention,
     StepContext,
@@ -31,12 +49,17 @@ from .presets import (
     TranslationPreset,
 )
 from .store import CausalStore, MemoryStore, TimelineBranchConflictError
-from .voice import Embedder, IngestionGate, OfflineNgramEmbedder, VoiceBank
+from .voice import IngestionGate, VoiceBank
 
 __all__ = [
     "AliasRecord",
+    "BaseEngineHooks",
+    "CallableEmbedder",
+    "CallableExtractor",
     "CausalStore",
+    "DEFAULT_EPISODIC_POLICY",
     "DEFAULT_SCHEMA_POLICY",
+    "DefaultEpisodeRanker",
     "DefaultLexicalResolver",
     "DeltaExtractor",
     "DialogueCandidate",
@@ -44,9 +67,13 @@ __all__ = [
     "DomainPreset",
     "EdgeDelta",
     "Embedder",
+    "EngineHooks",
     "EntityDelta",
     "EntityRecord",
+    "EpisodeRanker",
     "EpisodeRecord",
+    "EpisodicScoringPolicy",
+    "EpistemicMode",
     "InformDelta",
     "IngestionGate",
     "InteractiveFictionPreset",
@@ -54,6 +81,9 @@ __all__ = [
     "MentionResolver",
     "NarrativeMemoryEngine",
     "OfflineNgramEmbedder",
+    "OllamaEmbedder",
+    "OpenAICompatibleEmbedder",
+    "OpenAICompatibleExtractor",
     "ResolvedMention",
     "SchemaPolicy",
     "SimulationPreset",
@@ -62,7 +92,9 @@ __all__ = [
     "StepTransaction",
     "TimelineBranchConflictError",
     "TimelineInfo",
+    "TimelineSession",
     "TranslationPreset",
     "VoiceBank",
     "VoiceExemplar",
+    "embed_texts_batch",
 ]
