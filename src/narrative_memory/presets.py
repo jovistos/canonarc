@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Protocol
 
-from .models import StepContext, StepDelta
+from .models import DirectedEdgeRecord, StepContext, StepDelta
 
 
 @dataclass(frozen=True)
@@ -45,8 +45,34 @@ class DomainPreset(Protocol):
 class InteractiveFictionPreset:
     """Preset for Ren'Py, RPG dialogue engines, and text adventures."""
 
-    def __init__(self, policy: SchemaPolicy | None = None) -> None:
+    def __init__(
+        self,
+        policy: SchemaPolicy | None = None,
+        *,
+        include_background_edges: bool = False,
+    ) -> None:
         self.policy: SchemaPolicy = policy or DEFAULT_SCHEMA_POLICY
+        self.include_background_edges: bool = include_background_edges
+
+    @staticmethod
+    def _format_edge_line(edge: DirectedEdgeRecord) -> str:
+        if edge.relation_type in ("stance", "facade") or (
+            "register" in edge.state or "tone" in edge.state or "trust" in edge.state
+        ):
+            reg = edge.state.get("register", "standard")
+            tone = edge.state.get("tone", "neutral")
+            trust = edge.state.get("trust", 0.0)
+            tag = " [facade]" if edge.relation_type == "facade" else ""
+            line = f"- {edge.source_id} → {edge.target_id}{tag}: register={reg}, tone={tone}, trust={trust}"
+        else:
+            pairs = ", ".join(f"{k}={v}" for k, v in edge.state.items())
+            detail = f": {pairs}" if pairs else ""
+            line = f"- {edge.source_id} → {edge.target_id} [{edge.relation_type}]{detail}"
+        if edge.reason:
+            line += f" (because: {edge.reason})"
+        elif edge.caused_by_episode_id:
+            line += f" (caused by: {edge.caused_by_episode_id})"
+        return line
 
     def format_prompt_context(self, ctx: StepContext) -> str:
         lines: list[str] = ["### Active Scene Narrative Context (Step: {})".format(ctx.step)]
@@ -71,23 +97,12 @@ class InteractiveFictionPreset:
         if ctx.active_edges:
             lines.append("\n#### Interpersonal Stances & Register:")
             for edge in ctx.active_edges:
-                if edge.relation_type in ("stance", "facade") or (
-                    "register" in edge.state or "tone" in edge.state or "trust" in edge.state
-                ):
-                    reg = edge.state.get("register", "standard")
-                    tone = edge.state.get("tone", "neutral")
-                    trust = edge.state.get("trust", 0.0)
-                    tag = " [facade]" if edge.relation_type == "facade" else ""
-                    line = f"- {edge.source_id} → {edge.target_id}{tag}: register={reg}, tone={tone}, trust={trust}"
-                else:
-                    pairs = ", ".join(f"{k}={v}" for k, v in edge.state.items())
-                    detail = f": {pairs}" if pairs else ""
-                    line = f"- {edge.source_id} → {edge.target_id} [{edge.relation_type}]{detail}"
-                if edge.reason:
-                    line += f" (because: {edge.reason})"
-                elif edge.caused_by_episode_id:
-                    line += f" (caused by: {edge.caused_by_episode_id})"
-                lines.append(line)
+                lines.append(self._format_edge_line(edge))
+
+        if self.include_background_edges and ctx.background_edges:
+            lines.append("\n#### Off-Screen Ties (Not Present in Scene):")
+            for edge in ctx.background_edges:
+                lines.append(self._format_edge_line(edge))
 
         if ctx.episodes:
             lines.append("\n#### Episodic Memory (Relevant Past Events):")
@@ -125,8 +140,24 @@ class InteractiveFictionPreset:
 class TranslationPreset:
     """Preset for literary and game localization (Tier 1 base declension/gender + Tier 2 register)."""
 
-    def __init__(self, policy: SchemaPolicy | None = None) -> None:
+    def __init__(
+        self,
+        policy: SchemaPolicy | None = None,
+        *,
+        include_background_edges: bool = False,
+    ) -> None:
         self.policy: SchemaPolicy = policy or DEFAULT_SCHEMA_POLICY
+        self.include_background_edges: bool = include_background_edges
+
+    @staticmethod
+    def _format_edge_line(edge: DirectedEdgeRecord) -> str:
+        if edge.relation_type in ("stance", "facade") or ("register" in edge.state or "tone" in edge.state):
+            reg = edge.state.get("register", "")
+            tone = edge.state.get("tone", "")
+            tag = " [facade]" if edge.relation_type == "facade" else ""
+            return f"- {edge.source_id} → {edge.target_id}{tag}: register={reg}, tone={tone}"
+        pairs = ", ".join(f"{k}='{v}'" if isinstance(v, str) else f"{k}={v}" for k, v in edge.state.items())
+        return f"- {edge.source_id} → {edge.target_id} [{edge.relation_type}]: {pairs}"
 
     def format_prompt_context(self, ctx: StepContext) -> str:
         blocks: list[str] = []
@@ -143,16 +174,15 @@ class TranslationPreset:
             state_lines.append(f"- {e.canonical_name} ({e.entity_id}): {attr_str}{mood_str}")
 
         for edge in ctx.active_edges:
-            if edge.relation_type in ("stance", "facade") or ("register" in edge.state or "tone" in edge.state):
-                reg = edge.state.get("register", "")
-                tone = edge.state.get("tone", "")
-                tag = " [facade]" if edge.relation_type == "facade" else ""
-                state_lines.append(f"- {edge.source_id} → {edge.target_id}{tag}: register={reg}, tone={tone}")
-            else:
-                pairs = ", ".join(f"{k}='{v}'" if isinstance(v, str) else f"{k}={v}" for k, v in edge.state.items())
-                state_lines.append(f"- {edge.source_id} → {edge.target_id} [{edge.relation_type}]: {pairs}")
+            state_lines.append(self._format_edge_line(edge))
 
         blocks.append("\n".join(state_lines))
+
+        if self.include_background_edges and ctx.background_edges:
+            bg_lines: list[str] = ["## Off-screen character ties — reference only"]
+            for edge in ctx.background_edges:
+                bg_lines.append(self._format_edge_line(edge))
+            blocks.append("\n".join(bg_lines))
 
         # Tier 6 Episodic context block (when present)
         if ctx.episodes:

@@ -168,6 +168,7 @@ class StepTransaction:
         pov_entity_ids: Sequence[str] | None = None,
         pov_mode: Literal["any", "all"] = "any",
         edge_types: Sequence[str] | None = None,
+        location_id: str | None = None,
         timeline_id: str | None = None,
         rerun_clean: bool = True,
     ) -> None:
@@ -180,6 +181,7 @@ class StepTransaction:
         self.pov_entity_ids = pov_entity_ids
         self.pov_mode = pov_mode
         self.edge_types = edge_types
+        self.location_id = location_id
         self.timeline_id = timeline_id or engine.active_timeline
         self.rerun_clean = rerun_clean
         self._context: StepContext | None = None
@@ -212,6 +214,7 @@ class StepTransaction:
             pov_entity_ids=self.pov_entity_ids,
             pov_mode=self.pov_mode,
             edge_types=self.edge_types,
+            location_id=self.location_id,
             timeline_id=self.timeline_id,
         )
         return self
@@ -336,6 +339,7 @@ class NarrativeMemoryEngine:
         pov_entity_ids: Sequence[str] | None = None,
         pov_mode: Literal["any", "all"] = "any",
         edge_types: Sequence[str] | None = None,
+        location_id: str | None = None,
         inclusive: bool = False,
         timeline_id: str | None = None,
         fallback_on_empty_mentions: Literal["all", "pov_only", "none"] = "pov_only",
@@ -370,35 +374,58 @@ class NarrativeMemoryEngine:
         resolved_entity_ids = {m.entity_id for m in resolved_mentions}
         masked_real_ids = set(disguise_masks.keys())
 
-        # 3. Filter relevant entities: present entities + 1-hop edge neighbors
-        # Exclude edges belonging to a masked entity's true identity
-        relevant_entity_ids = set(resolved_entity_ids)
-        scene_edges: list[DirectedEdgeRecord] = []
+        # 3. Separate co-present scene entities from 1-hop social graph neighbors
+        present_entity_ids = {
+            eid for eid in resolved_entity_ids if not eid.startswith("masked:")
+        }
+        active_location_ids: set[str] = set()
+        if location_id is not None:
+            active_location_ids.add(location_id)
+        for ent in active_entities:
+            if ent.entity_id in present_entity_ids and ent.kind == "location":
+                active_location_ids.add(ent.entity_id)
+        if active_location_ids:
+            for ent in active_entities:
+                if ent.entity_id in masked_real_ids:
+                    continue
+                ent_loc = ent.state.get("location_id") or ent.base_attributes.get("location_id")
+                if ent_loc in active_location_ids:
+                    present_entity_ids.add(ent.entity_id)
+
+        # Fallback when no explicit/lexical mentions or co-located entities were found
+        if not present_entity_ids and not disguise_masks:
+            if fallback_on_empty_mentions == "all":
+                present_entity_ids = {
+                    e.entity_id for e in active_entities if e.entity_id not in masked_real_ids
+                }
+            elif fallback_on_empty_mentions == "pov_only" and pov_set:
+                present_entity_ids = {
+                    eid for eid in pov_set if eid not in masked_real_ids
+                }
+
+        # Partition active edges into in-scene edges vs. 1-hop background edges
+        # Exclude belief_state edges and edges belonging to a masked entity's true identity
+        in_scene_edges: list[DirectedEdgeRecord] = []
+        background_edges: list[DirectedEdgeRecord] = []
+        neighbor_entity_ids: set[str] = set()
         for edge in active_edges:
             if edge.relation_type == policy.belief_relation:
                 continue
             if edge.source_id in masked_real_ids or edge.target_id in masked_real_ids:
                 continue
-            if edge.source_id in resolved_entity_ids or edge.target_id in resolved_entity_ids:
-                scene_edges.append(edge)
-                relevant_entity_ids.add(edge.source_id)
-                relevant_entity_ids.add(edge.target_id)
+            src_present = edge.source_id in present_entity_ids
+            tgt_present = edge.target_id in present_entity_ids
+            if src_present and tgt_present:
+                in_scene_edges.append(edge)
+            elif src_present or tgt_present:
+                background_edges.append(edge)
+                if not src_present:
+                    neighbor_entity_ids.add(edge.source_id)
+                if not tgt_present:
+                    neighbor_entity_ids.add(edge.target_id)
 
-        scene_entities = [e for e in active_entities if e.entity_id in relevant_entity_ids]
-
-        # Fallback when no explicit/lexical mentions were found
-        if not scene_entities and not disguise_masks:
-            if fallback_on_empty_mentions == "all":
-                scene_entities = active_entities
-                scene_edges = [e for e in active_edges if e.relation_type != policy.belief_relation]
-            elif fallback_on_empty_mentions == "pov_only" and pov_set:
-                scene_entities = [e for e in active_entities if e.entity_id in pov_set]
-                scene_edges = [
-                    e
-                    for e in active_edges
-                    if e.relation_type != policy.belief_relation
-                    and (e.source_id in pov_set or e.target_id in pov_set)
-                ]
+        scene_entities = [e for e in active_entities if e.entity_id in present_entity_ids]
+        neighbor_entities = [e for e in active_entities if e.entity_id in neighbor_entity_ids]
 
         # Fetch candidate episodes early so we know which causal episodes are known to POV
         candidate_episodes = (
@@ -421,15 +448,26 @@ class NarrativeMemoryEngine:
                     if pov_set & set(ep.known_by.keys())
                 }
 
-        # Project entities and edges through POV epistemic lens
+        # Project co-present entities/edges and 1-hop background entities/edges through POV epistemic lens
         projected_entities, projected_edges = self._project_pov_state(
             scene_entities=scene_entities,
-            scene_edges=scene_edges,
+            scene_edges=in_scene_edges,
             all_active_edges=active_edges,
             pov_set=pov_set,
             pov_mode=pov_mode,
             pov_known_episode_ids=pov_known_episode_ids,
             disguise_masks=disguise_masks,
+            pierced_disguises=pierced_disguises,
+            policy=policy,
+        )
+        projected_related_entities, projected_background_edges = self._project_pov_state(
+            scene_entities=neighbor_entities,
+            scene_edges=background_edges,
+            all_active_edges=active_edges,
+            pov_set=pov_set,
+            pov_mode=pov_mode,
+            pov_known_episode_ids=pov_known_episode_ids,
+            disguise_masks={},
             pierced_disguises=pierced_disguises,
             policy=policy,
         )
@@ -451,7 +489,7 @@ class NarrativeMemoryEngine:
                     if is_masked_speaker
                     else speaker.entity_id
                 )
-                edge_pool = active_edges if is_masked_speaker else scene_edges
+                edge_pool = active_edges if is_masked_speaker else (in_scene_edges + background_edges)
                 voice_targets = self._resolve_speaker_voice_targets(
                     real_speaker_id=real_speaker_id,
                     is_masked_speaker=is_masked_speaker,
@@ -512,6 +550,8 @@ class NarrativeMemoryEngine:
             resolved_mentions=resolved_mentions,
             entities=projected_entities,
             active_edges=projected_edges,
+            related_entities=projected_related_entities,
+            background_edges=projected_background_edges,
             voice_exemplars=voice_exemplars,
             episodes=episodes,
         )
@@ -755,6 +795,7 @@ class NarrativeMemoryEngine:
         pov_entity_ids: Sequence[str] | None = None,
         pov_mode: Literal["any", "all"] = "any",
         edge_types: Sequence[str] | None = None,
+        location_id: str | None = None,
         timeline_id: str | None = None,
         rerun_clean: bool = True,
     ) -> StepTransaction:
@@ -768,6 +809,7 @@ class NarrativeMemoryEngine:
             pov_entity_ids=pov_entity_ids,
             pov_mode=pov_mode,
             edge_types=edge_types,
+            location_id=location_id,
             timeline_id=timeline_id,
             rerun_clean=rerun_clean,
         )
@@ -1018,11 +1060,13 @@ class NarrativeMemoryEngine:
 
     def build_extraction_prompt(self, ctx: StepContext, scene_text: str) -> str:
         """Builds a structured extraction prompt combining preset instructions, active IDs, and StepDelta schema."""
-        entity_lines = [
-            f"- {e.entity_id} (name: {e.canonical_name}, kind: {e.kind})"
-            for e in ctx.entities
-            if not e.entity_id.startswith("masked:")
-        ]
+        seen_entity_ids: set[str] = set()
+        entity_lines: list[str] = []
+        for e in (*ctx.entities, *ctx.related_entities):
+            if e.entity_id.startswith("masked:") or e.entity_id in seen_entity_ids:
+                continue
+            seen_entity_ids.add(e.entity_id)
+            entity_lines.append(f"- {e.entity_id} (name: {e.canonical_name}, kind: {e.kind})")
         episode_lines = [
             f"- {ep.episode_id} (step {ep.step}): {ep.summary}"
             for ep in ctx.episodes

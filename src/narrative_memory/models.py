@@ -256,5 +256,7 @@ class StepContext(BaseModel):
     resolved_mentions: list[ResolvedMention] = Field(default_factory=list)
     entities: list[EntityRecord] = Field(default_factory=list)
     active_edges: list[DirectedEdgeRecord] = Field(default_factory=list)
+    related_entities: list[EntityRecord] = Field(default_factory=list)
+    background_edges: list[DirectedEdgeRecord] = Field(default_factory=list)
     voice_exemplars: list[VoiceExemplar] = Field(default_factory=list)
     episodes: list[EpisodeRecord] = Field(default_factory=list)

@@ -428,3 +428,121 @@ def test_causal_store_thread_safety_and_asyncio_to_thread(tmp_path):
     assert alice is not None
     assert alice.state["hp"] == 91
     engine.close()
+
+
+def test_copresent_scene_entities_isolated_from_1hop_social_graph_neighbors():
+    """1-hop social graph neighbors stay in related_entities/background_edges rather than
+    polluting co-present scene entities, ignorant annotations, or episode causal pinning."""
+    from narrative_memory.presets import InteractiveFictionPreset
+
+    engine = NarrativeMemoryEngine(":memory:")
+    engine.register_entity(
+        EntityRecord(
+            entity_id="char_arthur",
+            canonical_name="Arthur",
+            state={"mood": "weary", "location_id": "loc_woods"},
+        ),
+        step=0,
+    )
+    engine.register_entity(
+        EntityRecord(
+            entity_id="char_merlin",
+            canonical_name="Merlin",
+            state={"mood": "contemplative", "location_id": "loc_camelot"},
+        ),
+        step=0,
+    )
+    engine.register_entity(
+        EntityRecord(
+            entity_id="char_morgause",
+            canonical_name="Morgause",
+            state={"mood": "scheming", "location_id": "loc_orkney"},
+        ),
+        step=0,
+    )
+    engine.register_entity(
+        EntityRecord(
+            entity_id="char_ranger",
+            canonical_name="Alden",
+            state={"mood": "alert", "location_id": "loc_woods"},
+        ),
+        step=0,
+    )
+
+    engine.commit_step(
+        step=5,
+        delta=StepDelta(
+            episodes=[
+                EpisodeRecord(
+                    episode_id="ep_orkney_plot",
+                    predicate="conspiracy",
+                    summary="Morgause forged a secret pact in Orkney.",
+                    participants={"char_morgause": "actor"},
+                    salience=3.0,
+                ),
+                EpisodeRecord(
+                    episode_id="ep_woods_omen",
+                    predicate="discovery",
+                    summary="Arthur found the broken silver hilt by the frozen stream.",
+                    location_id="loc_woods",
+                    participants={"char_arthur": "actor"},
+                    known_by={"char_arthur": "direct"},
+                    salience=9.0,
+                ),
+            ],
+            edges=[
+                EdgeDelta(
+                    source_id="char_arthur",
+                    target_id="char_merlin",
+                    relation_type="stance",
+                    state={"register": "Vi", "tone": "reverent", "trust": 0.9},
+                ),
+                EdgeDelta(
+                    source_id="char_arthur",
+                    target_id="char_morgause",
+                    relation_type="stance",
+                    state={"register": "formal", "tone": "hostile", "trust": -0.9},
+                    caused_by_episode_id="ep_orkney_plot",
+                    reason="Morgause betrayed the realm",
+                ),
+            ],
+        ),
+    )
+
+    # 1. Solo scene: only Arthur is mentioned (no location_id passed)
+    ctx_solo = engine.retrieve_context(
+        step=10,
+        text="Arthur knelt beside the frozen stream and examined the hilt.",
+        mentions=["Arthur"],
+        top_k_episodes=1,
+    )
+    assert [e.entity_id for e in ctx_solo.entities] == ["char_arthur"]
+    assert ctx_solo.active_edges == []
+    assert {e.entity_id for e in ctx_solo.related_entities} == {"char_merlin", "char_morgause"}
+    assert len(ctx_solo.background_edges) == 2
+
+    # Off-screen edge caused_by_episode_id='ep_orkney_plot' must NOT hijack top_k_episodes=1
+    assert [ep.episode_id for ep in ctx_solo.episodes] == ["ep_woods_omen"]
+
+    # Preset rendering lists only Arthur under Characters Present and emits no bogus ignorant tags
+    rendered = InteractiveFictionPreset().format_prompt_context(ctx_solo)
+    assert "**Arthur** (char_arthur)" in rendered
+    assert "char_merlin" not in rendered
+    assert "char_morgause" not in rendered
+    assert "ignorant:" not in rendered
+
+    # Opt-in include_background_edges renders off-screen ties under their own distinct header
+    rendered_with_bg = InteractiveFictionPreset(include_background_edges=True).format_prompt_context(ctx_solo)
+    assert "#### Off-Screen Ties (Not Present in Scene):" in rendered_with_bg
+    assert "char_arthur → char_merlin" in rendered_with_bg
+
+    # 2. Co-located scene with location_id='loc_woods' brings in Alden alongside Arthur
+    ctx_colocated = engine.retrieve_context(
+        step=10,
+        text="Arthur knelt beside the frozen stream.",
+        mentions=["Arthur"],
+        location_id="loc_woods",
+    )
+    assert {e.entity_id for e in ctx_colocated.entities} == {"char_arthur", "char_ranger"}
+    assert {e.entity_id for e in ctx_colocated.related_entities} == {"char_merlin", "char_morgause"}
+    engine.close()

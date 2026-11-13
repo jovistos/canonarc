@@ -323,15 +323,17 @@ def test_facade_vs_private_stance_voice_selection_and_irony_prompt():
     # Arthur does NOT see Mordred's private hostile stance edge when facade exists
     assert all(e.relation_type == "facade" for e in ctx_arthur.active_edges)
 
-    # Omniscient scene with Mordred & Percival shows dramatic irony ignorant tag
+    # Omniscient scene with Mordred & Percival shows dramatic irony ignorant tag only for co-present Percival
     ctx_omni = engine.retrieve_context(
         step=20,
         text="Mordred greeted Percival in the hall.",
         mentions=["Mordred", "Percival"],
     )
+    assert "char_arthur" not in {e.entity_id for e in ctx_omni.entities}
+    assert "char_arthur" in {e.entity_id for e in ctx_omni.related_entities}
     prompt = engine.format_context(ctx_omni)
-    assert "ignorant: char_arthur, char_percival" in prompt
+    assert "ignorant: char_percival" in prompt
 
     # TranslationPreset also preserves epistemic boundaries
     trans_prompt = TranslationPreset().format_prompt_context(ctx_omni)
-    assert "ignorant: char_arthur, char_percival" in trans_prompt
+    assert "ignorant: char_percival" in trans_prompt
