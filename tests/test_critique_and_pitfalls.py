@@ -10,7 +10,6 @@ from narrative_memory import (
     EntityDelta,
     EntityRecord,
     EpisodeRecord,
-    InformDelta,
     NarrativeMemoryEngine,
     StepDelta,
     VoiceExemplar,
