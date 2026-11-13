@@ -3,7 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Protocol
 
-from .models import DirectedEdgeRecord, StepContext, StepDelta
+from .episodic import EpisodicScoringPolicy
+from .models import DirectedEdgeRecord, StepContext
 
 
 @dataclass(frozen=True)
@@ -28,6 +29,7 @@ class SchemaPolicy:
     fallback_on_empty_hard_filter: bool = True
     hard_filter_mismatch_penalty: float = 0.25
     hard_filter_fallback_note: str = "[Note: different {keys}]"
+    episodic_policy: EpisodicScoringPolicy = field(default_factory=EpisodicScoringPolicy)
 
 
 DEFAULT_SCHEMA_POLICY = SchemaPolicy()

@@ -1,6 +1,5 @@
 import tempfile
 from pathlib import Path
-import pytest
 from narrative_memory.store import CausalStore
 from narrative_memory.models import EntityRecord, StepDelta, EdgeDelta, EntityDelta
 

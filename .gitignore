@@ -3,9 +3,13 @@ __pycache__/
 *.pyo
 *.pyd
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 *.egg-info/
 dist/
 build/
 .venv/
+*.sqlite
+*.db
 temp.txt
 notes/

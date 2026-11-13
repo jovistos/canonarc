@@ -12,8 +12,6 @@ from typing import Any, Literal, Protocol, Sequence
 from .models import (
     AliasRecord,
     DirectedEdgeRecord,
-    EdgeDelta,
-    EntityDelta,
     EntityRecord,
     EpisodeRecord,
     InformDelta,
@@ -122,11 +120,11 @@ WITH RECURSIVE lineage(timeline_id, parent_id, max_step, depth) AS (
 """
 
 LINEAGE_ACTIVE_REVISIONS_CTE = LINEAGE_CTE_SQL + """,
-ranked_revisions AS (
+step_deduped AS (
     SELECT
         r.revision_id,
         r.timeline_id,
-        r.step AS valid_from_step,
+        r.step,
         r.record_type,
         r.subject_key,
         r.relation_type,
@@ -134,30 +132,50 @@ ranked_revisions AS (
         r.target_id,
         r.is_tombstone,
         r.payload,
+        l.depth,
         ROW_NUMBER() OVER (
-            PARTITION BY r.record_type, r.subject_key
-            ORDER BY l.depth ASC, r.step DESC, r.revision_id DESC
-        ) AS rn,
-        COUNT(*) OVER (
-            PARTITION BY r.record_type, r.subject_key
-        ) AS revision_count,
-        LEAD(r.payload) OVER (
-            PARTITION BY r.record_type, r.subject_key
-            ORDER BY l.depth ASC, r.step DESC, r.revision_id DESC
-        ) AS prior_payload,
-        LEAD(r.step) OVER (
-            PARTITION BY r.record_type, r.subject_key
-            ORDER BY l.depth ASC, r.step DESC, r.revision_id DESC
-        ) AS prior_step,
-        LEAD(r.is_tombstone) OVER (
-            PARTITION BY r.record_type, r.subject_key
-            ORDER BY l.depth ASC, r.step DESC, r.revision_id DESC
-        ) AS prior_is_tombstone
+            PARTITION BY r.record_type, r.subject_key, r.step
+            ORDER BY l.depth ASC, r.revision_id DESC
+        ) AS step_rn
     FROM graph_revisions r
     JOIN lineage l
       ON r.timeline_id = l.timeline_id
      AND (l.max_step IS NULL OR r.step <= l.max_step)
     /*EXTRA_FILTERS*/
+),
+ranked_revisions AS (
+    SELECT
+        revision_id,
+        timeline_id,
+        step AS valid_from_step,
+        record_type,
+        subject_key,
+        relation_type,
+        source_id,
+        target_id,
+        is_tombstone,
+        payload,
+        ROW_NUMBER() OVER (
+            PARTITION BY record_type, subject_key
+            ORDER BY depth ASC, step DESC, revision_id DESC
+        ) AS rn,
+        COUNT(*) OVER (
+            PARTITION BY record_type, subject_key
+        ) AS revision_count,
+        LEAD(payload) OVER (
+            PARTITION BY record_type, subject_key
+            ORDER BY depth ASC, step DESC, revision_id DESC
+        ) AS prior_payload,
+        LEAD(step) OVER (
+            PARTITION BY record_type, subject_key
+            ORDER BY depth ASC, step DESC, revision_id DESC
+        ) AS prior_step,
+        LEAD(is_tombstone) OVER (
+            PARTITION BY record_type, subject_key
+            ORDER BY depth ASC, step DESC, revision_id DESC
+        ) AS prior_is_tombstone
+    FROM step_deduped
+    WHERE step_rn = 1
 )
 SELECT
     record_type,
@@ -185,6 +203,32 @@ def _unpack_edge_payload(raw_payload: dict[str, Any]) -> tuple[dict[str, Any], s
     return state, None, None
 
 
+def _pack_episode_metadata(ep: EpisodeRecord) -> dict[str, Any]:
+    """Serializes optional narrative-time and consolidation attributes into episode metadata."""
+    meta = dict(ep.metadata)
+    if ep.story_time is not None:
+        meta["_story_time"] = ep.story_time
+    if ep.chapter_id is not None:
+        meta["_chapter_id"] = ep.chapter_id
+    if ep.scene_id is not None:
+        meta["_scene_id"] = ep.scene_id
+    if ep.consolidated_from:
+        meta["_consolidated_from"] = list(ep.consolidated_from)
+    return meta
+
+
+def _unpack_episode_metadata(
+    raw_meta: dict[str, Any],
+) -> tuple[dict[str, Any], int | float | str | None, str | None, str | None, list[str]]:
+    """Extracts narrative-time and consolidation fields from stored episode metadata."""
+    meta = dict(raw_meta)
+    story_time = meta.pop("_story_time", None)
+    chapter_id = meta.pop("_chapter_id", None)
+    scene_id = meta.pop("_scene_id", None)
+    consolidated_from = meta.pop("_consolidated_from", None) or []
+    return meta, story_time, chapter_id, scene_id, list(consolidated_from)
+
+
 class TimelineBranchConflictError(RuntimeError):
     """Raised when rolling back a parent timeline would invalidate child branches."""
 
@@ -202,6 +246,7 @@ class MemoryStore(Protocol):
     ) -> TimelineInfo: ...
     def get_timeline(self, timeline_id: str) -> TimelineInfo | None: ...
     def list_timelines(self) -> list[TimelineInfo]: ...
+    def delete_timeline(self, timeline_id: str, *, cascade: bool = False) -> int: ...
     def rollback_to(self, step: int, *, timeline_id: str, force: bool = False) -> int: ...
     def register_entity(
         self,
@@ -211,15 +256,15 @@ class MemoryStore(Protocol):
         step: int = 0,
         timeline_id: str = "main",
     ) -> None: ...
-    def get_all_active_entities(self, timeline_id: str, cutoff_step: int) -> list[EntityRecord]: ...
+    def get_all_active_entities(self, timeline_id: str, cutoff_step: int | None) -> list[EntityRecord]: ...
     def get_all_active_edges(
         self,
         timeline_id: str,
-        cutoff_step: int,
+        cutoff_step: int | None,
         *,
         relation_type: str | None = None,
     ) -> list[DirectedEdgeRecord]: ...
-    def get_all_active_aliases(self, timeline_id: str, cutoff_step: int) -> list[AliasRecord]: ...
+    def get_all_active_aliases(self, timeline_id: str, cutoff_step: int | None) -> list[AliasRecord]: ...
     def apply_delta(
         self,
         step: int,
@@ -345,6 +390,12 @@ class CausalStore:
     def close(self) -> None:
         with self._lock:
             self.conn.close()
+
+    def __enter__(self) -> CausalStore:
+        return self
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        self.close()
 
     # --- Timelines & Branching ---
 
@@ -476,6 +527,62 @@ class CausalStore:
             )
             return c1.rowcount + c2.rowcount + c3.rowcount + c4.rowcount
 
+    def delete_timeline(self, timeline_id: str, *, cascade: bool = False) -> int:
+        """Deletes a timeline branch and all of its owned records."""
+        if timeline_id == "main":
+            raise ValueError("Cannot delete the primary 'main' timeline.")
+        with self.transaction():
+            exists = self.conn.execute(
+                "SELECT 1 FROM timelines WHERE timeline_id = ?",
+                (timeline_id,),
+            ).fetchone()
+            if not exists:
+                raise ValueError(f"Timeline '{timeline_id}' does not exist.")
+
+            direct_children = [
+                row["timeline_id"]
+                for row in self.conn.execute(
+                    "SELECT timeline_id FROM timelines WHERE parent_id = ?",
+                    (timeline_id,),
+                ).fetchall()
+            ]
+            if direct_children and not cascade:
+                raise TimelineBranchConflictError(
+                    f"Cannot delete timeline '{timeline_id}': child branches exist "
+                    f"({', '.join(direct_children)}). Pass cascade=True to delete descendants."
+                )
+
+            # Collect subtree in BFS order, then delete bottom-up to satisfy parent_id FK
+            to_delete: list[str] = [timeline_id]
+            queue: list[str] = list(direct_children)
+            while queue:
+                cid = queue.pop(0)
+                to_delete.append(cid)
+                sub_children = [
+                    row["timeline_id"]
+                    for row in self.conn.execute(
+                        "SELECT timeline_id FROM timelines WHERE parent_id = ?",
+                        (cid,),
+                    ).fetchall()
+                ]
+                queue.extend(sub_children)
+
+            deleted_rows = 0
+            for tid in reversed(to_delete):
+                for table in (
+                    "graph_revisions",
+                    "voice_exemplars",
+                    "episodes",
+                    "episode_epistemics",
+                    "timelines",
+                ):
+                    cur = self.conn.execute(
+                        f"DELETE FROM {table} WHERE timeline_id = ?",
+                        (tid,),
+                    )
+                    deleted_rows += cur.rowcount
+            return deleted_rows
+
     # --- Lineage Queries ---
 
     def get_active_revisions(
@@ -520,10 +627,18 @@ class CausalStore:
             rows = cursor.fetchall()
         results = []
         for row in rows:
+            payload_dict = json.loads(row["payload"])
+            rev_offset = 0
+            if isinstance(payload_dict, dict):
+                raw_offset = payload_dict.pop("_revision_count_offset", 0)
+                if isinstance(raw_offset, (int, float)):
+                    rev_offset = int(raw_offset)
             prior_payload = None
             prior_step = None
             if row["prior_payload"] is not None and not row["prior_is_tombstone"]:
                 prior_payload = json.loads(row["prior_payload"])
+                if isinstance(prior_payload, dict):
+                    prior_payload.pop("_revision_count_offset", None)
                 prior_step = row["prior_step"]
             results.append(
                 {
@@ -533,8 +648,8 @@ class CausalStore:
                     "source_id": row["source_id"],
                     "target_id": row["target_id"],
                     "valid_from_step": row["valid_from_step"],
-                    "payload": json.loads(row["payload"]),
-                    "revision_count": row["revision_count"],
+                    "payload": payload_dict,
+                    "revision_count": row["revision_count"] + rev_offset,
                     "prior_payload": prior_payload,
                     "prior_step": prior_step,
                 }
@@ -641,7 +756,7 @@ class CausalStore:
     def get_all_active_entities(
         self,
         timeline_id: str,
-        cutoff_step: int,
+        cutoff_step: int | None,
     ) -> list[EntityRecord]:
         revs = self.get_active_revisions(timeline_id, cutoff_step, record_type="entity")
         return [self._row_to_entity(r) for r in revs]
@@ -649,7 +764,7 @@ class CausalStore:
     def get_all_active_edges(
         self,
         timeline_id: str,
-        cutoff_step: int,
+        cutoff_step: int | None,
         *,
         relation_type: str | None = None,
     ) -> list[DirectedEdgeRecord]:
@@ -664,26 +779,49 @@ class CausalStore:
             for r in revs
         ]
 
+    def _row_to_alias(self, rev: dict[str, Any]) -> AliasRecord:
+        p = rev["payload"]
+        return AliasRecord(
+            alias=p.get("alias") or rev["subject_key"],
+            entity_id=rev["source_id"],
+            kind=p.get("kind", "epithet"),
+            known_to=p.get("known_to"),
+            persona_name=p.get("persona_name"),
+            valid_from_step=rev["valid_from_step"],
+        )
+
     def get_all_active_aliases(
         self,
         timeline_id: str,
-        cutoff_step: int,
+        cutoff_step: int | None,
     ) -> list[AliasRecord]:
         revs = self.get_active_revisions(timeline_id, cutoff_step, record_type="alias")
+        return [self._row_to_alias(r) for r in revs]
+
+    def get_active_graph_state(
+        self,
+        timeline_id: str,
+        cutoff_step: int | None,
+        *,
+        edge_types: Sequence[str] | None = None,
+    ) -> tuple[list[EntityRecord], list[AliasRecord], list[DirectedEdgeRecord]]:
+        """Single-pass CTE retrieval of all active entities, aliases, and edges."""
+        revs = self.get_active_revisions(timeline_id, cutoff_step)
+        entities: list[EntityRecord] = []
         aliases: list[AliasRecord] = []
-        for r in revs:
-            p = r["payload"]
-            aliases.append(
-                AliasRecord(
-                    alias=p.get("alias") or r["subject_key"],
-                    entity_id=r["source_id"],
-                    kind=p.get("kind", "epithet"),
-                    known_to=p.get("known_to"),
-                    persona_name=p.get("persona_name"),
-                    valid_from_step=r["valid_from_step"],
-                )
-            )
-        return aliases
+        edges: list[DirectedEdgeRecord] = []
+        allowed_edge_types = set(edge_types) if edge_types is not None else None
+        for rev in revs:
+            rtype = rev["record_type"]
+            if rtype == "entity":
+                entities.append(self._row_to_entity(rev))
+            elif rtype == "alias":
+                aliases.append(self._row_to_alias(rev))
+            elif rtype == "edge":
+                rel = rev.get("relation_type") or "stance"
+                if allowed_edge_types is None or rel in allowed_edge_types:
+                    edges.append(self._row_to_edge(rev, default_relation=rel))
+        return entities, aliases, edges
 
     # --- Write-Time State Materialization (Resolve-on-Write) ---
 
@@ -946,7 +1084,7 @@ class CausalStore:
                     ep.salience,
                     json.dumps(ep.participants),
                     json.dumps(ep.witnesses),
-                    json.dumps(ep.metadata),
+                    json.dumps(_pack_episode_metadata(ep)),
                     emb_bytes,
                 ),
             )
@@ -959,13 +1097,13 @@ class CausalStore:
             for ent_id, mode in ep.known_by.items():
                 initial_known[ent_id] = mode
 
-            for ent_id, mode in initial_known.items():
+            for ent_id, raw_mode in initial_known.items():
                 self.conn.execute(
                     """
                     INSERT INTO episode_epistemics (timeline_id, step, episode_id, entity_id, epistemic, believed_summary)
                     VALUES (?, ?, ?, ?, ?, ?)
                     """,
-                    (timeline_id, ep.step, ep_id, ent_id, mode, ep.believed_summaries.get(ent_id)),
+                    (timeline_id, ep.step, ep_id, ent_id, raw_mode, ep.believed_summaries.get(ent_id)),
                 )
 
     def insert_episodes(
@@ -992,6 +1130,28 @@ class CausalStore:
                 """,
                 (timeline_id, step, inform.episode_id, inform.entity_id, inform.epistemic, inform.believed_summary),
             )
+
+    def delete_episodes(
+        self,
+        episode_ids: Sequence[str],
+        *,
+        timeline_id: str = "main",
+    ) -> int:
+        """Deletes specific episodes and their epistemic records on a timeline (used for consolidation)."""
+        ids = [eid for eid in episode_ids if eid]
+        if not ids:
+            return 0
+        placeholders = ",".join("?" for _ in ids)
+        with self.transaction():
+            c1 = self.conn.execute(
+                f"DELETE FROM episodes WHERE timeline_id = ? AND episode_id IN ({placeholders})",
+                (timeline_id, *ids),
+            )
+            c2 = self.conn.execute(
+                f"DELETE FROM episode_epistemics WHERE timeline_id = ? AND episode_id IN ({placeholders})",
+                (timeline_id, *ids),
+            )
+            return c1.rowcount + c2.rowcount
 
     def get_lineage_episodes(
         self,
@@ -1027,7 +1187,7 @@ class CausalStore:
           ON ep.timeline_id = l.timeline_id
          AND (l.max_step IS NULL OR ep.step <= l.max_step)
         {epistemic_filter}
-        ORDER BY l.depth DESC, ep.step ASC, ep.id ASC;
+        ORDER BY ep.step ASC, l.depth DESC, ep.id ASC;
         """
         )
         params: dict[str, Any] = {"timeline_id": timeline_id, "cutoff_step": cutoff_step}
@@ -1047,22 +1207,24 @@ class CausalStore:
             ep_id = row["episode_id"]
             ent_id = row["entity_id"]
             raw_mode = row["epistemic"]
+            if raw_mode in ("forgotten", "suppressed"):
+                if ep_id in known_map:
+                    known_map[ep_id].pop(ent_id, None)
+                if ep_id in believed_map:
+                    believed_map[ep_id].pop(ent_id, None)
+                continue
             if raw_mode == "direct":
                 mode: Literal["direct", "told", "deceived"] = "direct"
             elif raw_mode == "deceived":
                 mode = "deceived"
             else:
                 mode = "told"
-            if ep_id not in known_map:
-                known_map[ep_id] = {}
-            # 'direct' awareness is never downgraded to 'told' or 'deceived'
-            if known_map[ep_id].get(ent_id) != "direct":
-                known_map[ep_id][ent_id] = mode
-                if mode == "deceived":
-                    if row["believed_summary"]:
-                        believed_map.setdefault(ep_id, {})[ent_id] = row["believed_summary"]
-                elif ep_id in believed_map and ent_id in believed_map[ep_id]:
-                    believed_map[ep_id].pop(ent_id, None)
+            known_map.setdefault(ep_id, {})[ent_id] = mode
+            if mode == "deceived":
+                if row["believed_summary"]:
+                    believed_map.setdefault(ep_id, {})[ent_id] = row["believed_summary"]
+            elif ep_id in believed_map and ent_id in believed_map[ep_id]:
+                believed_map[ep_id].pop(ent_id, None)
 
         items: list[tuple[EpisodeRecord, bytes]] = []
         seen_ids: set[str] = set()
@@ -1071,6 +1233,9 @@ class CausalStore:
             if ep_id in seen_ids:
                 continue
             seen_ids.add(ep_id)
+            meta, story_time, chapter_id, scene_id, consolidated_from = _unpack_episode_metadata(
+                json.loads(row["metadata"])
+            )
             rec = EpisodeRecord(
                 episode_id=ep_id,
                 timeline_id=row["timeline_id"],
@@ -1078,12 +1243,16 @@ class CausalStore:
                 predicate=row["predicate"],
                 summary=row["summary"],
                 location_id=row["location_id"],
+                story_time=story_time,
+                chapter_id=chapter_id,
+                scene_id=scene_id,
+                consolidated_from=consolidated_from,
                 salience=row["salience"],
                 participants=json.loads(row["participants"]),
                 witnesses=json.loads(row["witnesses"]),
                 known_by=known_map.get(ep_id, {}),
                 believed_summaries=believed_map.get(ep_id, {}),
-                metadata=json.loads(row["metadata"]),
+                metadata=meta,
             )
             items.append((rec, bytes(row["embedding"])))
         items.sort(key=lambda item: item[0].step, reverse=True)
@@ -1354,13 +1523,28 @@ class CausalStore:
             lineage_episodes = self.get_lineage_episodes(timeline_id, at_step)
             epistemic_query = (
                 LINEAGE_CTE_SQL
-                + """
-        SELECT ep.step, ep.episode_id, ep.entity_id, ep.epistemic, ep.believed_summary
-        FROM episode_epistemics ep
-        JOIN lineage l
-          ON ep.timeline_id = l.timeline_id
-         AND (l.max_step IS NULL OR ep.step <= l.max_step)
-        ORDER BY l.depth DESC, ep.step ASC, ep.id ASC;
+                + """,
+        ranked_epistemics AS (
+            SELECT
+                ep.step,
+                ep.episode_id,
+                ep.entity_id,
+                ep.epistemic,
+                ep.believed_summary,
+                ep.id,
+                ROW_NUMBER() OVER (
+                    PARTITION BY ep.episode_id, ep.entity_id, ep.step
+                    ORDER BY l.depth ASC, ep.id DESC
+                ) AS rn
+            FROM episode_epistemics ep
+            JOIN lineage l
+              ON ep.timeline_id = l.timeline_id
+             AND (l.max_step IS NULL OR ep.step <= l.max_step)
+        )
+        SELECT step, episode_id, entity_id, epistemic, believed_summary
+        FROM ranked_epistemics
+        WHERE rn = 1
+        ORDER BY step ASC, id ASC;
         """
             )
             epistemic_rows = self.conn.execute(
@@ -1409,7 +1593,14 @@ class CausalStore:
 
         with export_store.conn:
             for r in active_revs:
-                if r.get("prior_payload") is not None and r.get("prior_step") is not None:
+                has_prior = r.get("prior_payload") is not None and r.get("prior_step") is not None
+                exported_rows = 2 if has_prior else 1
+                rev_offset = max(0, int(r.get("revision_count", 1)) - exported_rows)
+                payload_to_export = dict(r["payload"])
+                if rev_offset > 0:
+                    payload_to_export["_revision_count_offset"] = rev_offset
+
+                if has_prior:
                     export_store.conn.execute(
                         """
                         INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, relation_type, source_id, target_id, is_tombstone, payload)
@@ -1437,7 +1628,7 @@ class CausalStore:
                         r.get("relation_type"),
                         r["source_id"],
                         r["target_id"],
-                        json.dumps(r["payload"]),
+                        json.dumps(payload_to_export),
                     ),
                 )
             for ep, emb_bytes in lineage_episodes:
@@ -1456,7 +1647,7 @@ class CausalStore:
                         ep.salience,
                         json.dumps(ep.participants),
                         json.dumps(ep.witnesses),
-                        json.dumps(ep.metadata),
+                        json.dumps(_pack_episode_metadata(ep)),
                         emb_bytes,
                     ),
                 )

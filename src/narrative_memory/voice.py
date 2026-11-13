@@ -3,11 +3,24 @@ from __future__ import annotations
 import math
 import re
 import uuid
-import zlib
-from typing import Any, Callable, Literal, Protocol, Sequence
+from typing import Any, Callable, Literal, Sequence
 
 import numpy as np
 
+from .embedders import (
+    _CJK_CHAR_RE,
+    _TOKEN_UNIT_RE,
+    Embedder,
+    OfflineNgramEmbedder,
+    _tokenize_units,
+)
+from .episodic import (
+    DEFAULT_EPISODIC_POLICY,
+    DefaultEpisodeRanker,
+    EpisodeRanker,
+    EpisodicScoringPolicy,
+    cosine_similarity,
+)
 from .models import DialogueCandidate, EpisodeRecord, VoiceExemplar
 from .presets import DEFAULT_SCHEMA_POLICY, SchemaPolicy
 
@@ -20,64 +33,6 @@ DIALOGUE_PATTERNS = [
     re.compile(r'『([^』]+)』'),                   # Japanese / Traditional Chinese inner quotes
     re.compile(r'(?:^|\n)\s*—\s*([^\n]+)'),     # Em-dash dialogue lines
 ]
-
-# CJK Unified Ideographs, Extension A, Hiragana, Katakana, Hangul Syllables
-_CJK_CHAR_RE = re.compile(r'[\u3040-\u309f\u30a0-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af]')
-_TOKEN_UNIT_RE = re.compile(
-    r'[\u3040-\u309f\u30a0-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af]'
-    r'|[^\W\u3040-\u309f\u30a0-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af]+'
-)
-
-
-def _tokenize_units(text: str) -> tuple[list[str], bool]:
-    """Tokenizes text into linguistic units (CJK characters individually, non-CJK words via \\w+).
-
-    Returns (lowercased_units, is_cjk_dominant).
-    """
-    units = [m.lower() for m in _TOKEN_UNIT_RE.findall(text)]
-    if not units:
-        return [], False
-    cjk_count = sum(1 for u in units if len(u) == 1 and _CJK_CHAR_RE.match(u))
-    return units, (cjk_count / len(units)) >= 0.5
-
-
-class Embedder(Protocol):
-    """Protocol for dense or sparse text embedding."""
-    def embed_text(self, text: str) -> np.ndarray: ...
-
-
-class OfflineNgramEmbedder:
-    """Zero-dependency offline character + word n-gram feature hashing embedder.
-
-    Produces normalized float32 vectors of fixed dimension with cosine similarity
-    reflective of lexical overlap, morphology, and style keywords.
-    """
-
-    def __init__(self, dim: int = 128) -> None:
-        self.dim = dim
-
-    def embed_text(self, text: str) -> np.ndarray:
-        clean = " ".join(text.lower().split())
-        if not clean:
-            return np.zeros(self.dim, dtype=np.float32)
-
-        vec = np.zeros(self.dim, dtype=np.float32)
-        # Word tokens (deterministic crc32 so persisted vectors remain valid across processes)
-        words = re.findall(r"\w+", clean)
-        for w in words:
-            h = zlib.crc32(w.encode("utf-8")) % self.dim
-            vec[h] += 1.0
-
-        # Character 3-grams
-        for i in range(len(clean) - 2):
-            tri = clean[i : i + 3]
-            h = zlib.crc32(tri.encode("utf-8")) % self.dim
-            vec[h] += 0.5
-
-        norm = np.linalg.norm(vec)
-        if norm > 1e-6:
-            vec /= norm
-        return vec.astype(np.float32)
 
 
 class IngestionGate:
@@ -99,7 +54,6 @@ class IngestionGate:
     def _attribution_windows(text: str, start: int, end: int) -> tuple[str, str]:
         """Extracts local pre-quote and post-quote attribution clauses."""
         before_raw = text[max(0, start - 140) : start]
-        # Bound by paragraph break or previous closing quote
         for sep in ("\n\n", '"', "”", "“", "»", "」", "』"):
             idx = before_raw.rfind(sep)
             if idx != -1:
@@ -119,6 +73,7 @@ class IngestionGate:
         *,
         source_text: str = "",
         speaker_resolver: Callable[[str, str], tuple[str | None, str | None, str | None]] | None = None,
+        on_rejected: Callable[[str, str, dict[str, Any]], None] | None = None,
     ) -> list[DialogueCandidate]:
         """Extracts quoted dialogue spans and applies Gate 1 (length + distinctiveness pre-filter)."""
         candidates: list[DialogueCandidate] = []
@@ -135,18 +90,21 @@ class IngestionGate:
                 unit_count = len(units)
                 effective_max = int(self.max_words * 1.8) if is_cjk else self.max_words
                 if not (self.min_words <= unit_count <= effective_max):
+                    if on_rejected is not None:
+                        on_rejected(
+                            span,
+                            f"word_count {unit_count} outside [{self.min_words}, {effective_max}]",
+                            {"unit_count": unit_count, "min_words": self.min_words, "max_words": effective_max},
+                        )
                     continue
 
-                # Compute script-agnostic distinctiveness & lexical diversity
                 unique_units = set(units)
-                # Root Type-Token Ratio: |V| / sqrt(N)
                 root_ttr = len(unique_units) / math.sqrt(unit_count)
                 lexical_diversity = len(unique_units) / unit_count
                 bigrams = set(zip(units, units[1:]))
                 bigram_diversity = len(bigrams) / max(1, unit_count - 1)
 
                 if is_cjk:
-                    # CJK words are typically 1-2 characters; avoid English >=6-char word-length bias
                     distinctiveness = min(1.0, (root_ttr / 5.0) * 0.6 + bigram_diversity * 0.4)
                 else:
                     long_words = [w for w in units if len(w) >= 6]
@@ -156,30 +114,38 @@ class IngestionGate:
                         (root_ttr / 5.0) * 0.55 + long_ratio * 0.25 + bigram_diversity * 0.20,
                     )
 
-                if distinctiveness >= self.min_distinctiveness:
-                    speaker_id: str | None = None
-                    addressee_id: str | None = None
-                    speaker_surface: str | None = None
-                    if speaker_resolver is not None:
-                        before_win, after_win = self._attribution_windows(
-                            text, match.start(), match.end()
+                if distinctiveness < self.min_distinctiveness:
+                    if on_rejected is not None:
+                        on_rejected(
+                            span,
+                            f"distinctiveness {distinctiveness:.3f} < {self.min_distinctiveness}",
+                            {"distinctiveness": distinctiveness, "threshold": self.min_distinctiveness},
                         )
-                        speaker_id, addressee_id, speaker_surface = speaker_resolver(
-                            before_win, after_win
-                        )
-                    candidates.append(
-                        DialogueCandidate(
-                            candidate_id=str(uuid.uuid4())[:8],
-                            text=span,
-                            source_text=source_text,
-                            word_count=unit_count,
-                            distinctiveness_score=round(distinctiveness, 3),
-                            lexical_diversity=round(lexical_diversity, 3),
-                            speaker_id=speaker_id,
-                            addressee_id=addressee_id,
-                            speaker_surface=speaker_surface,
-                        )
+                    continue
+
+                speaker_id: str | None = None
+                addressee_id: str | None = None
+                speaker_surface: str | None = None
+                if speaker_resolver is not None:
+                    before_win, after_win = self._attribution_windows(
+                        text, match.start(), match.end()
                     )
+                    speaker_id, addressee_id, speaker_surface = speaker_resolver(
+                        before_win, after_win
+                    )
+                candidates.append(
+                    DialogueCandidate(
+                        candidate_id=str(uuid.uuid4())[:8],
+                        text=span,
+                        source_text=source_text,
+                        word_count=unit_count,
+                        distinctiveness_score=round(distinctiveness, 3),
+                        lexical_diversity=round(lexical_diversity, 3),
+                        speaker_id=speaker_id,
+                        addressee_id=addressee_id,
+                        speaker_surface=speaker_surface,
+                    )
+                )
 
         return candidates
 
@@ -189,15 +155,19 @@ class IngestionGate:
 
 
 class VoiceBank:
-    """Tier 5 Gated Voice Bank & Tier 6 Hybrid Episodic Retriever."""
+    """Tier 5 Gated Voice Bank (with optional backwards-compatible delegation to EpisodeRanker)."""
 
     def __init__(
         self,
         embedder: Embedder | None = None,
         gate: IngestionGate | None = None,
+        episode_ranker: EpisodeRanker | None = None,
     ) -> None:
-        self.embedder = embedder or OfflineNgramEmbedder()
-        self.gate = gate or IngestionGate()
+        self.embedder: Embedder = embedder or OfflineNgramEmbedder()
+        self.gate: IngestionGate = gate or IngestionGate()
+        self.episode_ranker: EpisodeRanker = episode_ranker or DefaultEpisodeRanker(
+            embedder=self.embedder
+        )
 
     def _cosine_sim(
         self,
@@ -206,16 +176,7 @@ class VoiceBank:
         emb_bytes: bytes,
         fallback_text: str,
     ) -> float:
-        if q_vec is None or q_norm <= 1e-6:
-            return 0.5
-        if len(emb_bytes) > 0:
-            emb = np.frombuffer(emb_bytes, dtype=np.float32)
-            if emb.shape != q_vec.shape:
-                emb = self.embedder.embed_text(fallback_text)
-        else:
-            emb = self.embedder.embed_text(fallback_text)
-        e_norm = float(np.linalg.norm(emb))
-        return float(np.dot(q_vec, emb)) / (q_norm * e_norm) if e_norm > 1e-6 else 0.0
+        return cosine_similarity(self.embedder, q_vec, q_norm, emb_bytes, fallback_text)
 
     def rank_exemplars(
         self,
@@ -243,7 +204,11 @@ class VoiceBank:
             constraints["tone"] = target_tone
         if target_constraints:
             constraints.update(target_constraints)
-        norm_constraints = {k.lower(): str(v).strip().lower() for k, v in constraints.items() if str(v).strip()}
+        norm_constraints = {
+            k.lower(): str(v).strip().lower()
+            for k, v in constraints.items()
+            if str(v).strip()
+        }
 
         def _score_pass(allow_hard_mismatch: bool) -> list[tuple[float, VoiceExemplar]]:
             scored_items: list[tuple[float, VoiceExemplar]] = []
@@ -378,85 +343,30 @@ class VoiceBank:
         pinned_episode_ids: set[str] | None = None,
         pov_entity_ids: Sequence[str] | None = None,
         pov_mode: Literal["any", "all"] = "any",
+        policy: EpisodicScoringPolicy = DEFAULT_EPISODIC_POLICY,
         top_k: int = 5,
     ) -> list[EpisodeRecord]:
-        """Hybrid 4-signal episodic memory scorer:
-        1. Epistemic POV filtering (direct / told awareness)
-        2. Causal provenance pinning (why an active entity/edge is in its current state)
-        3. Entity / Location / Artifact cue overlap (with dyadic co-occurrence boost)
-        4. Semantic cue similarity + Salience-modulated recency decay
-        """
-        if not candidates or top_k <= 0:
-            return []
+        """Delegates to the configured EpisodeRanker (kept here for backwards compatibility)."""
+        return self.episode_ranker.rank_episodes(
+            current_step=current_step,
+            query_text=query_text,
+            candidates=candidates,
+            scene_entity_ids=scene_entity_ids,
+            pinned_episode_ids=pinned_episode_ids,
+            pov_entity_ids=pov_entity_ids,
+            pov_mode=pov_mode,
+            policy=policy,
+            top_k=top_k,
+        )
 
-        q_vec = self.embedder.embed_text(query_text) if query_text else None
-        q_norm = float(np.linalg.norm(q_vec)) if q_vec is not None else 0.0
-        pinned = pinned_episode_ids or set()
-        pov_set = set(pov_entity_ids) if pov_entity_ids else set()
 
-        scored: list[tuple[float, int, EpisodeRecord]] = []
-
-        for ep, emb_bytes in candidates:
-            # 1. Hard Epistemic POV filter (Pitfall 4: prevent metagaming)
-            if pov_set:
-                known_entities = set(ep.known_by.keys())
-                if pov_mode == "all":
-                    if not pov_set.issubset(known_entities):
-                        continue
-                else:
-                    if not (pov_set & known_entities):
-                        continue
-
-            # 2. Causal provenance pin (Pitfall 2)
-            provenance_bonus = 1.0 if (ep.episode_id and ep.episode_id in pinned) else 0.0
-
-            # 3. Entity / Location / Artifact overlap (Pitfalls 3 & 6)
-            ep_entities = set(ep.participants.keys()) | set(ep.witnesses)
-            overlap = scene_entity_ids & ep_entities
-            if len(overlap) >= 2:
-                overlap_score = 0.60
-            elif len(overlap) == 1:
-                overlap_score = 0.30
-            else:
-                overlap_score = 0.0
-
-            location_bonus = 0.25 if (ep.location_id and ep.location_id in scene_entity_ids) else 0.0
-
-            # 4. Semantic cue similarity (Pitfall 6)
-            if q_vec is not None and q_norm > 1e-6:
-                sim = self._cosine_sim(q_vec, q_norm, emb_bytes, ep.summary)
-                semantic_score = 0.40 * max(0.0, sim)
-            else:
-                semantic_score = 0.0
-
-            # 5. Salience & Salience-Modulated Recency Decay (Pitfall 1 & 6)
-            salience_norm = max(0.0, min(1.0, ep.salience / 10.0))
-            salience_score = 0.25 * salience_norm
-
-            delta_steps = max(0, current_step - ep.step)
-            # High-salience episodes decay ~10x slower than low-salience episodes
-            decay_rate = 0.04 * (1.0 - 0.9 * salience_norm)
-            recency_score = 0.20 * math.exp(-decay_rate * delta_steps)
-
-            total_score = (
-                provenance_bonus
-                + overlap_score
-                + location_bonus
-                + semantic_score
-                + salience_score
-                + recency_score
-            )
-            ep_copy = ep.model_copy()
-            if pov_set:
-                matched_povs = sorted(pid for pid in pov_set if pid in ep.known_by)
-                if matched_povs and all(
-                    ep.known_by[pid] == "deceived" and pid in ep.believed_summaries
-                    for pid in matched_povs
-                ):
-                    ep_copy.summary = ep.believed_summaries[matched_povs[0]]
-            ep_copy.match_score = round(total_score, 4)
-            scored.append((total_score, ep.step, ep_copy))
-
-        # Sort by descending match score, breaking ties by newer step
-        scored.sort(key=lambda item: (item[0], item[1]), reverse=True)
-        return [item[2] for item in scored[:top_k]]
+__all__ = [
+    "DIALOGUE_PATTERNS",
+    "Embedder",
+    "IngestionGate",
+    "OfflineNgramEmbedder",
+    "VoiceBank",
+    "_CJK_CHAR_RE",
+    "_TOKEN_UNIT_RE",
+    "_tokenize_units",
+]

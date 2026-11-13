@@ -5,14 +5,12 @@ import numpy as np
 import pytest
 
 from narrative_memory import (
-    AliasRecord,
     CausalStore,
     DefaultLexicalResolver,
     EdgeDelta,
     EntityDelta,
     EntityRecord,
     EpisodeRecord,
-    InformDelta,
     NarrativeMemoryEngine,
     OfflineNgramEmbedder,
     ResolvedMention,

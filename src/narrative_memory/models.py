@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import Any, Literal
 from pydantic import BaseModel, Field
 
+EpistemicMode = Literal["direct", "told", "deceived", "forgotten", "suppressed"]
+
 
 class TimelineInfo(BaseModel):
     """Metadata for a timeline branch."""
@@ -117,6 +119,22 @@ class EpisodeRecord(BaseModel):
         default=None,
         description="Optional canonical location entity_id where the episode occurred",
     )
+    story_time: int | float | str | None = Field(
+        default=None,
+        description="Optional diegetic / story-world time independent of discourse step",
+    )
+    chapter_id: str | None = Field(
+        default=None,
+        description="Optional hierarchical chapter or act identifier",
+    )
+    scene_id: str | None = Field(
+        default=None,
+        description="Optional hierarchical scene identifier",
+    )
+    consolidated_from: list[str] = Field(
+        default_factory=list,
+        description="Optional list of source episode_ids compacted into this summary episode",
+    )
     salience: float = Field(
         default=5.0,
         ge=0.0,
@@ -131,7 +149,7 @@ class InformDelta(BaseModel):
     """Records that an entity learned about a past episode (secondhand, belatedly, or via deception) at the current step."""
     episode_id: str
     entity_id: str
-    epistemic: Literal["direct", "told", "deceived"] = "told"
+    epistemic: EpistemicMode = "told"
     believed_summary: str | None = Field(
         default=None,
         description="Optional false/distorted summary believed by entity_id when epistemic='deceived'",
@@ -177,6 +195,10 @@ class StepDelta(BaseModel):
     edges: list[EdgeDelta] = Field(default_factory=list)
     episodes: list[EpisodeRecord] = Field(default_factory=list)
     inform: list[InformDelta] = Field(default_factory=list)
+    is_flashback: bool = False
+    story_time: int | float | str | None = None
+    chapter_id: str | None = None
+    scene_id: str | None = None
 
 
 # --- Tier 5 Voice Bank & Anti-Drift Gates ---
@@ -247,12 +269,17 @@ class ResolvedMention(BaseModel):
     entity_id: str
     matched_via: Literal["canonical", "alias", "fuzzy"]
     confidence: float = 1.0
+    matched_source: Literal["canonical", "alias"] | None = None
+    matched_phrase: str | None = None
 
 
 class StepContext(BaseModel):
     """Unified Tier 1-6 state retrieved for a specific step."""
     timeline_id: str
     step: int
+    story_time: int | float | str | None = None
+    chapter_id: str | None = None
+    scene_id: str | None = None
     resolved_mentions: list[ResolvedMention] = Field(default_factory=list)
     entities: list[EntityRecord] = Field(default_factory=list)
     active_edges: list[DirectedEdgeRecord] = Field(default_factory=list)

@@ -72,10 +72,11 @@ Past Utterance Anchors:
 
 ## 4. Custom Presets & `SchemaPolicy`
 
-Every `DomainPreset` exposes a `policy: SchemaPolicy` attribute that controls which state/metadata keys act as hard filters, soft boosts, or edge layers in the core engine and `VoiceBank`:
+Every `DomainPreset` exposes a `policy: SchemaPolicy` attribute that controls which state/metadata keys act as hard filters, soft boosts, or edge layers in the core engine, `VoiceBank`, and `DefaultEpisodeRanker` (via `episodic_policy: EpisodicScoringPolicy`):
 
 ```python
 from narrative_memory import NarrativeMemoryEngine, SchemaPolicy, SimulationPreset
+from narrative_memory.episodic import EpisodicScoringPolicy
 from narrative_memory.models import StepContext
 
 # Example: Financial / multi-agent simulation filtering on channel & urgency
@@ -83,6 +84,11 @@ sim_policy = SchemaPolicy(
     hard_filter_keys=("channel",),
     soft_boost_weights={"urgency": 0.25, "stance": 0.15},
     fallback_on_empty_hard_filter=True,
+    episodic_policy=EpisodicScoringPolicy(
+        provenance_bonus=1.2,
+        semantic_weight=0.5,
+        base_decay_rate=0.02,
+    ),
 )
 engine = NarrativeMemoryEngine(preset=SimulationPreset(policy=sim_policy))
 ```

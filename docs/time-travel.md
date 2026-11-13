@@ -31,7 +31,7 @@ engine.checkout("dark_pact_route")
 
 In visual novels, users frequently scroll the mouse-wheel backward to reread previous lines or explore alternate choices.
 
-`rollback_to(step)` deletes all graph revisions, voice exemplars, and episodic records at `> step` on the target timeline:
+`rollback_to(step)` deletes all graph revisions, voice exemplars, and episodic records at `> step` on the target timeline. If child timelines forked from `timeline_id` at `fork_step > step`, `rollback_to` raises `TimelineBranchConflictError` to prevent corrupting descendant histories unless `force=True` is passed:
 
 ```python
 # Rolls back 'main' timeline to step 15
@@ -70,4 +70,77 @@ To create an isolated `.sqlite` save file (e.g., `save_slot_01.sqlite`) that can
 engine.export_snapshot("saves/slot_01.sqlite", at_step=50, timeline_id="dark_pact_route")
 ```
 
-The exported database materializes the exact active world state and all lineage episodes up to `step=50` flattened into a fresh `step=0` baseline.
+The exported database materializes the exact active world state and all lineage episodes up to `step=50` flattened into a fresh `step=0` baseline (preserving `revision_count` across the snapshot).
+
+---
+
+## 5. Deleting & Pruning Timelines (`delete_timeline`)
+
+Remove finished or abandoned branches while keeping parent histories intact:
+
+```python
+# Delete a leaf branch (raises TimelineBranchConflictError if it has children)
+engine.delete_timeline("dark_pact_route")
+
+# Recursively delete a branch and all descendant branches
+engine.delete_timeline("dark_pact_route", cascade=True)
+```
+
+Note: Deleting `"main"` is disallowed unless handled explicitly; deleting the currently checked-out branch automatically resets `active_timeline` back to `"main"`.
+
+---
+
+## 6. Concurrency-Safe Timeline Sessions (`use_timeline` / `session`)
+
+Avoid mutating global `engine.checkout(...)` state across concurrent async tasks or worker threads:
+
+```python
+# Task-local ContextVar scoping (ideal for async web handlers)
+with engine.use_timeline("dark_pact_route") as tl_session:
+    ctx = engine.retrieve_context(step=30, mentions=["Arthur"])
+    tl_session.commit_step(step=30, delta=...)
+
+# Explicit immutable timeline handle
+route_a = engine.session("route_a")
+ctx_a = route_a.retrieve_context(step=30, mentions=["Arthur"])
+```
+
+---
+
+## 7. Non-Linear Narrative Time & Flashbacks
+
+`narrative-memory` distinguishes **discourse order** (`step: int`) from **diegetic story order** (`story_time`, `chapter_id`, `scene_id`):
+
+```python
+engine.commit_step(
+    step=40,
+    delta=StepDelta(
+        is_flashback=True,
+        story_time="10 years earlier",
+        chapter_id="ch_04",
+        scene_id="flashback_citadel",
+        episodes=[
+            EpisodeRecord(
+                episode_id="ep_oath_past",
+                summary="Young Arthur swore the Secret Citadel Oath.",
+                participants={"char_arthur": "actor"},
+            )
+        ],
+    ),
+)
+```
+
+When `is_flashback=True`, existing entities and edges at step 40 are **never rolled backward** to historical state, while episodic events, epistemic records, and brand-new flashback-only entities are cleanly indexed into causal memory.
+
+---
+
+## 8. CLI Timeline Inspection
+
+Inspect save files without writing Python scripts:
+
+```bash
+narrative-memory tree saves/story.sqlite
+narrative-memory inspect saves/story.sqlite --timeline dark_pact_route --step 50 --pov char_arthur
+narrative-memory diff saves/story.sqlite main dark_pact_route --step 50
+narrative-memory history saves/story.sqlite char_arthur --timeline dark_pact_route
+```

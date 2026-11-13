@@ -1,21 +1,25 @@
 from __future__ import annotations
 
 import contextlib
+import contextvars
 import json
-import re
 import uuid
+from collections.abc import Iterator
 from contextlib import AbstractContextManager
 from pathlib import Path
-from typing import Any, Literal, Protocol, Sequence
+from typing import Any, Literal, Sequence
 
-from rapidfuzz import fuzz
-
+from .embedders import Embedder, embed_texts_batch
+from .episodic import DEFAULT_EPISODIC_POLICY, EpisodeRanker
+from .extractors import DeltaExtractor
+from .hooks import EngineHooks
 from .models import (
     AliasRecord,
     DialogueCandidate,
     DirectedEdgeRecord,
     EntityRecord,
     EpisodeRecord,
+    EpistemicMode,
     InformDelta,
     ResolvedMention,
     StepContext,
@@ -24,133 +28,9 @@ from .models import (
     VoiceExemplar,
 )
 from .presets import DEFAULT_SCHEMA_POLICY, DomainPreset, InteractiveFictionPreset, SchemaPolicy
+from .resolver import DefaultLexicalResolver, MentionResolver
 from .store import CausalStore, MemoryStore, TimelineBranchConflictError
-from .voice import Embedder, IngestionGate, VoiceBank
-
-
-class MentionResolver(Protocol):
-    """Protocol for pluggable entity mention & coreference resolution."""
-
-    def resolve(
-        self,
-        text: str,
-        explicit_mentions: Sequence[str],
-        entities: Sequence[EntityRecord],
-        aliases: Sequence[AliasRecord],
-    ) -> list[ResolvedMention]: ...
-
-
-class DeltaExtractor(Protocol):
-    """Protocol for LLM-backed structured StepDelta extraction."""
-
-    def extract_delta(self, prompt: str, scene_text: str) -> StepDelta: ...
-
-
-_CJK_CHAR_RE = re.compile(r"[\u3040-\u309f\u30a0-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af]")
-
-
-class DefaultLexicalResolver:
-    """Word-boundary lexical + alias resolver with optional rapidfuzz inflection fallback."""
-
-    def __init__(self, fuzzy_threshold: float | None = 88.0) -> None:
-        self.fuzzy_threshold = fuzzy_threshold
-
-    @staticmethod
-    def _phrase_pattern(phrase_lower: str) -> str:
-        prefix = "" if _CJK_CHAR_RE.match(phrase_lower[0]) else r"(?<!\w)"
-        suffix = "" if _CJK_CHAR_RE.match(phrase_lower[-1]) else r"(?!\w)"
-        return rf"{prefix}{re.escape(phrase_lower)}{suffix}"
-
-    @classmethod
-    def _find_whole_phrase(cls, text_lower: str, phrase_lower: str) -> int:
-        if not phrase_lower:
-            return -1
-        match = re.search(cls._phrase_pattern(phrase_lower), text_lower)
-        return match.start() if match else -1
-
-    def resolve(
-        self,
-        text: str,
-        explicit_mentions: Sequence[str],
-        entities: Sequence[EntityRecord],
-        aliases: Sequence[AliasRecord],
-    ) -> list[ResolvedMention]:
-        resolved: list[ResolvedMention] = []
-        seen_pairs: set[tuple[str, str]] = set()  # (entity_id, surface_lower)
-
-        name_to_id = {e.canonical_name.lower(): e.entity_id for e in entities if e.canonical_name}
-        alias_map: dict[str, list[AliasRecord]] = {}
-        for a in aliases:
-            if a.alias:
-                alias_map.setdefault(a.alias.lower(), []).append(a)
-
-        def _add(surface: str, entity_id: str, via: Literal["canonical", "alias", "fuzzy"], conf: float = 1.0) -> None:
-            key = (entity_id, surface.strip().lower())
-            if key in seen_pairs:
-                return
-            seen_pairs.add(key)
-            resolved.append(
-                ResolvedMention(
-                    surface_text=surface,
-                    entity_id=entity_id,
-                    matched_via=via,
-                    confidence=conf,
-                )
-            )
-
-        # 1. Explicit mentions
-        for m in explicit_mentions:
-            m_clean = m.strip().lower()
-            if not m_clean:
-                continue
-            if m_clean in name_to_id:
-                _add(m, name_to_id[m_clean], "canonical")
-            elif m_clean in alias_map:
-                for alias_rec in alias_map[m_clean]:
-                    _add(m, alias_rec.entity_id, "alias")
-
-        # 2. Word-boundary text scan (longest phrases first to avoid partial shadowing)
-        if text:
-            text_lower = text.lower()
-            candidates: list[tuple[str, str, Literal["canonical", "alias"]]] = []
-            for name, ent_id in name_to_id.items():
-                candidates.append((name, ent_id, "canonical"))
-            for alias_str, alias_recs in alias_map.items():
-                for alias_rec in alias_recs:
-                    candidates.append((alias_str, alias_rec.entity_id, "alias"))
-            candidates.sort(key=lambda item: len(item[0]), reverse=True)
-
-            matched_spans: list[tuple[int, int]] = []
-            for phrase, ent_id, via in candidates:
-                pattern = self._phrase_pattern(phrase)
-                for match in re.finditer(pattern, text_lower):
-                    start, end = match.start(), match.end()
-                    # Avoid matching a shorter sub-phrase inside an already-matched longer phrase
-                    if any(s <= start and end <= e for s, e in matched_spans):
-                        continue
-                    matched_spans.append((start, end))
-                    _add(phrase, ent_id, via)
-                    break
-
-            # 3. Optional fuzzy fallback for inflected languages / typos
-            if self.fuzzy_threshold is not None:
-                matched_entity_ids = {r.entity_id for r in resolved}
-                tokens = re.findall(r"\w+", text_lower)
-                for phrase, ent_id, _ in candidates:
-                    if ent_id in matched_entity_ids or len(phrase) < 4:
-                        continue
-                    n_words = len(phrase.split())
-                    if n_words <= 0 or len(tokens) < n_words:
-                        continue
-                    for idx in range(len(tokens) - n_words + 1):
-                        window = " ".join(tokens[idx : idx + n_words])
-                        score = fuzz.WRatio(phrase, window)
-                        if score >= self.fuzzy_threshold:
-                            _add(window, ent_id, "fuzzy", conf=round(score / 100.0, 3))
-                            matched_entity_ids.add(ent_id)
-                            break
-
-        return resolved
+from .voice import IngestionGate, VoiceBank
 
 
 class StepTransaction:
@@ -192,7 +72,6 @@ class StepTransaction:
 
     def __enter__(self) -> StepTransaction:
         if self.rerun_clean:
-            # Fail fast if a child branch depends on steps >= self.step, without deleting yet
             for tl in self.engine.list_timelines():
                 if (
                     tl.parent_id == self.timeline_id
@@ -274,6 +153,190 @@ class StepTransaction:
                     )
 
 
+class TimelineSession:
+    """Concurrency-safe, immutable-timeline session view bound to a single timeline_id."""
+
+    def __init__(self, engine: NarrativeMemoryEngine, timeline_id: str) -> None:
+        self.engine = engine
+        self.timeline_id = timeline_id
+
+    def register_entity(
+        self,
+        entity: EntityRecord,
+        *,
+        aliases: Sequence[str | AliasRecord] = (),
+        step: int = 0,
+    ) -> None:
+        self.engine.register_entity(entity, aliases=aliases, step=step, timeline_id=self.timeline_id)
+
+    def seed_entities(self, entities: Sequence[EntityRecord], *, step: int = 0) -> None:
+        self.engine.seed_entities(entities, step=step, timeline_id=self.timeline_id)
+
+    def retrieve_context(
+        self,
+        step: int,
+        *,
+        text: str = "",
+        mentions: Sequence[str] = (),
+        top_k_voice: int = 3,
+        top_k_episodes: int = 5,
+        pov_entity_ids: Sequence[str] | None = None,
+        pov_mode: Literal["any", "all"] = "any",
+        edge_types: Sequence[str] | None = None,
+        location_id: str | None = None,
+        inclusive: bool = False,
+        fallback_on_empty_mentions: Literal["all", "pov_only", "none"] = "pov_only",
+        story_time: int | float | str | None = None,
+        chapter_id: str | None = None,
+        scene_id: str | None = None,
+    ) -> StepContext:
+        return self.engine.retrieve_context(
+            step,
+            text=text,
+            mentions=mentions,
+            top_k_voice=top_k_voice,
+            top_k_episodes=top_k_episodes,
+            pov_entity_ids=pov_entity_ids,
+            pov_mode=pov_mode,
+            edge_types=edge_types,
+            location_id=location_id,
+            inclusive=inclusive,
+            timeline_id=self.timeline_id,
+            fallback_on_empty_mentions=fallback_on_empty_mentions,
+            story_time=story_time,
+            chapter_id=chapter_id,
+            scene_id=scene_id,
+        )
+
+    def step_transaction(
+        self,
+        step: int,
+        *,
+        text: str = "",
+        mentions: Sequence[str] = (),
+        top_k_voice: int = 3,
+        top_k_episodes: int = 5,
+        pov_entity_ids: Sequence[str] | None = None,
+        pov_mode: Literal["any", "all"] = "any",
+        edge_types: Sequence[str] | None = None,
+        location_id: str | None = None,
+        rerun_clean: bool = True,
+    ) -> StepTransaction:
+        return self.engine.step_transaction(
+            step,
+            text=text,
+            mentions=mentions,
+            top_k_voice=top_k_voice,
+            top_k_episodes=top_k_episodes,
+            pov_entity_ids=pov_entity_ids,
+            pov_mode=pov_mode,
+            edge_types=edge_types,
+            location_id=location_id,
+            timeline_id=self.timeline_id,
+            rerun_clean=rerun_clean,
+        )
+
+    def apply_delta(self, step: int, delta: StepDelta) -> list[EpisodeRecord]:
+        return self.engine.apply_delta(step, delta, timeline_id=self.timeline_id)
+
+    def index_episodes(self, step: int, episodes: Sequence[EpisodeRecord]) -> list[EpisodeRecord]:
+        return self.engine.index_episodes(step, episodes, timeline_id=self.timeline_id)
+
+    def inform_entity(
+        self,
+        step: int,
+        *,
+        episode_id: str,
+        entity_id: str,
+        epistemic: EpistemicMode = "told",
+        believed_summary: str | None = None,
+    ) -> None:
+        self.engine.inform_entity(
+            step,
+            episode_id=episode_id,
+            entity_id=entity_id,
+            epistemic=epistemic,
+            believed_summary=believed_summary,
+            timeline_id=self.timeline_id,
+        )
+
+    def query_episodes(self, **kwargs: Any) -> list[EpisodeRecord]:
+        return self.engine.query_episodes(timeline_id=self.timeline_id, **kwargs)
+
+    def extract_dialogue_candidates(
+        self,
+        text: str,
+        *,
+        source_text: str = "",
+        step: int | None = None,
+    ) -> list[DialogueCandidate]:
+        return self.engine.extract_dialogue_candidates(
+            text, source_text=source_text, step=step, timeline_id=self.timeline_id
+        )
+
+    def index_voice_exemplars(
+        self,
+        step: int,
+        exemplars: Sequence[VoiceExemplar],
+        *,
+        bypass_gate: bool = False,
+    ) -> list[VoiceExemplar]:
+        return self.engine.index_voice_exemplars(
+            step, exemplars, bypass_gate=bypass_gate, timeline_id=self.timeline_id
+        )
+
+    def commit_step(
+        self,
+        step: int,
+        delta: StepDelta | None = None,
+        exemplars: Sequence[VoiceExemplar] = (),
+        episodes: Sequence[EpisodeRecord] = (),
+        *,
+        bypass_gate: bool = False,
+    ) -> list[VoiceExemplar]:
+        return self.engine.commit_step(
+            step,
+            delta=delta,
+            exemplars=exemplars,
+            episodes=episodes,
+            bypass_gate=bypass_gate,
+            timeline_id=self.timeline_id,
+        )
+
+    def consolidate_episodes(self, step: int, **kwargs: Any) -> EpisodeRecord | None:
+        return self.engine.consolidate_episodes(step, timeline_id=self.timeline_id, **kwargs)
+
+    def rollback_to(self, step: int) -> int:
+        return self.engine.rollback_to(step, timeline_id=self.timeline_id)
+
+    def branch(
+        self,
+        at_step: int,
+        name: str,
+        *,
+        metadata: dict[str, Any] | None = None,
+    ) -> TimelineSession:
+        self.engine.branch(at_step, name, from_timeline=self.timeline_id, metadata=metadata)
+        return TimelineSession(self.engine, name)
+
+    def get_history(self, subject_key: str, *, record_type: str | None = None) -> list[dict[str, Any]]:
+        return self.engine.get_history(
+            subject_key, timeline_id=self.timeline_id, record_type=record_type
+        )
+
+    def export_snapshot(self, target_path: str | Path, *, at_step: int) -> Path:
+        return self.engine.export_snapshot(target_path, at_step=at_step, timeline_id=self.timeline_id)
+
+    def normalize_delta(self, delta: StepDelta, *, step: int | None = None) -> StepDelta:
+        return self.engine.normalize_delta(delta, step=step, timeline_id=self.timeline_id)
+
+    def format_context(self, ctx: StepContext) -> str:
+        return self.engine.format_context(ctx)
+
+    def build_extraction_prompt(self, ctx: StepContext, scene_text: str) -> str:
+        return self.engine.build_extraction_prompt(ctx, scene_text)
+
+
 class NarrativeMemoryEngine:
     """High-level facade for Tier 1-6 narrative memory, episodic recall, time travel, and voice retrieval."""
 
@@ -288,13 +351,56 @@ class NarrativeMemoryEngine:
         preset: DomainPreset | None = None,
         mention_resolver: MentionResolver | None = None,
         extractor: DeltaExtractor | None = None,
+        episode_ranker: EpisodeRanker | None = None,
+        hooks: Sequence[EngineHooks] = (),
     ) -> None:
         self.store: MemoryStore = store if store is not None else CausalStore(db_path)
-        self.active_timeline = timeline_id
-        self.voice_bank = VoiceBank(embedder=embedder, gate=gate)
+        self._default_timeline = timeline_id
+        self._timeline_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+            f"narrative_memory_timeline_{id(self)}", default=None
+        )
+        self.voice_bank = VoiceBank(
+            embedder=embedder, gate=gate, episode_ranker=episode_ranker
+        )
         self.preset: DomainPreset = preset or InteractiveFictionPreset()
         self.mention_resolver: MentionResolver = mention_resolver or DefaultLexicalResolver()
         self.extractor: DeltaExtractor | None = extractor
+        self._hooks: list[EngineHooks] = list(hooks)
+
+    @property
+    def active_timeline(self) -> str:
+        scoped = self._timeline_var.get()
+        return scoped if scoped is not None else self._default_timeline
+
+    @active_timeline.setter
+    def active_timeline(self, value: str) -> None:
+        self._default_timeline = value
+        if self._timeline_var.get() is not None:
+            self._timeline_var.set(value)
+
+    @contextlib.contextmanager
+    def use_timeline(self, timeline_id: str) -> Iterator[TimelineSession]:
+        """Task/thread-local context manager scoping active_timeline without mutating other requests."""
+        if not self.store.get_timeline(timeline_id):
+            raise ValueError(f"Timeline '{timeline_id}' does not exist.")
+        token = self._timeline_var.set(timeline_id)
+        try:
+            yield TimelineSession(self, timeline_id)
+        finally:
+            self._timeline_var.reset(token)
+
+    def session(self, timeline_id: str | None = None) -> TimelineSession:
+        """Returns a concurrency-safe TimelineSession bound to timeline_id."""
+        tl = timeline_id or self.active_timeline
+        if not self.store.get_timeline(tl):
+            raise ValueError(f"Timeline '{tl}' does not exist.")
+        return TimelineSession(self, tl)
+
+    def add_hook(self, hook: EngineHooks) -> None:
+        self._hooks.append(hook)
+
+    def remove_hook(self, hook: EngineHooks) -> None:
+        self._hooks = [h for h in self._hooks if h is not hook]
 
     @property
     def _policy(self) -> SchemaPolicy:
@@ -302,6 +408,12 @@ class NarrativeMemoryEngine:
 
     def close(self) -> None:
         self.store.close()
+
+    def __enter__(self) -> NarrativeMemoryEngine:
+        return self
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        self.close()
 
     # --- Tier 1 Seeding ---
 
@@ -343,18 +455,26 @@ class NarrativeMemoryEngine:
         inclusive: bool = False,
         timeline_id: str | None = None,
         fallback_on_empty_mentions: Literal["all", "pov_only", "none"] = "pov_only",
+        story_time: int | float | str | None = None,
+        chapter_id: str | None = None,
+        scene_id: str | None = None,
     ) -> StepContext:
         tl = timeline_id or self.active_timeline
         policy = self._policy
-        # Causal cutoff: step < current_step unless inclusive is True
         cutoff_step = step if inclusive else (step - 1)
 
-        # 1. Fetch active entities, aliases, and edges from store
-        active_entities = self.store.get_all_active_entities(tl, cutoff_step)
-        active_aliases = self.store.get_all_active_aliases(tl, cutoff_step)
-        active_edges = self.store.get_all_active_edges(tl, cutoff_step)
-        if edge_types is not None:
-            active_edges = [e for e in active_edges if e.relation_type in edge_types]
+        # 1. Single-pass fetch of active entities, aliases, and edges (with custom MemoryStore fallback)
+        get_graph_fn = getattr(self.store, "get_active_graph_state", None)
+        if callable(get_graph_fn):
+            active_entities, active_aliases, active_edges = get_graph_fn(
+                tl, cutoff_step, edge_types=edge_types
+            )
+        else:
+            active_entities = self.store.get_all_active_entities(tl, cutoff_step)
+            active_aliases = self.store.get_all_active_aliases(tl, cutoff_step)
+            active_edges = self.store.get_all_active_edges(tl, cutoff_step)
+            if edge_types is not None:
+                active_edges = [e for e in active_edges if e.relation_type in edge_types]
 
         # 2. Entity resolution via pluggable MentionResolver + POV epistemic disguise projection
         pov_set = set(pov_entity_ids) if pov_entity_ids else set()
@@ -392,7 +512,6 @@ class NarrativeMemoryEngine:
                 if ent_loc in active_location_ids:
                     present_entity_ids.add(ent.entity_id)
 
-        # Fallback when no explicit/lexical mentions or co-located entities were found
         if not present_entity_ids and not disguise_masks:
             if fallback_on_empty_mentions == "all":
                 present_entity_ids = {
@@ -403,8 +522,6 @@ class NarrativeMemoryEngine:
                     eid for eid in pov_set if eid not in masked_real_ids
                 }
 
-        # Partition active edges into in-scene edges vs. 1-hop background edges
-        # Exclude belief_state edges and edges belonging to a masked entity's true identity
         in_scene_edges: list[DirectedEdgeRecord] = []
         background_edges: list[DirectedEdgeRecord] = []
         neighbor_entity_ids: set[str] = set()
@@ -427,7 +544,6 @@ class NarrativeMemoryEngine:
         scene_entities = [e for e in active_entities if e.entity_id in present_entity_ids]
         neighbor_entities = [e for e in active_entities if e.entity_id in neighbor_entity_ids]
 
-        # Fetch candidate episodes early so we know which causal episodes are known to POV
         candidate_episodes = (
             self.store.get_lineage_episodes(tl, cutoff_step)
             if (top_k_episodes > 0 or pov_set)
@@ -448,7 +564,6 @@ class NarrativeMemoryEngine:
                     if pov_set & set(ep.known_by.keys())
                 }
 
-        # Project co-present entities/edges and 1-hop background entities/edges through POV epistemic lens
         projected_entities, projected_edges = self._project_pov_state(
             scene_entities=scene_entities,
             scene_edges=in_scene_edges,
@@ -472,7 +587,7 @@ class NarrativeMemoryEngine:
             policy=policy,
         )
 
-        # 4. Tier 5 Voice Exemplars retrieval (facade-first & disguise-aware)
+        # 4. Tier 5 Voice Exemplars retrieval
         voice_exemplars: list[VoiceExemplar] = []
         speaker_ids = resolved_entity_ids | {f"masked:{rid}" for rid in masked_real_ids}
         speakers = (
@@ -501,7 +616,9 @@ class NarrativeMemoryEngine:
                 )
 
                 candidates = self.store.get_lineage_voice_exemplars(tl, cutoff_step, real_speaker_id)
-                disguise_persona = speaker.state.get(policy.entity_disguise_key) if is_masked_speaker else None
+                disguise_persona = (
+                    speaker.state.get(policy.entity_disguise_key) if is_masked_speaker else None
+                )
                 if disguise_persona:
                     persona_candidates = [
                         (ex, emb)
@@ -532,7 +649,12 @@ class NarrativeMemoryEngine:
                 if edge.caused_by_episode_id:
                     pinned_episode_ids.add(edge.caused_by_episode_id)
 
-            cue_entity_ids = resolved_entity_ids if resolved_entity_ids else {e.entity_id for e in projected_entities}
+            cue_entity_ids = (
+                resolved_entity_ids
+                if resolved_entity_ids
+                else {e.entity_id for e in projected_entities}
+            )
+            episodic_policy = getattr(policy, "episodic_policy", DEFAULT_EPISODIC_POLICY)
             episodes = self.voice_bank.rank_episodes(
                 current_step=step,
                 query_text=text,
@@ -541,12 +663,16 @@ class NarrativeMemoryEngine:
                 pinned_episode_ids=pinned_episode_ids,
                 pov_entity_ids=pov_entity_ids,
                 pov_mode=pov_mode,
+                policy=episodic_policy,
                 top_k=top_k_episodes,
             )
 
         return StepContext(
             timeline_id=tl,
             step=step,
+            story_time=story_time,
+            chapter_id=chapter_id,
+            scene_id=scene_id,
             resolved_mentions=resolved_mentions,
             entities=projected_entities,
             active_edges=projected_edges,
@@ -567,12 +693,7 @@ class NarrativeMemoryEngine:
         text: str,
         policy: SchemaPolicy = DEFAULT_SCHEMA_POLICY,
     ) -> list[tuple[str | None, dict[str, str]]]:
-        """Resolves ordered (addressee_id, constraints) dyadic voice targets for a speaker.
-
-        Layers edge state per (speaker, target) pair using policy.edge_layer_order and
-        prioritizes in-scene addressees deterministically by text mention order,
-        edge recency, and canonical target ID.
-        """
+        """Resolves ordered (addressee_id, constraints) dyadic voice targets for a speaker."""
         outgoing = [
             e
             for e in edges
@@ -641,7 +762,6 @@ class NarrativeMemoryEngine:
         policy: SchemaPolicy = DEFAULT_SCHEMA_POLICY,
     ) -> tuple[list[EntityRecord], list[DirectedEdgeRecord]]:
         """Projects entities and edges through the active POV's epistemic lens."""
-        # Map belief_state overrides for active POV(s): target_id -> merged belief state
         belief_overrides: dict[str, dict[str, Any]] = {}
         if pov_set:
             pov_edges = [
@@ -649,18 +769,37 @@ class NarrativeMemoryEngine:
                 for edge in all_active_edges
                 if edge.relation_type == policy.belief_relation and edge.source_id in pov_set
             ]
-            # Sort deterministically by source_id then valid_from_step
             pov_edges.sort(key=lambda e: (e.source_id, e.valid_from_step))
-            for edge in pov_edges:
-                belief_overrides.setdefault(edge.target_id, {}).update(edge.state)
+            if len(pov_set) > 1 and pov_mode == "all":
+                per_pov_beliefs: dict[str, dict[str, dict[str, Any]]] = {pid: {} for pid in pov_set}
+                for edge in pov_edges:
+                    per_pov_beliefs[edge.source_id].setdefault(edge.target_id, {}).update(edge.state)
+                common_targets = set.intersection(
+                    *(set(per_pov_beliefs[pid].keys()) for pid in pov_set)
+                )
+                for target_id in common_targets:
+                    first_pid = next(iter(pov_set))
+                    shared_state: dict[str, Any] = {}
+                    for k, v in per_pov_beliefs[first_pid][target_id].items():
+                        if all(
+                            k in per_pov_beliefs[pid][target_id]
+                            and per_pov_beliefs[pid][target_id][k] == v
+                            for pid in pov_set
+                        ):
+                            shared_state[k] = v
+                    if shared_state:
+                        belief_overrides[target_id] = shared_state
+            else:
+                for edge in pov_edges:
+                    belief_overrides.setdefault(edge.target_id, {}).update(edge.state)
 
-        # Identify (source_id, target_id) pairs that have an active facade edge
         facade_pairs: set[tuple[str, str]] = {
             (edge.source_id, edge.target_id)
             for edge in scene_edges
             if edge.relation_type == policy.facade_relation
         }
 
+        is_multipov_all = len(pov_set) > 1 and pov_mode == "all"
         projected_entities: list[EntityRecord] = []
         for ent in scene_entities:
             ent_copy = ent.model_copy(deep=True)
@@ -669,7 +808,7 @@ class NarrativeMemoryEngine:
                 ent_copy.disguised_as = alias_rec.persona_name or alias_rec.alias
 
             if pov_set:
-                if ent_copy.entity_id not in pov_set or (len(pov_set) > 1 and pov_mode == "all"):
+                if ent_copy.entity_id not in pov_set or is_multipov_all:
                     ent_copy.private_state = {}
                     if (
                         ent_copy.caused_by_episode_id
@@ -682,7 +821,6 @@ class NarrativeMemoryEngine:
 
             projected_entities.append(ent_copy)
 
-        # Append masked persona records for unpierced disguises
         for real_id, alias_rec in disguise_masks.items():
             persona_label = alias_rec.persona_name or alias_rec.alias
             projected_entities.append(
@@ -696,16 +834,17 @@ class NarrativeMemoryEngine:
 
         projected_edges: list[DirectedEdgeRecord] = []
         for edge in scene_edges:
+            is_self_edge = edge.source_id in pov_set and not is_multipov_all
             if (
                 pov_set
                 and edge.relation_type in policy.edge_layer_order
                 and edge.relation_type != policy.facade_relation
-                and edge.source_id not in pov_set
+                and not is_self_edge
             ):
                 if (edge.source_id, edge.target_id) in facade_pairs:
                     continue
             edge_copy = edge.model_copy(deep=True)
-            if pov_set and edge_copy.source_id not in pov_set:
+            if pov_set and not is_self_edge:
                 if (
                     edge_copy.caused_by_episode_id
                     and edge_copy.caused_by_episode_id not in pov_known_episode_ids
@@ -737,23 +876,23 @@ class NarrativeMemoryEngine:
             a.alias.lower(): a for a in aliases if a.alias
         }
 
-        # Process alias matches first (especially disguises) so canonical matches don't shadow them
+        # Process alias matches (including fuzzy-matched aliases) first so canonical mentions cannot shadow them
         ordered_mentions = sorted(
             raw_mentions,
-            key=lambda m: (0 if m.matched_via == "alias" else 1),
+            key=lambda m: (0 if (m.matched_via == "alias" or m.matched_source == "alias") else 1),
         )
 
         for m in ordered_mentions:
-            surface_lower = m.surface_text.strip().lower()
+            is_alias_match = m.matched_via == "alias" or m.matched_source == "alias"
+            lookup_key = (m.matched_phrase or m.surface_text).strip().lower()
             alias_rec = (
-                alias_by_key.get((m.entity_id, surface_lower)) or alias_by_surface.get(surface_lower)
-                if m.matched_via == "alias"
+                alias_by_key.get((m.entity_id, lookup_key)) or alias_by_surface.get(lookup_key)
+                if is_alias_match
                 else None
             )
             if alias_rec is not None and alias_rec.kind == "disguise":
                 ent_id = alias_rec.entity_id
-                is_scoped_disguise = alias_rec.known_to is not None and bool(pov_set)
-                if is_scoped_disguise:
+                if alias_rec.known_to is not None and pov_set:
                     known_set = set(alias_rec.known_to or ())
                     pierced = (
                         pov_set.issubset(known_set)
@@ -771,10 +910,15 @@ class NarrativeMemoryEngine:
                                     entity_id=masked_id,
                                     matched_via="alias",
                                     confidence=m.confidence,
+                                    matched_source="alias",
+                                    matched_phrase=alias_rec.alias.lower(),
                                 )
                             )
                         continue
                 pierced_disguises[ent_id] = alias_rec
+
+            if m.entity_id in disguise_masks:
+                continue
 
             if m.entity_id not in seen_entities:
                 seen_entities.add(m.entity_id)
@@ -818,17 +962,43 @@ class NarrativeMemoryEngine:
 
     def apply_delta(self, step: int, delta: StepDelta, *, timeline_id: str | None = None) -> list[EpisodeRecord]:
         tl = timeline_id or self.active_timeline
-        ep_embeddings: dict[str, bytes] = {}
         prepared_episodes: list[EpisodeRecord] = []
         for ep in delta.episodes:
             ep_id = ep.episode_id or f"ep_{step}_{uuid.uuid4().hex[:8]}"
-            item = ep.model_copy(update={"episode_id": ep_id, "step": step, "timeline_id": tl})
-            emb = self.voice_bank.embedder.embed_text(item.summary)
-            ep_embeddings[ep_id] = emb.tobytes()
-            prepared_episodes.append(item)
+            updates: dict[str, Any] = {"episode_id": ep_id, "step": step, "timeline_id": tl}
+            if ep.story_time is None and delta.story_time is not None:
+                updates["story_time"] = delta.story_time
+            if ep.chapter_id is None and delta.chapter_id is not None:
+                updates["chapter_id"] = delta.chapter_id
+            if ep.scene_id is None and delta.scene_id is not None:
+                updates["scene_id"] = delta.scene_id
+            prepared_episodes.append(ep.model_copy(update=updates))
 
-        delta_to_apply = delta.model_copy(update={"episodes": prepared_episodes}) if prepared_episodes else delta
-        return self.store.apply_delta(step, delta_to_apply, timeline_id=tl, episode_embeddings=ep_embeddings)
+        ep_embeddings: dict[str, bytes] = {}
+        if prepared_episodes:
+            vectors = embed_texts_batch(
+                self.voice_bank.embedder, [ep.summary for ep in prepared_episodes]
+            )
+            for ep, vec in zip(prepared_episodes, vectors):
+                ep_embeddings[ep.episode_id] = vec.tobytes()
+
+        delta_updates: dict[str, Any] = {}
+        if prepared_episodes:
+            delta_updates["episodes"] = prepared_episodes
+        if delta.is_flashback:
+            # Flashbacks must not overwrite already-established present-day entity/edge states.
+            existing_ids = {
+                e.entity_id for e in self.store.get_all_active_entities(tl, step)
+            }
+            delta_updates["entities"] = [
+                ed for ed in delta.entities if not ed.remove and ed.entity_id not in existing_ids
+            ]
+            delta_updates["edges"] = []
+
+        delta_to_apply = delta.model_copy(update=delta_updates) if delta_updates else delta
+        return self.store.apply_delta(
+            step, delta_to_apply, timeline_id=tl, episode_embeddings=ep_embeddings
+        )
 
     def index_episodes(
         self,
@@ -838,17 +1008,83 @@ class NarrativeMemoryEngine:
         timeline_id: str | None = None,
     ) -> list[EpisodeRecord]:
         tl = timeline_id or self.active_timeline
-        to_store: list[tuple[EpisodeRecord, bytes]] = []
+        if not episodes:
+            return []
         indexed: list[EpisodeRecord] = []
         for ep in episodes:
             ep_id = ep.episode_id or f"ep_{step}_{uuid.uuid4().hex[:8]}"
-            item = ep.model_copy(update={"episode_id": ep_id, "step": step, "timeline_id": tl})
-            emb = self.voice_bank.embedder.embed_text(item.summary)
-            to_store.append((item, emb.tobytes()))
-            indexed.append(item)
-        if to_store:
-            self.store.insert_episodes(to_store, timeline_id=tl)
+            indexed.append(ep.model_copy(update={"episode_id": ep_id, "step": step, "timeline_id": tl}))
+
+        vectors = embed_texts_batch(self.voice_bank.embedder, [ep.summary for ep in indexed])
+        to_store = [(item, vec.tobytes()) for item, vec in zip(indexed, vectors)]
+        self.store.insert_episodes(to_store, timeline_id=tl)
         return indexed
+
+    def consolidate_episodes(
+        self,
+        step: int,
+        *,
+        before_step: int,
+        summary: str,
+        max_salience: float = 4.0,
+        predicate: str = "consolidated_summary",
+        episode_id: str | None = None,
+        chapter_id: str | None = None,
+        salience: float = 7.5,
+        timeline_id: str | None = None,
+    ) -> EpisodeRecord | None:
+        """Compacts old low-salience episodes (< before_step) into a single summary episode."""
+        tl = timeline_id or self.active_timeline
+        candidates = self.store.query_episodes(
+            timeline_id=tl,
+            cutoff_step=before_step - 1,
+        )
+        targets = [
+            ep
+            for ep in candidates
+            if ep.salience <= max_salience
+            and ep.predicate != predicate
+            and (chapter_id is None or ep.chapter_id == chapter_id)
+        ]
+        if not targets:
+            return None
+
+        participants: dict[str, str] = {}
+        witnesses: list[str] = []
+        seen_witnesses: set[str] = set()
+        known_by: dict[str, Literal["direct", "told", "deceived"]] = {}
+        for ep in targets:
+            for eid, role in ep.participants.items():
+                participants.setdefault(eid, role)
+            for wid in ep.witnesses:
+                if wid not in seen_witnesses:
+                    seen_witnesses.add(wid)
+                    witnesses.append(wid)
+            for eid, mode in ep.known_by.items():
+                if mode == "deceived":
+                    continue
+                if known_by.get(eid) != "direct":
+                    known_by[eid] = mode
+
+        summary_ep = EpisodeRecord(
+            episode_id=episode_id or f"ep_consolidated_{step}_{uuid.uuid4().hex[:8]}",
+            timeline_id=tl,
+            step=step,
+            predicate=predicate,
+            summary=summary,
+            participants=participants,
+            witnesses=witnesses,
+            known_by=known_by,
+            chapter_id=chapter_id,
+            consolidated_from=[ep.episode_id for ep in targets if ep.episode_id],
+            salience=salience,
+        )
+        with self._store_transaction():
+            committed = self.index_episodes(step, [summary_ep], timeline_id=tl)[0]
+            delete_fn = getattr(self.store, "delete_episodes", None)
+            if callable(delete_fn):
+                delete_fn([ep.episode_id for ep in targets], timeline_id=tl)
+        return committed
 
     def inform_entity(
         self,
@@ -856,7 +1092,7 @@ class NarrativeMemoryEngine:
         *,
         episode_id: str,
         entity_id: str,
-        epistemic: Literal["direct", "told", "deceived"] = "told",
+        epistemic: EpistemicMode = "told",
         believed_summary: str | None = None,
         timeline_id: str | None = None,
     ) -> None:
@@ -929,7 +1165,6 @@ class NarrativeMemoryEngine:
                     aliases=active_aliases,
                 )
                 if mentions:
-                    # Order by earliest appearance in the attribution clause
                     win_lower = window.lower()
                     ordered = sorted(
                         mentions,
@@ -946,10 +1181,15 @@ class NarrativeMemoryEngine:
                     return speaker_id, addressee_id, speaker_surface
             return None, None, None
 
+        def _on_gate1_rejected(span: str, reason: str, meta: dict[str, Any]) -> None:
+            for hook in self._hooks:
+                hook.on_gate_rejected("gate1", span, reason, meta)
+
         return self.voice_bank.gate.extract_candidates(
             text,
             source_text=source_text,
             speaker_resolver=_resolve_speaker,
+            on_rejected=_on_gate1_rejected if self._hooks else None,
         )
 
     def index_voice_exemplars(
@@ -962,18 +1202,22 @@ class NarrativeMemoryEngine:
     ) -> list[VoiceExemplar]:
         tl = timeline_id or self.active_timeline
         indexed: list[VoiceExemplar] = []
-        to_store: list[tuple[VoiceExemplar, bytes]] = []
-
         for ex in exemplars:
             if not bypass_gate and not self.voice_bank.gate.passes_quality_gate(ex):
+                for hook in self._hooks:
+                    hook.on_gate_rejected(
+                        "gate2",
+                        ex.text,
+                        f"quality_score {ex.quality_score} < {self.voice_bank.gate.min_quality}",
+                        {"speaker_id": ex.speaker_id, "quality_score": ex.quality_score},
+                    )
                 continue
             ex_id = ex.exemplar_id or str(uuid.uuid4())
-            item = ex.model_copy(update={"exemplar_id": ex_id, "step": step, "timeline_id": tl})
-            emb = self.voice_bank.embedder.embed_text(item.text)
-            to_store.append((item, emb.tobytes()))
-            indexed.append(item)
+            indexed.append(ex.model_copy(update={"exemplar_id": ex_id, "step": step, "timeline_id": tl}))
 
-        if to_store:
+        if indexed:
+            vectors = embed_texts_batch(self.voice_bank.embedder, [ex.text for ex in indexed])
+            to_store = [(item, vec.tobytes()) for item, vec in zip(indexed, vectors)]
             self.store.insert_voice_exemplars(to_store, timeline_id=tl)
         return indexed
 
@@ -992,21 +1236,31 @@ class NarrativeMemoryEngine:
         timeline_id: str | None = None,
     ) -> list[VoiceExemplar]:
         tl = timeline_id or self.active_timeline
+        for hook in self._hooks:
+            hook.on_before_commit(step, tl, delta, exemplars, episodes)
+        committed_episodes: list[EpisodeRecord] = []
+        indexed: list[VoiceExemplar] = []
         with self._store_transaction():
             if delta:
-                self.apply_delta(step, delta, timeline_id=tl)
+                committed_episodes.extend(self.apply_delta(step, delta, timeline_id=tl))
             if episodes:
-                self.index_episodes(step, episodes, timeline_id=tl)
-            indexed: list[VoiceExemplar] = []
+                committed_episodes.extend(self.index_episodes(step, episodes, timeline_id=tl))
             if exemplars:
-                indexed = self.index_voice_exemplars(step, exemplars, bypass_gate=bypass_gate, timeline_id=tl)
-            return indexed
+                indexed = self.index_voice_exemplars(
+                    step, exemplars, bypass_gate=bypass_gate, timeline_id=tl
+                )
+        for hook in self._hooks:
+            hook.on_after_commit(step, tl, committed_episodes, indexed)
+        return indexed
 
     # --- Time-Travel Operations ---
 
     def rollback_to(self, step: int, *, timeline_id: str | None = None) -> int:
         tl = timeline_id or self.active_timeline
-        return self.store.rollback_to(step, timeline_id=tl)
+        deleted = self.store.rollback_to(step, timeline_id=tl)
+        for hook in self._hooks:
+            hook.on_rollback(step, tl, deleted)
+        return deleted
 
     def branch(
         self,
@@ -1021,7 +1275,17 @@ class NarrativeMemoryEngine:
         info = self.store.create_timeline(name, parent_id=parent, fork_step=at_step, metadata=metadata)
         if switch:
             self.active_timeline = name
+        for hook in self._hooks:
+            hook.on_branch(info)
         return info
+
+    def delete_timeline(self, timeline_id: str, *, cascade: bool = False) -> int:
+        deleted = self.store.delete_timeline(timeline_id, cascade=cascade)
+        if self._default_timeline == timeline_id:
+            self._default_timeline = "main"
+        if self._timeline_var.get() == timeline_id:
+            self._timeline_var.set(None)
+        return deleted
 
     def checkout(self, timeline_id: str) -> None:
         if not self.store.get_timeline(timeline_id):
@@ -1109,10 +1373,23 @@ class NarrativeMemoryEngine:
             if a.alias and a.kind != "disguise":
                 lookup.setdefault(a.alias.lower(), a.entity_id)
 
+        # Include entities and non-disguise aliases introduced within this same StepDelta
+        for ed in delta.entities:
+            if ed.remove:
+                continue
+            lookup.setdefault(ed.entity_id.lower(), ed.entity_id)
+            if ed.canonical_name:
+                lookup.setdefault(ed.canonical_name.lower(), ed.entity_id)
+            for alias_item in ed.add_aliases:
+                if isinstance(alias_item, AliasRecord):
+                    if alias_item.alias and alias_item.kind != "disguise":
+                        lookup.setdefault(alias_item.alias.lower(), ed.entity_id)
+                elif isinstance(alias_item, str) and alias_item.strip():
+                    lookup.setdefault(alias_item.strip().lower(), ed.entity_id)
+
         def _norm_id(raw: str) -> str:
             return lookup.get(raw.strip().lower(), raw)
 
-        # Resolve intra-step episode IDs (assign concrete IDs to blank ones and map symbolic refs)
         ep_id_map: dict[str, str] = {}
         norm_episodes: list[EpisodeRecord] = []
         for ep in delta.episodes:
@@ -1176,4 +1453,8 @@ class NarrativeMemoryEngine:
             edges=norm_edges,
             episodes=norm_episodes,
             inform=norm_inform,
+            is_flashback=delta.is_flashback,
+            story_time=delta.story_time,
+            chapter_id=delta.chapter_id,
+            scene_id=delta.scene_id,
         )
