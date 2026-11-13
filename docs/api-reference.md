@@ -25,7 +25,7 @@ class NarrativeMemoryEngine:
 - `seed_entities(entities: Sequence[EntityRecord], step: int = 0, timeline_id: str | None = None) -> None`: Batch registers entities.
 
 ### Retrieval & Query Methods
-- `retrieve_context(step: int, text: str = "", mentions: Sequence[str] = (), top_k_voice: int = 3, top_k_episodes: int = 5, pov_entity_ids: Sequence[str] | None = None, pov_mode: Literal["any", "all"] = "any", edge_types: Sequence[str] | None = None, inclusive: bool = False, timeline_id: str | None = None, fallback_on_empty_mentions: Literal["all", "pov_only", "none"] = "all") -> StepContext`: Executes unified Tier 1–6 retrieval at `step`.
+- `retrieve_context(step: int, text: str = "", mentions: Sequence[str] = (), top_k_voice: int = 3, top_k_episodes: int = 5, pov_entity_ids: Sequence[str] | None = None, pov_mode: Literal["any", "all"] = "any", edge_types: Sequence[str] | None = None, location_id: str | None = None, inclusive: bool = False, timeline_id: str | None = None, fallback_on_empty_mentions: Literal["all", "pov_only", "none"] = "pov_only") -> StepContext`: Executes unified Tier 1–6 retrieval at `step`. Co-present scene entities (matched in text/mentions, sharing the active `location_id`, or POV fallback) and edges between them populate `entities` and `active_edges`, while 1-hop off-screen social graph neighbors populate `related_entities` and `background_edges`.
 - `query_episodes(cutoff_step: int = 999999999, participants: Sequence[str] = (), match_all_participants: bool = False, predicate: str | None = None, location_id: str | None = None, known_to: Sequence[str] = (), min_salience: float = 0.0, step_range: tuple[int, int] | None = None, timeline_id: str | None = None) -> list[EpisodeRecord]`: Queries episodic ledger by participants, predicate, location, and epistemic visibility.
 - `format_context(ctx: StepContext) -> str`: Formats `StepContext` using the configured `DomainPreset`.
 
@@ -34,7 +34,7 @@ class NarrativeMemoryEngine:
 - `normalize_delta(delta: StepDelta, step: int | None = None, timeline_id: str | None = None) -> StepDelta`: Normalizes canonical names/aliases into canonical `entity_id`s and resolves intra-step symbolic `episode_id` references.
 
 ### Transaction & Mutation Methods
-- `step_transaction(step: int, text: str = "", mentions: Sequence[str] = (), top_k_voice: int = 3, top_k_episodes: int = 5, pov_entity_ids: Sequence[str] | None = None, pov_mode: Literal["any", "all"] = "any", edge_types: Sequence[str] | None = None, timeline_id: str | None = None, rerun_clean: bool = True) -> StepTransaction`: Context manager for clean read-and-commit workflows. Supports `tx.extract_and_commit(scene_text)` when a `DeltaExtractor` is configured.
+- `step_transaction(step: int, text: str = "", mentions: Sequence[str] = (), top_k_voice: int = 3, top_k_episodes: int = 5, pov_entity_ids: Sequence[str] | None = None, pov_mode: Literal["any", "all"] = "any", edge_types: Sequence[str] | None = None, location_id: str | None = None, timeline_id: str | None = None, rerun_clean: bool = True) -> StepTransaction`: Context manager for clean read-and-commit workflows. Supports `tx.extract_and_commit(scene_text)` when a `DeltaExtractor` is configured.
 - `apply_delta(step: int, delta: StepDelta, timeline_id: str | None = None) -> list[EpisodeRecord]`: Directly applies state deltas, episodes, and inform actions.
 - `index_episodes(step: int, episodes: Sequence[EpisodeRecord], timeline_id: str | None = None) -> list[EpisodeRecord]`: Embeds and indexes episodes into Tier 6.
 - `inform_entity(step: int, episode_id: str, entity_id: str, epistemic: Literal["direct", "told", "deceived"] = "told", believed_summary: str | None = None, timeline_id: str | None = None) -> None`: Records secondhand, delayed, or deceptive epistemic awareness of an episode.
@@ -159,8 +159,10 @@ class StepContext(BaseModel):
     timeline_id: str
     step: int
     resolved_mentions: list[ResolvedMention] = []
-    entities: list[EntityRecord] = []
-    active_edges: list[DirectedEdgeRecord] = []
+    entities: list[EntityRecord] = []               # Co-present scene entities
+    active_edges: list[DirectedEdgeRecord] = []      # Edges strictly between co-present scene entities
+    related_entities: list[EntityRecord] = []       # 1-hop off-screen social graph neighbors
+    background_edges: list[DirectedEdgeRecord] = []  # Edges from scene entities to off-screen neighbors
     voice_exemplars: list[VoiceExemplar] = []
     episodes: list[EpisodeRecord] = []
 ```

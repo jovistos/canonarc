@@ -39,7 +39,7 @@
 ### Tier 4: Temporal Versioning & 1-Hop Expansion
 - All revisions are indexed by `step: int`.
 - The query engine resolves active states at `step < current_step` (no future spoiler leakage).
-- Evaluates 1-hop aliases (`"the old wizard" -> char_merlin`) and pulls 1-hop edge neighbors connected to active characters in the scene.
+- Evaluates 1-hop aliases (`"the old wizard" -> char_merlin`) and partitions the social graph into **co-present scene entities/edges** (`StepContext.entities`, `StepContext.active_edges`—matched in text, explicitly passed, or sharing the active `location_id`) vs. **1-hop background neighbors/edges** (`StepContext.related_entities`, `StepContext.background_edges`), preventing off-screen characters from polluting scene presence, `| ignorant:` dramatic irony tags, or causal episode pinning.
 
 ### Tier 5: Gated Voice Bank
 - Stores empirical past dialogue lines.

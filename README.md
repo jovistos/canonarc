@@ -175,7 +175,7 @@ engine.branch(at_step=50, name="reconciliation_route")
 engine.checkout("reconciliation_route")
 
 # The branch inherits state and episodes up to Step 50, but ignores Step 82 on 'main'!
-branch_context = engine.retrieve_context(step=85)
+branch_context = engine.retrieve_context(step=85, mentions=["Arthur", "Merlin"])
 assert branch_context.active_edges[0].state["register"] == "formal"
 
 # Rewind 'main' back to Step 10 in < 1ms (revisions and episodes at > 10 atomically deleted)

@@ -8,6 +8,8 @@ Domain presets format the retrieved `StepContext` (Tiers 1–6) into structured 
 
 Designed for Visual Novels (Ren'Py), RPGs, and text adventures. Integrates character state, windowed emotional transitions, interpersonal stances, episodic plot history, and voice anchors.
 
+Only co-present scene characters (`ctx.entities`) and edges between them (`ctx.active_edges`) are rendered under `Characters Present & State:` and `Interpersonal Stances & Register:`, and `| ignorant: ...` annotations only check co-present scene characters. Initialize with `InteractiveFictionPreset(include_background_edges=True)` to optionally render `ctx.background_edges` under a separate `#### Off-Screen Ties (Not Present in Scene):` section.
+
 ### Injected Context Format
 ```markdown
 ### Active Scene Narrative Context (Step: 95)
@@ -32,6 +34,8 @@ Designed for Visual Novels (Ren'Py), RPGs, and text adventures. Integrates chara
 ## 2. `TranslationPreset`
 
 Designed for literary and video game localization pipelines. Emphasizes grammatical declension/gender rules, target exonyms, register constraints, and historical episodic context.
+
+Only co-present scene characters (`ctx.entities`) and edges between them (`ctx.active_edges`) are rendered in the binding state block, and `| ignorant: ...` annotations only check co-present scene characters. Initialize with `TranslationPreset(include_background_edges=True)` to optionally render `ctx.background_edges` under a separate `## Off-screen character ties — reference only` block.
 
 ### Injected Context Format
 ```markdown

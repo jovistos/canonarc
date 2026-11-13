@@ -129,7 +129,7 @@ Relationships are directed edges keyed by `source_id:relation_type->target_id`. 
 When scenes produce mutations, `apply_delta()` applies Resolve-on-Write materialization. Furthermore, window functions attach `prior_state`, `prior_step`, and `revision_count` to active records. When Arthur's mood cools to `"calm"` at Step 90, the prompt knows he was `"furious"` at Step 82.
 
 ### Tier 4: Temporal Versioning & 1-Hop Coreference Expansion
-Tier 4 resolves epithets and titles (`"the old wizard"` $\to$ `char_merlin`) and pulls all 1-hop social connections into context.
+Tier 4 resolves epithets and titles (`"the old wizard"` $\to$ `char_merlin`) and cleanly separates co-present scene entities (`ctx.entities`, `ctx.active_edges`—resolved from text, explicit mentions, or active `location_id`) from 1-hop off-screen social graph neighbors (`ctx.related_entities`, `ctx.background_edges`).
 
 ### Tier 5: Gated Dynamic Voice Bank
 Vetted dialogue exemplars filtered by hard grammatical register and cosine similarity anchor character style.
