@@ -279,3 +279,104 @@ def test_multigraph_independent_edge_lifecycles():
         assert snap_kinship.relation_type == "kinship"
         assert snap_kinship.state["relation"] == "foster_brother"
         snap_store.close()
+
+
+def test_bounded_episode_loading_and_sql_prefilter():
+    """get_lineage_episodes(limit=...) bounds rows loaded while preserving pinned, cue, FTS, and POV matches."""
+    from narrative_memory.engine import NarrativeMemoryEngine
+    from narrative_memory.models import EpisodeRecord, InformDelta
+
+    engine = NarrativeMemoryEngine(":memory:")
+    engine.register_entity(EntityRecord(entity_id="char_arthur", canonical_name="Arthur"), step=0)
+    engine.register_entity(EntityRecord(entity_id="char_merlin", canonical_name="Merlin"), step=0)
+
+    # Insert an old episode at step 1 that should be found via FTS + cue even after 300 filler episodes
+    engine.store.insert_episodes(
+        [
+            (
+                EpisodeRecord(
+                    episode_id="ep_old_sword",
+                    timeline_id="main",
+                    step=1,
+                    summary="Arthur forged the enchanted broadsword in the hidden smithy.",
+                    location_id="loc_smithy",
+                    salience=5.0,
+                    participants={"char_arthur": "smith"},
+                    witnesses=[],
+                    known_by={"char_arthur": "direct"},
+                ),
+                b"",
+            ),
+            (
+                EpisodeRecord(
+                    episode_id="ep_secret_merlin",
+                    timeline_id="main",
+                    step=2,
+                    summary="Merlin hid the ancient crown.",
+                    salience=9.0,
+                    participants={"char_merlin": "actor"},
+                    known_by={"char_merlin": "direct"},
+                ),
+                b"",
+            ),
+        ],
+        timeline_id="main",
+    )
+
+    # Insert 300 newer filler episodes
+    filler = [
+        (
+            EpisodeRecord(
+                episode_id=f"ep_filler_{i}",
+                timeline_id="main",
+                step=10 + i,
+                summary=f"Routine patrol number {i} along the eastern wall.",
+                salience=3.0,
+                participants={"char_merlin": "observer"},
+                known_by={"char_arthur": "direct", "char_merlin": "direct"},
+            ),
+            b"",
+        )
+        for i in range(300)
+    ]
+    engine.store.insert_episodes(filler, timeline_id="main")
+
+    # Bounded query with limit=10: must still surface ep_old_sword via FTS + cue, and exclude ep_secret_merlin for Arthur POV
+    bounded = engine.store.get_lineage_episodes(
+        "main",
+        400,
+        limit=10,
+        pov_entity_ids=["char_arthur"],
+        pov_mode="any",
+        cue_entity_ids=["char_arthur"],
+        query_text="enchanted broadsword smithy",
+    )
+    assert len(bounded) == 10
+    bounded_ids = {ep.episode_id for ep, _ in bounded}
+    assert "ep_old_sword" in bounded_ids
+    assert "ep_secret_merlin" not in bounded_ids
+
+    # Forgotten override in branch should be respected by get_known_episode_ids & POV-filtered get_lineage_episodes
+    engine.branch(350, "alt", from_timeline="main")
+    engine.store.record_epistemic(
+        InformDelta(episode_id="ep_old_sword", entity_id="char_arthur", epistemic="forgotten"),
+        step=360,
+        timeline_id="alt",
+    )
+    assert "ep_old_sword" not in engine.store.get_known_episode_ids(
+        "alt", 400, ["char_arthur"], episode_ids=["ep_old_sword", "ep_filler_0"]
+    )
+    assert "ep_filler_0" in engine.store.get_known_episode_ids(
+        "alt", 400, ["char_arthur"], episode_ids=["ep_old_sword", "ep_filler_0"]
+    )
+
+    # End-to-end retrieve_context() on main with > 200 episodes still recalls ep_old_sword
+    ctx = engine.retrieve_context(
+        400,
+        text="Arthur asked about the enchanted broadsword.",
+        mentions=["char_arthur"],
+        pov_entity_ids=["char_arthur"],
+        top_k_episodes=3,
+    )
+    assert any(ep.episode_id == "ep_old_sword" for ep in ctx.episodes)
+    engine.close()
