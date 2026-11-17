@@ -1,14 +1,18 @@
+import warnings
+
 import numpy as np
 import pytest
 
 from narrative_memory import (
     AliasRecord,
     BaseEngineHooks,
+    CallableEmbedder,
     CallableExtractor,
     CausalStore,
     DefaultEpisodeRanker,
     DefaultLexicalResolver,
     EdgeDelta,
+    EmbedderMismatchError,
     EntityDelta,
     EntityRecord,
     EpisodeRecord,
@@ -608,3 +612,66 @@ def test_sessions_hooks_batch_embedder_extractor_ranker_and_cli(tmp_path):
     assert cli_main(["inspect", str(db_file), "--timeline", "route_b", "--step", "10", "--inclusive"]) == 0
     assert cli_main(["diff", str(db_file), "main", "route_b", "--step", "10"]) == 0
     assert cli_main(["history", str(db_file), "char_arthur", "--timeline", "route_b"]) == 0
+
+
+def test_embedder_metadata_mismatch_and_reindex(tmp_path):
+    """Store records embedder_id & dim; reopening with another embedder warns, raises, or reindexes."""
+    db_file = tmp_path / "embedder_meta.db"
+
+    with NarrativeMemoryEngine(db_file, embedder=OfflineNgramEmbedder(dim=64)) as engine:
+        engine.register_entity(EntityRecord(entity_id="char_arthur", canonical_name="Arthur"), step=0)
+        engine.commit_step(
+            step=1,
+            episodes=[
+                EpisodeRecord(
+                    episode_id="ep_1",
+                    summary="Arthur found the ancient crown.",
+                    participants={"char_arthur": "actor"},
+                    witnesses=["char_arthur"],
+                )
+            ],
+            exemplars=[
+                VoiceExemplar(
+                    step=1,
+                    speaker_id="char_arthur",
+                    text="By the old oath, this crown belongs to Camelot alone!",
+                    quality_score=9.5,
+                )
+            ],
+        )
+        assert engine.store.get_embedding_metadata() == ("OfflineNgramEmbedder(dim=64)", 64)
+
+    # Different dimension -> warn by default
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        with NarrativeMemoryEngine(db_file, embedder=OfflineNgramEmbedder(dim=128)) as engine:
+            assert any("OfflineNgramEmbedder(dim=64)" in str(w.message) for w in caught)
+
+    # Same dimension (64), different embedder_id -> raise when strict
+    alt_same_dim = CallableEmbedder(
+        lambda text: np.ones(64, dtype=np.float32),
+        embedder_id="custom-model-v1",
+        dim=64,
+    )
+    with pytest.raises(EmbedderMismatchError, match="custom-model-v1"):
+        NarrativeMemoryEngine(db_file, embedder=alt_same_dim, on_embedder_mismatch="raise").close()
+
+    # Different dimension + on_embedder_mismatch="reindex" migrates stored BLOBs in batches
+    with NarrativeMemoryEngine(
+        db_file, embedder=OfflineNgramEmbedder(dim=128), on_embedder_mismatch="reindex"
+    ) as engine:
+        assert engine.store.get_embedding_metadata() == ("OfflineNgramEmbedder(dim=128)", 128)
+        ep_rows = engine.store.get_lineage_episodes("main", 10)
+        assert len(ep_rows[0][1]) == 128 * 4
+        vo_rows = engine.store.get_lineage_voice_exemplars("main", 10, "char_arthur")
+        assert len(vo_rows[0][1]) == 128 * 4
+
+    # Re-opening with the migrated embedder now succeeds cleanly without warnings
+    with warnings.catch_warnings(record=True) as caught_after:
+        warnings.simplefilter("always")
+        with NarrativeMemoryEngine(
+            db_file, embedder=OfflineNgramEmbedder(dim=128), on_embedder_mismatch="raise"
+        ) as engine:
+            counts = engine.reindex_embeddings()
+            assert counts == {"episodes": 1, "voice_exemplars": 1}
+        assert not [w for w in caught_after if issubclass(w.category, UserWarning)]
