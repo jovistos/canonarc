@@ -1,0 +1,57 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "watchful"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_briefing_1",
+      "reason": "Elena notices the courier's costly city-stitched gloves and grows suspicious."
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_briefing_1",
+      "timeline_id": "main",
+      "step": 0,
+      "predicate": "briefing",
+      "summary": "Elena presented sealed confidential reports to Marcus for review while the hooded courier delivered northern border dispatches; Julian stammered awkwardly and Elena grew suspicious of the courier's fine gloves.",
+      "participants": {
+        "char_elena": "actor",
+        "char_marcus": "recipient",
+        "char_lyra": "courier",
+        "char_julian": "observer"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_marcus",
+        "char_julian",
+        "char_lyra"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 4.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

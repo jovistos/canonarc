@@ -1,0 +1,126 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [
+        {
+          "alias": "the hooded courier",
+          "entity_id": "char_lyra",
+          "kind": "disguise",
+          "known_to": [
+            "char_elena",
+            "char_julian",
+            "char_marcus"
+          ],
+          "persona_name": "Courier",
+          "valid_from_step": 0,
+          "valid_to_step": null
+        }
+      ],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_revelation_5",
+      "reason": "Lyra climbs the vault stairwell into the Council Chamber with hood thrown back and the signet in her bare hand, unmasking before Marcus as well."
+    },
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "indignant"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_confrontation_6",
+      "reason": "Marcus comprehends the deception and roars at Julian in fury."
+    },
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "calm"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_confrontation_6",
+      "reason": "After drinking the amber phial, Julian's terror drains away into bland, drugged calm."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_marcus",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "furious",
+        "trust": -0.9
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_confrontation_6",
+      "reason": "Marcus drops all formality and roars an informal-ti accusation at Julian before the military council."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_confrontation_6",
+      "timeline_id": "main",
+      "step": 6,
+      "predicate": "confrontation",
+      "summary": "Lyra rose from the vault stairwell with her hood thrown back and the Obsidian Signet in her hand, recounting the emptied pocket, the ring in the courier's glove, and the fabricated raider lie; Marcus wheeled on Julian with an indignant roar, and Julian—cornered by three pairs of eyes—swallowed a phial of cloudy amber liquid that shattered on the floor, wiping away the winter pact, the ten years of trust, and his own fear, leaving only polite bewilderment.",
+      "participants": {
+        "char_lyra": "revealer",
+        "char_marcus": "accuser",
+        "char_julian": "target",
+        "char_elena": "observer",
+        "item_signet": "instrument"
+      },
+      "witnesses": [
+        "char_lyra",
+        "char_marcus",
+        "char_julian",
+        "char_elena"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_flashback_4",
+      "entity_id": "char_julian",
+      "epistemic": "forgotten",
+      "believed_summary": null
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

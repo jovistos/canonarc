@@ -1,0 +1,265 @@
+{
+  "cache_key": "b2b2118243d9df678badeda411cbe03ec77d6be6238b32ccaa2b6d06493f6ba4",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-16T17:57:32.676734+00:00",
+  "prompt_sha256": "0fc0883b62823772bcfd17900c9a1ebe77b018162050680010d01370fd8b39e3",
+  "scene_text_sha256": "ef0cfc48902693293fa7663874c94a6c09d4fe9b776603d15dee7f7d71c4bd8a",
+  "scene_text": "Down in the Archive Vault, the air was stone-cold and tasted of dust and old iron. Julian had backed himself against a shelf of ledgers, chest heaving, when the courier came down the last steps and stopped in the lantern light. Then the grey gloves rose, hooked the scarf, and dragged the wool hood back — and a woman's face looked out of it, hard-jawed and thoroughly determined, dark hair crushed flat by the hood's weight. \"Lyra,\" Julian whispered, shocked, as though the name itself had struck him. \"You were— you were a rider from the north, you said—\"\n\n\"Predaj mi sve lažne povelje odmah, Julijane, ili ćeš do zore biti u kraljevskoj tamnici!\" Lyra's hand was already out, palm up, the Obsidian Signet glinting between her fingers like a black eye. Julian flinched as though she'd raised a blade.\n\nUpstairs, the balcony door groaned open and Marcus came back into the Council Chamber, rubbing warmth into his hands, just as Julian stumbled up the vault stair and into the room — cloak torn, hair wild, breathing like a hunted thing. Marcus's eyes narrowed. \"What in the nine hells happened to you?\" Julian straightened his collar with trembling fingers and delivered his tale: northern raiders had broken into the annex, he said, desperate men with axes, and he had defended the ledger with his life, but the Obsidian Signet was gone.\n\nElena did not move from the window. Inside, the fury sat in her chest like a hot coal, but her voice came out dry as paper. \"Oh, what a wonderfully convenient tale of heroic vigilance, dear cousin.\" Marcus frowned at her tone, uncertain where the blade was pointed. Lyra stayed below in the vault, listening to the ceiling, saying nothing.",
+  "usage": {
+    "prompt_tokens": 4028,
+    "completion_tokens": 3470,
+    "total_tokens": 7498,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 1900,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 17460.463,
+    "cost_estimate": {
+      "input_cost_usd": 0.000564,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.000972,
+      "total_cost_usd": 0.001536,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_lyra",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "disguise_status": "revealed to Julian in the vault",
+          "current_location": "loc_vault",
+          "holding": "item_signet",
+          "posture_toward_julian": "threatening, demanding false charters"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [
+          {
+            "alias": "the courier",
+            "entity_id": "char_lyra",
+            "kind": "disguise",
+            "known_to": [
+              "char_julian"
+            ],
+            "persona_name": "rider from the north / hooded courier",
+            "valid_from_step": 4,
+            "valid_to_step": null
+          }
+        ],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_lyra_reveals_identity",
+        "reason": "Hooded courier lowered hood, revealing Lyra's face to Julian."
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "emotional_state": "panicked, hunted, trembling",
+          "deception_status": "told Marcus a false tale of northern raiders",
+          "current_location": "loc_council"
+        },
+        "private_state": {
+          "knows_courier_is_lyra": true,
+          "confronted_over_false_charters": true
+        },
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_lies_raiders",
+        "reason": "Julie fled vault, returned to Council Chamber, and lied to Marcus about raiders."
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "emotional_state": "controlled fury, skeptical of Julian's story",
+          "current_location": "loc_council"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_lies_raiders",
+        "reason": "Elena voiced dry sarcasm, disbelieving Julian's heroic tale."
+      },
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "emotional_state": "uncertain, suspicious",
+          "current_location": "loc_council"
+        },
+        "private_state": {
+          "believes_raider_tale": true
+        },
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_lies_raiders",
+        "reason": "Marcus returned from the balcony and was told Julian's false account."
+      },
+      {
+        "entity_id": "item_signet",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "possessed_by": "char_lyra",
+          "current_location": "loc_vault"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_lyra_reveals_identity",
+        "reason": "Lyra held the Obsidian Signet in her palm before Julian."
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_elena",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "sentiment": "hostile",
+          "trust": "low",
+          "suspicion": "high",
+          "note": "Believes Julian is lying about the Signet's loss"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_lies_raiders",
+        "reason": "Elena's dry sarcasm signals she does not accept Julian's heroic tale."
+      },
+      {
+        "source_id": "char_lyra",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "sentiment": "threatening",
+          "demand": "hand over all false charters by dawn",
+          "leverage": "holding the Obsidian Signet"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_lyra_reveals_identity",
+        "reason": "Lyra confronted Julian in the vault with the Signet and demanded the false charters."
+      },
+      {
+        "source_id": "char_marcus",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "sentiment": "suspicious",
+          "uncertainty": "high",
+          "note": "Unsure where Elena's barbed tone is pointed"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_lies_raiders",
+        "reason": "Marcus frowned at Elena's tone, uncertain of the truth."
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_lyra_reveals_identity",
+        "timeline_id": "main",
+        "step": 4,
+        "predicate": "revelation",
+        "summary": "In the Archive Vault, the hooded courier pulled back her hood to reveal herself as Lyra. She confronted Julian, holding the Obsidian Signet and demanding he surrender all the false charters by dawn on pain of the royal dungeon.",
+        "participants": {
+          "char_lyra": "actor",
+          "char_julian": "target",
+          "item_signet": "instrument"
+        },
+        "witnesses": [
+          "char_julian",
+          "char_lyra"
+        ],
+        "known_by": {
+          "char_julian": "direct",
+          "char_lyra": "direct"
+        },
+        "believed_summaries": {},
+        "location_id": "loc_vault",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.0,
+        "metadata": {
+          "revealed_disguise": "hooded courier",
+          "demanded": "false charters"
+        },
+        "match_score": 0.0
+      },
+      {
+        "episode_id": "ep_julian_lies_raiders",
+        "timeline_id": "main",
+        "step": 4,
+        "predicate": "deception",
+        "summary": "Julian stumbled up from the vault into the Council Chamber and told Marcus a false tale: that northern raiders with axes had broken into the annex and stolen the Obsidian Signet despite his heroic defense. Elena sarcastically mocked the account while Marcus remained uncertain.",
+        "participants": {
+          "char_julian": "deceiver",
+          "char_marcus": "deceived",
+          "char_elena": "witness",
+          "item_signet": "subject"
+        },
+        "witnesses": [
+          "char_marcus",
+          "char_elena"
+        ],
+        "known_by": {
+          "char_marcus": "deceived",
+          "char_elena": "direct",
+          "char_julian": "direct"
+        },
+        "believed_summaries": {
+          "char_marcus": "Northern raiders broke into the annex with axes; Julian defended the ledger with his life but the Obsidian Signet was stolen."
+        },
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [
+      {
+        "episode_id": "ep_lyra_reveals_identity",
+        "entity_id": "char_julian",
+        "epistemic": "direct",
+        "believed_summary": null
+      }
+    ],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_vault",
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_item_transfer_3",
+      "reason": "Fled through the iron door down into the Archive Vault"
+    },
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_vault",
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_item_transfer_3",
+      "reason": "Bolted after Julian into the vault stairwell, hood flying back"
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_item_transfer_3",
+      "reason": "Fury hardened into cold certainty watching a decade of trust burn"
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_lyra",
+      "target_id": "item_signet",
+      "relation_type": "possesses",
+      "state": {
+        "status": "concealed"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_item_transfer_3",
+      "reason": "Julian forced the Obsidian Signet into the courier's grey-gloved hand"
+    },
+    {
+      "source_id": "char_julian",
+      "target_id": "item_signet",
+      "relation_type": "possesses",
+      "state": {},
+      "merge": true,
+      "remove": true,
+      "caused_by_episode_id": "ep_item_transfer_3",
+      "reason": "Surrendered the stolen signet to the courier before fleeing"
+    },
+    {
+      "source_id": "char_elena",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "tone": "commanding",
+        "trust": -0.9
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_item_transfer_3",
+      "reason": "Ordered him to empty every pocket and fold before he bolted"
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_item_transfer_3",
+      "timeline_id": "main",
+      "step": 3,
+      "predicate": "item_transfer",
+      "summary": "Under Elena's demand to empty his pockets, Julian forced the stolen Obsidian Signet into the hooded courier's hand, ordering her to hide it in the stone vault, then fled through the iron door into the Archive Vault; the courier bolted after him, leaving Elena alone in the Council Chamber.",
+      "participants": {
+        "char_julian": "actor",
+        "char_lyra": "recipient",
+        "item_signet": "instrument",
+        "char_elena": "observer"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_julian",
+        "char_lyra"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

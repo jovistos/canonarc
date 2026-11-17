@@ -1,0 +1,133 @@
+{
+  "cache_key": "517f3230b5a4baa404620dba72a7aa0827c8db9a39458f99d2d6eb545184f860",
+  "model": "gemini-4-hydrogen",
+  "created_at": "2026-11-16T19:42:36.329644+00:00",
+  "prompt_sha256": "5fc1eb919f6c73d5a85222c48ebc864f93025a65ee4dc5c2d44be0db949327a9",
+  "scene_text_sha256": "6f092494c13dbb775fa5a23c519c89bf229a39b5cd6590bf443e08258753c5ba",
+  "scene_text": "Marcus read for a long while, and the chamber grew hotter and closer with every page. At last he shoved the reports aside, muttered something about clerks who could not tell a supply column from a funeral procession, and rose so abruptly his chair scraped a raw line into the oak floor. \"The air in here is a dead man's breath,\" he announced, and no one disagreed. He crossed to the tall glass doors, hauled one open, and stepped out onto the Windy Balcony, where the dusk wind was already tearing at the courtyard banners below. The heavy doors swung shut behind him and cut the chamber in two.\n\nElena was on her feet before the latch had finished clicking. The calm she had worn all evening peeled away like a mask of thin tin, and what remained beneath was furious — a cold, precise, terrifying fury that made the candle flames seem to lean away from her. She rounded the table in three strides and stopped in front of Julian, close enough that he had to crane his neck back to meet her eyes.\n\n\"Prestani sa tim bednim lažima, izdajniče, jer znam da si sinoć ukrao crni pečat iz komore!\" Each word dropped like a nail being driven. Julian's face drained from pink to grey to a sickly parchment white; his panicked hands found the table edge and gripped it as though the floor had begun to tilt. \"I— I don't know what you mean,\" he managed, and the lie was so thin it practically let the light through.\n\nBehind them, in the shadows by the door, the hooded courier had not moved an inch. The wool hood stayed lowered, the grey scarf stayed drawn, and the courier's eyes went from Elena to Julian and back again, quiet and watchful, hoarding every word like a coin nobody would ever get back.",
+  "usage": {
+    "prompt_tokens": 5938,
+    "completion_tokens": 456,
+    "total_tokens": 7167,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 12022.141,
+    "cost_estimate": {
+      "input_cost_usd": 0.000831,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.000128,
+      "total_cost_usd": 0.000959,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_balcony"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": null,
+        "reason": null
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_elena_confronts_julian",
+        "reason": null
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "panicked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_elena_confronts_julian",
+        "reason": null
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_elena",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "register": "ti",
+          "tone": "furious",
+          "trust": -0.9
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_elena_confronts_julian",
+        "reason": null
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_elena_confronts_julian",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "confrontation",
+        "summary": "Elena furiously confronts Julian in the Council Chamber, accusing him of stealing the Obsidian Signet.",
+        "participants": {
+          "char_elena": "actor",
+          "char_julian": "target"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "char_lyra"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

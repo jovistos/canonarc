@@ -1,0 +1,160 @@
+{
+  "cache_key": "ac01c98f547ab205fdbc5fa714923ca23e8df9866cbebbc6a0547d64d57178c5",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-16T17:57:15.125602+00:00",
+  "prompt_sha256": "5f3003caef0edaa3d359efa3dee8fd381346a17e8a3fc5d76a9762c537ed1f3d",
+  "scene_text_sha256": "16ab0d8e7bc443ce105fa7f03dc61598a2b5b28cefbaad30105c335a1a1ecd9f",
+  "scene_text": "Ten years ago, the same chamber had smelled of pine resin and wet wool instead of sour candle smoke. It was winter then — the winter of the ruined harvest, when the granaries of the north stood empty and the border lords spoke openly of secession over their ale. Elena remembered standing exactly here, at the head of this table, and she remembered being younger in a way that had nothing to do with the mirror. Naive, and trusting, and foolish enough to believe that a signed pact was a wall.\n\nThe room had been full of frost-bitten couriers that night, stamping snow from their boots, blowing on their fingers. The historic pact lay open on the oak boards, its ink still wet, eight seals pressed into the wax in a solemn red arc. And at her right hand, steady and earnest, had stood Julian — barely more than a boy, his collar too large for him, his voice shaking only a little as he read the treasury's guarantees aloud to the assembled lords. She had trusted him implicitly. Utterly. That was the thing she remembered most clearly now: the warmth of that trust, how comfortable it had been to wear, like a good winter coat she never once thought to check for holes.\n\nHe had brought her tea afterward, she recalled, and taken the blame for a miscounted ledger no one else would claim, and she had thought: here is a man I could build a kingdom with. The snow had beaten against these very windows. The same long oak table. The same high chairs.\n\nStanding alone in that room in the present, Elena could still feel the ghost of that winter draft on her cheek — and behind it, sharper than any winter, the cold knowledge of how thoroughly she had been wrong.",
+  "usage": {
+    "prompt_tokens": 3961,
+    "completion_tokens": 1617,
+    "total_tokens": 5578,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 608,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 9538.129,
+    "cost_estimate": {
+      "input_cost_usd": 0.000555,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.000453,
+      "total_cost_usd": 0.001007,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "cold, embittered, disillusioned",
+          "current_activity": "standing alone at the head of the council table, lost in memory",
+          "emotional_weather": "grief-edged contempt"
+        },
+        "private_state": {
+          "memory_ten_years_past": "Winter of the ruined harvest: eight seals pressed in red wax on the pact, frost-bitten couriers, young Julian reading the treasury's guarantees aloud with a shaking voice",
+          "self_assessment": "Naive, trusting, foolish enough to believe a signed pact was a wall",
+          "reappraisal_of_julian": "The trust she wore like a good winter coat she never checked for holes; now certain she was thoroughly wrong about him"
+        },
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_elena_recalls_pact_betrayal",
+        "reason": "Flashback reflection crystallizes her revised judgment of Julian"
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {
+          "past_presentation_ten_years_ago": "Barely more than a boy, oversized collar, earnest and steady at Elena's right hand, voice shaking only slightly while reading the treasury's guarantees"
+        },
+        "state": {},
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_pact_winter_ruined_harvest",
+        "reason": "Historic appearance and role at the pact signing"
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_elena",
+        "target_id": "char_julian",
+        "relation_type": "trust",
+        "state": {
+          "trust": "shattered",
+          "past_trust": "implicit and utter",
+          "current_stance": "bitter recrimination",
+          "confidence_in_former_judgment": "none"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_elena_recalls_pact_betrayal",
+        "reason": "Memory of ten-year-old trust collapses fully into present certainty of betrayal"
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_pact_winter_ruined_harvest",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "pact_signing",
+        "summary": "In the winter of the ruined harvest, northern border lords on the brink of secession signed a historic pact at the council table, its eight seals pressed in a red arc; young Julian read the treasury's guarantees aloud and Elena trusted him utterly.",
+        "participants": {
+          "char_elena": "host",
+          "char_julian": "reader_of_guarantees",
+          "item_signet": "absent"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian"
+        ],
+        "known_by": {
+          "char_elena": "direct",
+          "char_julian": "direct"
+        },
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": "ten years before the present",
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.5,
+        "metadata": {
+          "season": "winter",
+          "context": "ruined harvest, empty northern granaries, open talk of secession",
+          "seals": 8
+        },
+        "match_score": 0.0
+      },
+      {
+        "episode_id": "ep_elena_recalls_pact_betrayal",
+        "timeline_id": "main",
+        "step": 3,
+        "predicate": "reflection",
+        "summary": "Alone in the council chamber, Elena recalls the winter pact of ten years ago and re-reads her old trust in Julian as naivety, certain now that she was thoroughly wrong about him.",
+        "participants": {
+          "char_elena": "actor",
+          "char_julian": "subject_of_reappraisal"
+        },
+        "witnesses": [
+          "char_elena"
+        ],
+        "known_by": {
+          "char_elena": "direct"
+        },
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": "present",
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 5.5,
+        "metadata": {
+          "trigger": "ghost of winter draft in the same chamber",
+          "theme": "collapse of trust"
+        },
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": true,
+    "story_time": "ten years before the present, winter of the ruined harvest",
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "cache_key": "c71236517825ce0937509173c024786d3c2074c00cd23de661fefefe72396a6e",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-13T18:42:13.402220+00:00",
+  "prompt_sha256": "ed03cf28badfd058bd3ec4934b99ae89f3d960748813ed7f2ba4763776c2c648",
+  "scene_text_sha256": "c8f44767ed3c8f8e465b89ca766d3cb01a3f5bb0f6a4a6b8a283d83578a946b8",
+  "scene_text": "The Council Chamber blurred, and for a moment Elena was not standing amid the wreckage of the present but ten years ago, alone beneath the same curved glass. This was memory, not the room as it stood now: the holograms had been younger then, simpler, and the gas giant's storms had seemed less like a threat than a promise. She remembered the winter crisis with the clarity of a scar. The station had been running on reserve power, its docking ring frozen shut, its corridors full of frightened voices. She had been naive_trusting then, a science director who still believed that records and goodwill could hold a coalition together.\n\nJulian had been younger too, his nervousness charming rather than suspect. He had stood beside her during the historic pact signing, his hands steady on the ledger, his voice warm with assurances. She had trusted him implicitly. When the northern delegations demanded concessions, Julian had found compromises in the margins; when the council wavered, he had whispered the right figures into the right ears. Elena had signed the pact with his encouragement ringing in her memory, convinced that the young treasurer was the one honest constant in a station full of shifting alliances.\n\nThe memory sharpened around the signing table. Seals had been pressed into wax; the Obsidian Signet had lain in its case like a sleeping eye. Julian had smiled at her across the documents, and she had smiled back, grateful for his cleverness. The winter wind had howled against the shielded balcony doors even then, though Marcus had not yet opened them. The council had applauded. The pact had seemed, for one bright and foolish moment, like the beginning of something stable.\n\nNow, in the present, Elena stood alone in the Council Chamber with that memory burning behind her eyes. The fury was still there, preserved exactly as she had left it, untouched by the flashback. Ten years ago she had trusted Julian implicitly. Ten years ago she had been naive_trusting. The realization did not soften her; it sharpened the edge of her anger. The room returned around her, the same glass, the same table, the same amber light, but the woman standing in it was no longer the one who had signed that pact.",
+  "usage": {
+    "prompt_tokens": 4133,
+    "completion_tokens": 383,
+    "total_tokens": 4516,
+    "cached_prompt_tokens": 128,
+    "reasoning_tokens": 243,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "cost_estimate": {
+      "input_cost_usd": 0.000561,
+      "cached_input_cost_usd": 2e-06,
+      "output_cost_usd": 0.000107,
+      "total_cost_usd": 0.00067,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_step4_past_flashback",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "flashback",
+        "summary": "Ten years ago during the winter siege, Elena trusted Julian at the treaty signing.",
+        "participants": {
+          "char_elena": "experiencer",
+          "char_julian": "companion"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": "10_years_ago",
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 6.5,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": true,
+    "story_time": "10_years_ago",
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

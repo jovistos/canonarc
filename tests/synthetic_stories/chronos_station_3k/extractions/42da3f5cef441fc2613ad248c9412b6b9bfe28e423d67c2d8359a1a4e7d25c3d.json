@@ -1,0 +1,132 @@
+{
+  "cache_key": "42da3f5cef441fc2613ad248c9412b6b9bfe28e423d67c2d8359a1a4e7d25c3d",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-13T18:42:08.024861+00:00",
+  "prompt_sha256": "edae4de3ccc3c602d5cabdc2032369577d671c10a093d1582fff445c61487f95",
+  "scene_text_sha256": "06863f41a72914b4a1255110708ce4c33e2b8a6dd083b8b009456ed751f2c2c9",
+  "scene_text": "Marcus read the final page, set it down, and rose with a restless scrape of his chair against the deck plating. The Council Chamber had grown stifling, its recycled air thick with the smell of old paper, warm electronics, and unspoken accusations. He crossed to the shielded observation doors, pushed them open, and stepped out onto the Windy Balcony. The gantry above the docking ring caught the full roar of the station's outer weather, a buffeting rush that snatched at his uniform and made the safety rails hum. The heavy doors swung shut behind him, sealing the chamber's interior from the balcony's wind-torn dusk.\n\nInside, the silence lasted exactly as long as it took for the latch to click home. Then Elena turned. The calm she had worn all evening peeled away like a mask removed too quickly, revealing fury beneath it, cold and focused. Julian flinched before she even spoke. His datapad slipped in his grip, and he caught it against the table edge with both hands, knuckles pale. The hooded courier did not move from the shadows, but the cloak's hem trembled once, as if the watcher had drawn a sharp breath.\n\nElena advanced on Julian, her boots striking the deck in measured beats. \"Prestani sa tim bednim lažima, izdajniče, jer znam da si sinoć ukrao crni pečat iz komore!\" The words cracked across the Council Chamber. Julian's face went from nervous to panicked, his mouth opening and closing around a denial that would not form. He took a step back, then another, until the table edge pressed against his spine. The holographic ledgers flickered around him, indifferent witnesses to his ruin.\n\nElena did not relent. She stood close enough that Julian could see the anger held rigid behind her eyes. \"Do not insult me with silence,\" she said, though the Croatian words had already done their work. \"You were seen. You were logged. And you will answer.\" Julian's gaze darted toward the closed balcony doors, then toward the shadowed courier, then back to Elena. He looked like a man calculating the distance to a locked exit. The hooded courier remained perfectly still, a dark shape at the edge of the lamplight, watching everything and revealing nothing.",
+  "usage": {
+    "prompt_tokens": 4282,
+    "completion_tokens": 633,
+    "total_tokens": 4915,
+    "cached_prompt_tokens": 384,
+    "reasoning_tokens": 367,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "cost_estimate": {
+      "input_cost_usd": 0.000546,
+      "cached_input_cost_usd": 5e-06,
+      "output_cost_usd": 0.000177,
+      "total_cost_usd": 0.000728,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "restless",
+          "location_id": "loc_balcony"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": null,
+        "reason": null
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step2_secret_confrontation",
+        "reason": null
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "panicked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step2_secret_confrontation",
+        "reason": null
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_elena",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "register": "ti",
+          "tone": "furious",
+          "trust": -0.95
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_step2_secret_confrontation",
+        "reason": null
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_step2_secret_confrontation",
+        "timeline_id": "main",
+        "step": 2,
+        "predicate": "confrontation",
+        "summary": "Elena accused Julian of stealing the Obsidian Signet.",
+        "participants": {
+          "char_elena": "actor",
+          "char_julian": "target",
+          "item_signet": "object"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "char_lyra"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 9.2,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

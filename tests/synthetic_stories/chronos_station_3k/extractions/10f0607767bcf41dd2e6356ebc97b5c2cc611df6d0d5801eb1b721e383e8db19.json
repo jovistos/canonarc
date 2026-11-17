@@ -1,0 +1,130 @@
+{
+  "cache_key": "10f0607767bcf41dd2e6356ebc97b5c2cc611df6d0d5801eb1b721e383e8db19",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-13T18:42:19.305426+00:00",
+  "prompt_sha256": "4f05f8d6652140ba7c8ffcf4f39eff38b18ad5f3204c0366a57d77f8382fc40b",
+  "scene_text_sha256": "bc1552d1947563922787cb3487e7171b8948d56311be85d85837e9fd5fae6629",
+  "scene_text": "The rear passage doors opened, and Lyra walked into the Council Chamber with the Obsidian Signet held high. The black stone caught the chamber lights and seemed to drink them. Julian's face went bloodless. Marcus turned from the table, his concern sharpening into alertness as Lyra crossed the deck and set the signet down between them with a deliberate click. All four of them were together now beneath the gas giant's amber gaze: Elena, Marcus, Julian, and Lyra.\n\nLyra did not waste words. She told Marcus the full truth of the earlier confrontation: Julian's theft of the signet, his desperate handoff, his flight into the vault, and the false tale he had carried back up the stairs. Marcus listened without interrupting, but his posture changed by degrees, the veteran commander's confidence hardening into something sterner. When Lyra finished, he turned on Julian. \"Kako se usuđuješ da obmanjuješ vojni savet dok držimo dokaze u rukama!\" The bark of his voice rebounded from the curved ceiling. Julian shrank back against the table, cornered, his eyes darting from Marcus to Elena to Lyra and finding no shelter in any of them.\n\nElena said nothing. She did not need to. The fury she had preserved through the long dusk was now fully visible, and it was colder than the vault below. Julian's hands fumbled at his coat, then found the small vial he had hidden in an inner seam, a memory-erasing draught prepared for exactly such an emergency. He uncorked it and swallowed before anyone could stop him. The damper worked quickly, a dim pulse behind his eyes, a slackening of the face.\n\nJulian blinked, swayed, and looked around the Council Chamber as though waking from a dream. The ten-years-ago flashback event, the winter crisis, the pact signing, the trust Elena had once placed in him, all of it vanished from his memory in a single dissolving stroke. He stared at the Obsidian Signet on the table and did not know why his hands were shaking. Marcus drew a sharp breath; Lyra's determined expression turned grim; Elena watched the young treasurer become a stranger to his own guilt. Above them, the gas giant rolled on, indifferent, while the Council Chamber filled with the terrible quiet of a truth that could no longer be remembered.",
+  "usage": {
+    "prompt_tokens": 4292,
+    "completion_tokens": 484,
+    "total_tokens": 4776,
+    "cached_prompt_tokens": 384,
+    "reasoning_tokens": 168,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "cost_estimate": {
+      "input_cost_usd": 0.000547,
+      "cached_input_cost_usd": 5e-06,
+      "output_cost_usd": 0.000136,
+      "total_cost_usd": 0.000688,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_lyra",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_council"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": null,
+        "reason": null
+      },
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "indignant"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step2_secret_confrontation",
+        "reason": null
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_marcus",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "register": "ti",
+          "tone": "stern",
+          "trust": -0.8
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_step2_secret_confrontation",
+        "reason": null
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_step6_memory_draught",
+        "timeline_id": "main",
+        "step": 6,
+        "predicate": "revelation",
+        "summary": "Lyra exposed Julian's theft and deception in the Council Chamber; Julian drank a memory-erasing draught, forgetting the past treaty trust.",
+        "participants": {
+          "char_lyra": "actor",
+          "char_marcus": "reactor",
+          "char_julian": "target",
+          "char_elena": "observer",
+          "item_signet": "instrument"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_marcus",
+          "char_lyra"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [
+      {
+        "episode_id": "ep_step2_secret_confrontation",
+        "entity_id": "char_marcus",
+        "epistemic": "told",
+        "believed_summary": null
+      },
+      {
+        "episode_id": "ep_step4_past_flashback",
+        "entity_id": "char_julian",
+        "epistemic": "forgotten",
+        "believed_summary": null
+      }
+    ],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

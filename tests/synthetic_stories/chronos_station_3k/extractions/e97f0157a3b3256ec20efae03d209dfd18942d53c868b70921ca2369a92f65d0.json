@@ -1,0 +1,116 @@
+{
+  "cache_key": "e97f0157a3b3256ec20efae03d209dfd18942d53c868b70921ca2369a92f65d0",
+  "model": "rule-based-non-llm",
+  "created_at": "2026-11-16T20:03:38.241572+00:00",
+  "prompt_sha256": "8d5693bc9727ca76d72ae1bab6ed496bc564bb27de7c6e4f356acd573e49fd73",
+  "scene_text_sha256": "06863f41a72914b4a1255110708ce4c33e2b8a6dd083b8b009456ed751f2c2c9",
+  "scene_text": "Marcus read the final page, set it down, and rose with a restless scrape of his chair against the deck plating. The Council Chamber had grown stifling, its recycled air thick with the smell of old paper, warm electronics, and unspoken accusations. He crossed to the shielded observation doors, pushed them open, and stepped out onto the Windy Balcony. The gantry above the docking ring caught the full roar of the station's outer weather, a buffeting rush that snatched at his uniform and made the safety rails hum. The heavy doors swung shut behind him, sealing the chamber's interior from the balcony's wind-torn dusk.\n\nInside, the silence lasted exactly as long as it took for the latch to click home. Then Elena turned. The calm she had worn all evening peeled away like a mask removed too quickly, revealing fury beneath it, cold and focused. Julian flinched before she even spoke. His datapad slipped in his grip, and he caught it against the table edge with both hands, knuckles pale. The hooded courier did not move from the shadows, but the cloak's hem trembled once, as if the watcher had drawn a sharp breath.\n\nElena advanced on Julian, her boots striking the deck in measured beats. \"Prestani sa tim bednim lažima, izdajniče, jer znam da si sinoć ukrao crni pečat iz komore!\" The words cracked across the Council Chamber. Julian's face went from nervous to panicked, his mouth opening and closing around a denial that would not form. He took a step back, then another, until the table edge pressed against his spine. The holographic ledgers flickered around him, indifferent witnesses to his ruin.\n\nElena did not relent. She stood close enough that Julian could see the anger held rigid behind her eyes. \"Do not insult me with silence,\" she said, though the Croatian words had already done their work. \"You were seen. You were logged. And you will answer.\" Julian's gaze darted toward the closed balcony doors, then toward the shadowed courier, then back to Elena. He looked like a man calculating the distance to a locked exit. The hooded courier remained perfectly still, a dark shape at the edge of the lamplight, watching everything and revealing nothing.",
+  "usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 1.649,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "restless"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_2",
+        "reason": null
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "panicked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_2",
+        "reason": null
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_lyra",
+        "target_id": "item_signet",
+        "relation_type": "possesses",
+        "state": {
+          "status": "concealed"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_2",
+        "reason": null
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_rule_2",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "item_transfer",
+        "summary": "Marcus read the final page, set it down, and rose with a restless scrape of his chair against the deck plating.",
+        "participants": {
+          "char_elena": "participant",
+          "char_julian": "participant"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "char_lyra",
+          "char_marcus"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

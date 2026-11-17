@@ -1,0 +1,68 @@
+{
+  "cache_key": "5de9c0b262b397b2610224a993af97890bc953e425e40475ae83319680523c0a",
+  "model": "gemini-4-hydrogen",
+  "created_at": "2026-11-16T19:41:22.438432+00:00",
+  "prompt_sha256": "e3dc2ea87d4d47e9516cc34170f06aabed1e23e1085ef543f77838bd819f5b18",
+  "scene_text_sha256": "16ab0d8e7bc443ce105fa7f03dc61598a2b5b28cefbaad30105c335a1a1ecd9f",
+  "scene_text": "Ten years ago, the same chamber had smelled of pine resin and wet wool instead of sour candle smoke. It was winter then — the winter of the ruined harvest, when the granaries of the north stood empty and the border lords spoke openly of secession over their ale. Elena remembered standing exactly here, at the head of this table, and she remembered being younger in a way that had nothing to do with the mirror. Naive, and trusting, and foolish enough to believe that a signed pact was a wall.\n\nThe room had been full of frost-bitten couriers that night, stamping snow from their boots, blowing on their fingers. The historic pact lay open on the oak boards, its ink still wet, eight seals pressed into the wax in a solemn red arc. And at her right hand, steady and earnest, had stood Julian — barely more than a boy, his collar too large for him, his voice shaking only a little as he read the treasury's guarantees aloud to the assembled lords. She had trusted him implicitly. Utterly. That was the thing she remembered most clearly now: the warmth of that trust, how comfortable it had been to wear, like a good winter coat she never once thought to check for holes.\n\nHe had brought her tea afterward, she recalled, and taken the blame for a miscounted ledger no one else would claim, and she had thought: here is a man I could build a kingdom with. The snow had beaten against these very windows. The same long oak table. The same high chairs.\n\nStanding alone in that room in the present, Elena could still feel the ghost of that winter draft on her cheek — and behind it, sharper than any winter, the cold knowledge of how thoroughly she had been wrong.",
+  "usage": {
+    "prompt_tokens": 4590,
+    "completion_tokens": 192,
+    "total_tokens": 5079,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 2939.471,
+    "cost_estimate": {
+      "input_cost_usd": 0.000643,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 5.4e-05,
+      "total_cost_usd": 0.000696,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_step4_past_flashback",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "flashback",
+        "summary": "Ten years ago during the winter siege, Elena trusted Julian at the treaty signing.",
+        "participants": {
+          "char_elena": "experiencer",
+          "char_julian": "companion"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": "10_years_ago",
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 6.5,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": true,
+    "story_time": "10_years_ago",
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

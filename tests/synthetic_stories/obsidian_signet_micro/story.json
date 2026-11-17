@@ -1,0 +1,144 @@
+{
+  "story_slug": "obsidian_signet_micro",
+  "title": "The Obsidian Signet Conspiracy (10x40w Micro-Chunk Baseline)",
+  "genre": "Deterministic Micro-Chunk Baseline",
+  "model": "deterministic_compiler",
+  "created_at": "2026-11-13T18:40:46.813883+00:00",
+  "total_chunks": 10,
+  "total_words": 378,
+  "total_estimated_tokens": 513,
+  "average_tokens_per_chunk": 51.3,
+  "generation_usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 0,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "chunks": [
+    {
+      "step": 1,
+      "beat_title": "Step 1",
+      "scene_id": "scene_1_council",
+      "chapter_id": "ch_1",
+      "location_id": "loc_council",
+      "story_time": "day_1_dusk",
+      "word_count": 31,
+      "estimated_tokens": 44,
+      "text": "Inside the Council Chamber, Elena addressed the old general with measured solemnity. \"Molim vas da pažljivo pregledate ove poverljive izveštaje pre nego što kraljevska straža zatvori kapije.\" Julian murmured, \"Yes, cousin.\""
+    },
+    {
+      "step": 2,
+      "beat_title": "Step 2",
+      "scene_id": "scene_1_council",
+      "chapter_id": "ch_1",
+      "location_id": "loc_council",
+      "story_time": "day_1_dusk",
+      "word_count": 25,
+      "estimated_tokens": 34,
+      "text": "The hooded courier bowed low before Marcus near the council brazier. \"Ponizno vam donosim zapečaćene depeše sa severne granice koje zahtevaju vašu hitnu vojnu procenu.\""
+    },
+    {
+      "step": 3,
+      "beat_title": "Step 3",
+      "scene_id": "scene_1_council",
+      "chapter_id": "ch_1",
+      "location_id": "loc_council",
+      "story_time": "day_1_dusk",
+      "word_count": 26,
+      "estimated_tokens": 35,
+      "text": "Growing restless from the smoky air, Marcus excused himself from the Council Chamber and stepped out onto the Windy Balcony, pulling the heavy terrace doors shut."
+    },
+    {
+      "step": 4,
+      "beat_title": "Step 4",
+      "scene_id": "scene_1_council",
+      "chapter_id": "ch_1",
+      "location_id": "loc_council",
+      "story_time": "day_1_dusk",
+      "word_count": 43,
+      "estimated_tokens": 59,
+      "text": "As soon as the balcony doors latched, Elena confronted Julian over the missing treasury ledger. \"Prestani sa tim bednim lažima, izdajniče, jer znam da si sinoć ukrao crni pečat iz komore!\" Julian trembled in panic as the accusation echoed through the silent room."
+    },
+    {
+      "step": 5,
+      "beat_title": "Step 5",
+      "scene_id": "scene_1_council",
+      "chapter_id": "ch_1",
+      "location_id": "loc_council",
+      "story_time": "day_1_dusk",
+      "word_count": 27,
+      "estimated_tokens": 36,
+      "text": "Still furious, she slammed her palm against the oak table and demanded that he empty his pockets immediately. He backed against the tapestry, clutching his velvet cloak."
+    },
+    {
+      "step": 6,
+      "beat_title": "Step 6",
+      "scene_id": "scene_1_council",
+      "chapter_id": "ch_1",
+      "location_id": "loc_council",
+      "story_time": "day_1_dusk",
+      "word_count": 51,
+      "estimated_tokens": 69,
+      "text": "In a desperate move, Julian pressed the Obsidian Signet into the hooded courier's gloved hand before bolting down the spiral stairs into the Archive Vault, with the hooded courier chasing after him. Julian stammered, \"Take this cursed ring and hide it deep inside the stone vault before the guards arrive!\""
+    },
+    {
+      "step": 7,
+      "beat_title": "Step 7",
+      "scene_id": "scene_2_flashback",
+      "chapter_id": "ch_1",
+      "location_id": "loc_council",
+      "story_time": "10_years_ago",
+      "word_count": 27,
+      "estimated_tokens": 35,
+      "text": "Elena stared at the empty doorway, remembering the winter siege ten years ago when she was a naive apprentice and trusted Julian blindly during the treaty signing."
+    },
+    {
+      "step": 8,
+      "beat_title": "Step 8",
+      "scene_id": "scene_3_vault",
+      "chapter_id": "ch_2",
+      "location_id": "loc_vault",
+      "story_time": "day_1_night",
+      "word_count": 40,
+      "estimated_tokens": 55,
+      "text": "Down in the Archive Vault, the hooded courier threw back her cowl, revealing to the shocked young treasurer that she was Lyra, the Crown Spymaster. \"Predaj mi sve lažne povelje odmah, Julijane, ili ćeš do zore biti u kraljevskoj tamnici!\""
+    },
+    {
+      "step": 9,
+      "beat_title": "Step 9",
+      "scene_id": "scene_4_return",
+      "chapter_id": "ch_2",
+      "location_id": "loc_council",
+      "story_time": "day_1_night",
+      "word_count": 56,
+      "estimated_tokens": 76,
+      "text": "Marcus stepped back into the Council Chamber just as Julian returned from the stairs wearing a polite smile. Julian told the old general that northern raiders had broken into the annex and stolen the Obsidian Signet. Though still furious inside, Elena said with icy sarcasm, \"Oh, what a wonderfully convenient tale of heroic vigilance, dear cousin.\""
+    },
+    {
+      "step": 10,
+      "beat_title": "Step 10",
+      "scene_id": "scene_4_return",
+      "chapter_id": "ch_2",
+      "location_id": "loc_council",
+      "story_time": "day_1_night",
+      "word_count": 52,
+      "estimated_tokens": 70,
+      "text": "Lyra entered the Council Chamber holding the recovered Obsidian Signet and informed Marcus of Julian's theft. Cornered at the table, Julian swallowed a bitter alchemical draught that blanked his memory of the old winter siege. Marcus barked at Julian, \"Kako se usuđuješ da obmanjuješ vojni savet dok držimo dokaze u rukama!\""
+    }
+  ]
+}
