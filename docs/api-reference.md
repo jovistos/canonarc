@@ -19,6 +19,7 @@ class NarrativeMemoryEngine:
         extractor: DeltaExtractor | None = None,
         episode_ranker: EpisodeRanker | None = None,
         hooks: Sequence[EngineHooks] = (),
+        on_embedder_mismatch: Literal["raise", "warn", "reindex", "ignore"] = "warn",
     ) -> None: ...
 ```
 
@@ -42,6 +43,7 @@ Supports Python context management (`with NarrativeMemoryEngine("save.sqlite") a
 - `apply_delta(step: int, delta: StepDelta, timeline_id: str | None = None) -> list[EpisodeRecord]`: Directly applies state deltas, episodes, and inform actions. When `delta.is_flashback=True`, skips overwriting existing entities/edges while still indexing episodes and new entities.
 - `index_episodes(step: int, episodes: Sequence[EpisodeRecord], timeline_id: str | None = None) -> list[EpisodeRecord]`: Embeds (using `embed_batch()` when available) and indexes episodes into Tier 6.
 - `consolidate_episodes(step: int, before_step: int, summary: str, max_salience: float = 4.0, predicate: str = "consolidated_summary", episode_id: str | None = None, chapter_id: str | None = None, salience: float = 7.5, timeline_id: str | None = None) -> EpisodeRecord | None`: Compacts older low-salience episodes into a single higher-level summary episode.
+- `reindex_embeddings(batch_size: int = 128) -> dict[str, int]`: Re-embeds all stored episodes and voice exemplars in batches using the active embedder and updates `store_metadata` (`embedder_id`, `embedding_dim`). Returns `{"episodes": n_ep, "voice_exemplars": n_vo}`.
 - `inform_entity(step: int, episode_id: str, entity_id: str, epistemic: EpistemicMode = "told", believed_summary: str | None = None, timeline_id: str | None = None) -> None`: Records secondhand, delayed, deceptive (`"deceived"`), or erased (`"forgotten"` / `"suppressed"`) epistemic awareness of an episode.
 - `extract_dialogue_candidates(text: str, source_text: str = "") -> list[DialogueCandidate]`: Extracts candidate dialogue lines passing Gate 1.
 - `index_voice_exemplars(step: int, exemplars: Sequence[VoiceExemplar], bypass_gate: bool = False, timeline_id: str | None = None) -> list[VoiceExemplar]`: Indexes voice exemplars into Tier 5 Vector DB.
@@ -206,7 +208,7 @@ class StepContext(BaseModel):
 - `MemoryStore`: Storage protocol implemented by `CausalStore`. Inject a custom backend via `NarrativeMemoryEngine(store=my_store)`.
 - `MentionResolver`: Pluggable entity/coreference resolution protocol (`resolve(text, explicit_mentions, entities, aliases) -> list[ResolvedMention]`). Defaults to `DefaultLexicalResolver(fuzzy_threshold=88.0)`, which uses word-boundary matching and optional `rapidfuzz` inflection matching.
 - `EpisodeRanker` / `EpisodicScoringPolicy`: Pluggable Tier 6 episodic memory ranker (`DefaultEpisodeRanker`) decoupled from `VoiceBank`, configurable via `SchemaPolicy.episodic_policy`.
-- `Embedder` & Built-in Adapters: `OfflineNgramEmbedder`, `CallableEmbedder`, `OpenAICompatibleEmbedder`, and `OllamaEmbedder`, all supporting `embed_batch()`.
+- `Embedder` & Built-in Adapters: `OfflineNgramEmbedder`, `CallableEmbedder`, `OpenAICompatibleEmbedder`, and `OllamaEmbedder`, all supporting `embed_batch()`. Embedder provenance (`embedder_id`, `embedding_dim`) is recorded in `store_metadata`, with `on_embedder_mismatch` (`"warn"`, `"raise"`, `"reindex"`, `"ignore"`), `EmbedderMismatchError`, and `get_embedder_info()`.
 - `DeltaExtractor` & Built-in Adapters: `CallableExtractor` and `OpenAICompatibleExtractor` for LLM-backed `StepDelta` extraction with validation retries.
 - `EngineHooks` / `BaseEngineHooks`: Middleware callbacks (`on_before_commit`, `on_after_commit`, `on_rollback`, `on_branch`, `on_gate_rejected`).
 - `SchemaPolicy`: Frozen dataclass on `DomainPreset.policy` defining `edge_layer_order`, `facade_relation`, `belief_relation`, `hard_filter_keys`, `soft_boost_weights`, `fallback_on_empty_hard_filter`, `hard_filter_mismatch_penalty`, and `episodic_policy`.
