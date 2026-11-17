@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import re
 import sqlite3
 import threading
 import uuid
@@ -95,6 +96,28 @@ CREATE TABLE IF NOT EXISTS episode_epistemics (
 
 CREATE INDEX IF NOT EXISTS idx_episode_epistemics_lookup
     ON episode_epistemics(timeline_id, episode_id, step DESC);
+
+CREATE VIRTUAL TABLE IF NOT EXISTS episodes_fts USING fts5(
+    timeline_id UNINDEXED,
+    episode_id UNINDEXED,
+    summary
+);
+
+CREATE TRIGGER IF NOT EXISTS episodes_ai AFTER INSERT ON episodes BEGIN
+    DELETE FROM episodes_fts WHERE timeline_id = NEW.timeline_id AND episode_id = NEW.episode_id;
+    INSERT INTO episodes_fts(timeline_id, episode_id, summary)
+    VALUES (NEW.timeline_id, NEW.episode_id, NEW.summary);
+END;
+
+CREATE TRIGGER IF NOT EXISTS episodes_ad AFTER DELETE ON episodes BEGIN
+    DELETE FROM episodes_fts WHERE timeline_id = OLD.timeline_id AND episode_id = OLD.episode_id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS episodes_au AFTER UPDATE OF summary ON episodes BEGIN
+    DELETE FROM episodes_fts WHERE timeline_id = OLD.timeline_id AND episode_id = OLD.episode_id;
+    INSERT INTO episodes_fts(timeline_id, episode_id, summary)
+    VALUES (NEW.timeline_id, NEW.episode_id, NEW.summary);
+END;
 
 CREATE TABLE IF NOT EXISTS store_metadata (
     key   TEXT PRIMARY KEY,
@@ -295,7 +318,25 @@ class MemoryStore(Protocol):
         self,
         timeline_id: str,
         cutoff_step: int | None,
+        *,
+        episode_id: str | None = None,
+        episode_ids: Sequence[str] | None = None,
+        limit: int | None = None,
+        pov_entity_ids: Sequence[str] | None = None,
+        pov_mode: Literal["any", "all"] = "any",
+        cue_entity_ids: Sequence[str] | None = None,
+        pinned_episode_ids: Sequence[str] | None = None,
+        query_text: str = "",
     ) -> list[tuple[EpisodeRecord, bytes]]: ...
+    def get_known_episode_ids(
+        self,
+        timeline_id: str,
+        cutoff_step: int | None,
+        pov_entity_ids: Sequence[str],
+        *,
+        pov_mode: Literal["any", "all"] = "any",
+        episode_ids: Sequence[str] | None = None,
+    ) -> set[str]: ...
     def query_episodes(
         self,
         *,
@@ -383,6 +424,12 @@ class CausalStore:
             }
             if "believed_summary" not in cols:
                 self.conn.execute("ALTER TABLE episode_epistemics ADD COLUMN believed_summary TEXT")
+            # Backfill FTS5 index for legacy databases created before episodes_fts existed
+            if not self.conn.execute("SELECT 1 FROM episodes_fts LIMIT 1").fetchone():
+                self.conn.execute(
+                    "INSERT INTO episodes_fts(timeline_id, episode_id, summary) "
+                    "SELECT timeline_id, episode_id, summary FROM episodes"
+                )
             # Ensure default 'main' timeline exists
             cursor = self.conn.cursor()
             cursor.execute("SELECT 1 FROM timelines WHERE timeline_id = 'main'")
@@ -1258,53 +1305,276 @@ class CausalStore:
             )
             return c1.rowcount + c2.rowcount
 
+    @staticmethod
+    def _bind_in_clause(
+        prefix: str, values: Sequence[str], params: dict[str, Any]
+    ) -> str:
+        """Binds a non-empty sequence of strings into named SQL placeholders."""
+        placeholders: list[str] = []
+        for idx, val in enumerate(values):
+            key = f"{prefix}_{idx}"
+            params[key] = val
+            placeholders.append(f":{key}")
+        return ", ".join(placeholders)
+
+    @staticmethod
+    def _build_fts_query(query_text: str, *, max_terms: int = 12) -> str:
+        """Extracts safe FTS5 OR-joined terms from arbitrary narrative prose."""
+        if not query_text:
+            return ""
+        tokens = re.findall(r"[A-Za-z0-9_]{2,}", query_text)
+        seen: set[str] = set()
+        terms: list[str] = []
+        for tok in tokens:
+            low = tok.lower()
+            if low in seen:
+                continue
+            seen.add(low)
+            terms.append(f'"{tok}"')
+            if len(terms) >= max_terms:
+                break
+        return " OR ".join(terms)
+
+    def get_known_episode_ids(
+        self,
+        timeline_id: str,
+        cutoff_step: int | None,
+        pov_entity_ids: Sequence[str],
+        *,
+        pov_mode: Literal["any", "all"] = "any",
+        episode_ids: Sequence[str] | None = None,
+    ) -> set[str]:
+        """Returns the subset of episode_ids known to pov_entity_ids under pov_mode."""
+        pov_list = sorted({pid for pid in pov_entity_ids if pid})
+        if not pov_list:
+            return set()
+        if episode_ids is not None and len(episode_ids) == 0:
+            return set()
+
+        params: dict[str, Any] = {"timeline_id": timeline_id, "cutoff_step": cutoff_step}
+        pov_in = self._bind_in_clause("pov", pov_list, params)
+        ep_filter = ""
+        if episode_ids is not None:
+            ep_list = sorted({eid for eid in episode_ids if eid})
+            if not ep_list:
+                return set()
+            ep_in = self._bind_in_clause("ep", ep_list, params)
+            ep_filter = f"AND ep.episode_id IN ({ep_in})"
+
+        if pov_mode == "all":
+            params["pov_count"] = len(pov_list)
+            outer_select = (
+                "SELECT episode_id FROM latest_epistemics "
+                "WHERE ep_rn = 1 AND epistemic NOT IN ('forgotten', 'suppressed') "
+                "GROUP BY episode_id HAVING COUNT(DISTINCT entity_id) = :pov_count"
+            )
+        else:
+            outer_select = (
+                "SELECT DISTINCT episode_id FROM latest_epistemics "
+                "WHERE ep_rn = 1 AND epistemic NOT IN ('forgotten', 'suppressed')"
+            )
+
+        query = (
+            LINEAGE_CTE_SQL
+            + f""",
+        latest_epistemics AS (
+            SELECT ep.episode_id, ep.entity_id, ep.epistemic,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY ep.episode_id, ep.entity_id
+                       ORDER BY ep.step DESC, l.depth ASC, ep.id DESC
+                   ) AS ep_rn
+            FROM episode_epistemics ep
+            JOIN lineage l
+              ON ep.timeline_id = l.timeline_id
+             AND (l.max_step IS NULL OR ep.step <= l.max_step)
+            WHERE ep.entity_id IN ({pov_in})
+            {ep_filter}
+        )
+        {outer_select};
+        """
+        )
+        with self._lock:
+            rows = self.conn.execute(query, params).fetchall()
+        return {row["episode_id"] for row in rows}
+
     def get_lineage_episodes(
         self,
         timeline_id: str,
         cutoff_step: int | None,
         *,
         episode_id: str | None = None,
+        episode_ids: Sequence[str] | None = None,
+        limit: int | None = None,
+        pov_entity_ids: Sequence[str] | None = None,
+        pov_mode: Literal["any", "all"] = "any",
+        cue_entity_ids: Sequence[str] | None = None,
+        pinned_episode_ids: Sequence[str] | None = None,
+        query_text: str = "",
     ) -> list[tuple[EpisodeRecord, bytes]]:
         """Retrieves episodes visible along the lineage with step <= cutoff_step, with resolved epistemic map."""
-        ep_filter = "WHERE e.episode_id = :episode_id" if episode_id is not None else ""
-        epistemic_filter = "WHERE ep.episode_id = :episode_id" if episode_id is not None else ""
+        if episode_ids is not None and len(episode_ids) == 0:
+            return []
+
+        params: dict[str, Any] = {"timeline_id": timeline_id, "cutoff_step": cutoff_step}
+        ep_where_clauses: list[str] = []
+        if episode_id is not None:
+            params["episode_id"] = episode_id
+            ep_where_clauses.append("e.episode_id = :episode_id")
+        if episode_ids is not None:
+            ep_list = sorted({eid for eid in episode_ids if eid})
+            if not ep_list:
+                return []
+            ep_in = self._bind_in_clause("req_ep", ep_list, params)
+            ep_where_clauses.append(f"e.episode_id IN ({ep_in})")
+
+        ep_where_sql = ("WHERE " + " AND ".join(ep_where_clauses)) if ep_where_clauses else ""
+
+        ctes: list[str] = []
+        pov_list = sorted({pid for pid in (pov_entity_ids or ()) if pid})
+        pov_filter_sql = ""
+        if pov_list:
+            pov_in = self._bind_in_clause("pov", pov_list, params)
+            ctes.append(
+                f"""latest_epistemics AS (
+            SELECT ep.episode_id, ep.entity_id, ep.epistemic,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY ep.episode_id, ep.entity_id
+                       ORDER BY ep.step DESC, l.depth ASC, ep.id DESC
+                   ) AS ep_rn
+            FROM episode_epistemics ep
+            JOIN lineage l
+              ON ep.timeline_id = l.timeline_id
+             AND (l.max_step IS NULL OR ep.step <= l.max_step)
+            WHERE ep.entity_id IN ({pov_in})
+        )"""
+            )
+            if pov_mode == "all":
+                params["pov_count"] = len(pov_list)
+                ctes.append(
+                    """pov_visible AS (
+            SELECT episode_id
+            FROM latest_epistemics
+            WHERE ep_rn = 1 AND epistemic NOT IN ('forgotten', 'suppressed')
+            GROUP BY episode_id
+            HAVING COUNT(DISTINCT entity_id) = :pov_count
+        )"""
+                )
+            else:
+                ctes.append(
+                    """pov_visible AS (
+            SELECT DISTINCT episode_id
+            FROM latest_epistemics
+            WHERE ep_rn = 1 AND epistemic NOT IN ('forgotten', 'suppressed')
+        )"""
+                )
+            pov_filter_sql = "AND episode_id IN (SELECT episode_id FROM pov_visible)"
+
+        fts_query = self._build_fts_query(query_text) if limit is not None else ""
+        if fts_query:
+            params["fts_query"] = fts_query
+            ctes.append(
+                """fts_matches AS (
+            SELECT DISTINCT episode_id
+            FROM episodes_fts
+            WHERE episodes_fts MATCH :fts_query
+        )"""
+            )
+
+        ctes.append(
+            f"""deduped_episodes AS (
+            SELECT e.episode_id, e.timeline_id, e.step, e.predicate, e.summary,
+                   e.location_id, e.salience, e.participants, e.witnesses, e.metadata, e.embedding,
+                   l.depth,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY e.episode_id
+                       ORDER BY l.depth ASC, e.step DESC
+                   ) AS rn
+            FROM episodes e
+            JOIN lineage l
+              ON e.timeline_id = l.timeline_id
+             AND (l.max_step IS NULL OR e.step <= l.max_step)
+            {ep_where_sql}
+        )"""
+        )
+
+        if limit is not None:
+            params["ep_limit"] = max(1, int(limit))
+            order_terms: list[str] = []
+            pinned_list = sorted({pid for pid in (pinned_episode_ids or ()) if pid})
+            if pinned_list:
+                pin_in = self._bind_in_clause("pin", pinned_list, params)
+                order_terms.append(f"(CASE WHEN episode_id IN ({pin_in}) THEN 1 ELSE 0 END) DESC")
+
+            cue_list = sorted({cid for cid in (cue_entity_ids or ()) if cid})
+            match_terms: list[str] = []
+            if cue_list:
+                cue_in = self._bind_in_clause("cue", cue_list, params)
+                match_terms.append(
+                    f"(CASE WHEN location_id IN ({cue_in}) "
+                    f"OR EXISTS (SELECT 1 FROM json_each(participants) WHERE key IN ({cue_in})) "
+                    f"OR EXISTS (SELECT 1 FROM json_each(witnesses) WHERE value IN ({cue_in})) "
+                    f"THEN 1 ELSE 0 END)"
+                )
+            if fts_query:
+                match_terms.append(
+                    "(CASE WHEN episode_id IN (SELECT episode_id FROM fts_matches) THEN 1 ELSE 0 END)"
+                )
+            if match_terms:
+                order_terms.append(f"({' + '.join(match_terms)}) DESC")
+
+            order_terms.extend(["salience DESC", "step DESC"])
+            order_limit_sql = f"ORDER BY {', '.join(order_terms)} LIMIT :ep_limit"
+        else:
+            order_limit_sql = "ORDER BY depth ASC, step DESC"
 
         ep_query = (
             LINEAGE_CTE_SQL
+            + ",\n        "
+            + ",\n        ".join(ctes)
             + f"""
-        SELECT e.episode_id, e.timeline_id, e.step, e.predicate, e.summary,
-               e.location_id, e.salience, e.participants, e.witnesses, e.metadata, e.embedding
-        FROM episodes e
-        JOIN lineage l
-          ON e.timeline_id = l.timeline_id
-         AND (l.max_step IS NULL OR e.step <= l.max_step)
-        {ep_filter}
-        ORDER BY l.depth ASC, e.step DESC;
+        SELECT episode_id, timeline_id, step, predicate, summary,
+               location_id, salience, participants, witnesses, metadata, embedding
+        FROM deduped_episodes
+        WHERE rn = 1 {pov_filter_sql}
+        {order_limit_sql};
         """
         )
-
-        epistemic_query = (
-            LINEAGE_CTE_SQL
-            + f"""
-        SELECT ep.episode_id, ep.entity_id, ep.epistemic, ep.believed_summary, ep.step, l.depth
-        FROM episode_epistemics ep
-        JOIN lineage l
-          ON ep.timeline_id = l.timeline_id
-         AND (l.max_step IS NULL OR ep.step <= l.max_step)
-        {epistemic_filter}
-        ORDER BY ep.step ASC, l.depth DESC, ep.id ASC;
-        """
-        )
-        params: dict[str, Any] = {"timeline_id": timeline_id, "cutoff_step": cutoff_step}
-        if episode_id is not None:
-            params["episode_id"] = episode_id
 
         with self._lock:
             cursor = self.conn.cursor()
-            cursor.execute(epistemic_query, params)
-            epistemic_rows = cursor.fetchall()
             cursor.execute(ep_query, params)
             ep_rows = cursor.fetchall()
+            if not ep_rows:
+                return []
+
+            epistemic_params: dict[str, Any] = {
+                "timeline_id": timeline_id,
+                "cutoff_step": cutoff_step,
+            }
+            if episode_id is not None:
+                epistemic_params["episode_id"] = episode_id
+                epistemic_filter = "WHERE ep.episode_id = :episode_id"
+            elif limit is not None or episode_ids is not None:
+                selected_ids = [row["episode_id"] for row in ep_rows]
+                sel_in = self._bind_in_clause("sel_ep", selected_ids, epistemic_params)
+                epistemic_filter = f"WHERE ep.episode_id IN ({sel_in})"
+            else:
+                epistemic_filter = ""
+
+            epistemic_query = (
+                LINEAGE_CTE_SQL
+                + f"""
+            SELECT ep.episode_id, ep.entity_id, ep.epistemic, ep.believed_summary, ep.step, l.depth
+            FROM episode_epistemics ep
+            JOIN lineage l
+              ON ep.timeline_id = l.timeline_id
+             AND (l.max_step IS NULL OR ep.step <= l.max_step)
+            {epistemic_filter}
+            ORDER BY ep.step ASC, l.depth DESC, ep.id ASC;
+            """
+            )
+            cursor.execute(epistemic_query, epistemic_params)
+            epistemic_rows = cursor.fetchall()
 
         known_map: dict[str, dict[str, Literal["direct", "told", "deceived"]]] = {}
         believed_map: dict[str, dict[str, str]] = {}

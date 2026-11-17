@@ -205,7 +205,7 @@ class StepContext(BaseModel):
 
 ## Extension Protocols, Adapters & Policies
 
-- `MemoryStore`: Storage protocol implemented by `CausalStore`. Inject a custom backend via `NarrativeMemoryEngine(store=my_store)`.
+- `MemoryStore`: Storage protocol implemented by `CausalStore`. Inject a custom backend via `NarrativeMemoryEngine(store=my_store)`. `CausalStore` also provides `get_known_episode_ids()` and bounded/pre-filtered `get_lineage_episodes(..., limit=..., pov_entity_ids=..., cue_entity_ids=..., pinned_episode_ids=..., query_text=...)` backed by SQLite FTS5 (`episodes_fts`).
 - `MentionResolver`: Pluggable entity/coreference resolution protocol (`resolve(text, explicit_mentions, entities, aliases) -> list[ResolvedMention]`). Defaults to `DefaultLexicalResolver(fuzzy_threshold=88.0)`, which uses word-boundary matching and optional `rapidfuzz` inflection matching.
 - `EpisodeRanker` / `EpisodicScoringPolicy`: Pluggable Tier 6 episodic memory ranker (`DefaultEpisodeRanker`) decoupled from `VoiceBank`, configurable via `SchemaPolicy.episodic_policy`.
 - `Embedder` & Built-in Adapters: `OfflineNgramEmbedder`, `CallableEmbedder`, `OpenAICompatibleEmbedder`, and `OllamaEmbedder`, all supporting `embed_batch()`. Embedder provenance (`embedder_id`, `embedding_dim`) is recorded in `store_metadata`, with `on_embedder_mismatch` (`"warn"`, `"raise"`, `"reindex"`, `"ignore"`), `EmbedderMismatchError`, and `get_embedder_info()`.

@@ -750,25 +750,43 @@ class NarrativeMemoryEngine:
         scene_entities = [e for e in active_entities if e.entity_id in present_entity_ids]
         neighbor_entities = [e for e in active_entities if e.entity_id in neighbor_entity_ids]
 
-        candidate_episodes = (
-            self.store.get_lineage_episodes(tl, cutoff_step)
-            if (top_k_episodes > 0 or pov_set)
-            else []
-        )
         pov_known_episode_ids: set[str] = set()
-        if pov_set and candidate_episodes:
-            if pov_mode == "all":
-                pov_known_episode_ids = {
-                    ep.episode_id
-                    for ep, _ in candidate_episodes
-                    if pov_set.issubset(ep.known_by.keys())
-                }
-            else:
-                pov_known_episode_ids = {
-                    ep.episode_id
-                    for ep, _ in candidate_episodes
-                    if pov_set & set(ep.known_by.keys())
-                }
+        fallback_lineage_episodes: list[tuple[EpisodeRecord, bytes]] | None = None
+        if pov_set:
+            provenance_ep_ids = {
+                eid
+                for eid in (
+                    *(e.caused_by_episode_id for e in scene_entities),
+                    *(e.caused_by_episode_id for e in neighbor_entities),
+                    *(e.caused_by_episode_id for e in in_scene_edges),
+                    *(e.caused_by_episode_id for e in background_edges),
+                )
+                if eid
+            }
+            if provenance_ep_ids:
+                get_known_fn = getattr(self.store, "get_known_episode_ids", None)
+                if callable(get_known_fn):
+                    pov_known_episode_ids = get_known_fn(
+                        tl,
+                        cutoff_step,
+                        pov_entity_ids or (),
+                        pov_mode=pov_mode,
+                        episode_ids=sorted(provenance_ep_ids),
+                    )
+                else:
+                    fallback_lineage_episodes = self.store.get_lineage_episodes(tl, cutoff_step)
+                    if pov_mode == "all":
+                        pov_known_episode_ids = {
+                            ep.episode_id
+                            for ep, _ in fallback_lineage_episodes
+                            if pov_set.issubset(ep.known_by.keys())
+                        }
+                    else:
+                        pov_known_episode_ids = {
+                            ep.episode_id
+                            for ep, _ in fallback_lineage_episodes
+                            if pov_set & set(ep.known_by.keys())
+                        }
 
         projected_entities, projected_edges = self._project_pov_state(
             scene_entities=scene_entities,
@@ -846,7 +864,7 @@ class NarrativeMemoryEngine:
 
         # 5. Tier 6 Episodic Memory retrieval
         episodes: list[EpisodeRecord] = []
-        if top_k_episodes > 0 and candidate_episodes:
+        if top_k_episodes > 0:
             pinned_episode_ids: set[str] = set()
             for ent in projected_entities:
                 if ent.caused_by_episode_id:
@@ -860,18 +878,38 @@ class NarrativeMemoryEngine:
                 if resolved_entity_ids
                 else {e.entity_id for e in projected_entities}
             )
-            episodic_policy = getattr(policy, "episodic_policy", DEFAULT_EPISODIC_POLICY)
-            episodes = self.voice_bank.rank_episodes(
-                current_step=step,
-                query_text=text,
-                candidates=candidate_episodes,
-                scene_entity_ids=cue_entity_ids,
-                pinned_episode_ids=pinned_episode_ids,
-                pov_entity_ids=pov_entity_ids,
-                pov_mode=pov_mode,
-                policy=episodic_policy,
-                top_k=top_k_episodes,
-            )
+            if fallback_lineage_episodes is not None:
+                candidate_episodes = fallback_lineage_episodes
+            else:
+                candidate_limit = max(top_k_episodes * 20, 200)
+                sql_cue_ids = sorted(cue_entity_ids | active_location_ids)
+                try:
+                    candidate_episodes = self.store.get_lineage_episodes(
+                        tl,
+                        cutoff_step,
+                        limit=candidate_limit,
+                        pov_entity_ids=pov_entity_ids,
+                        pov_mode=pov_mode,
+                        cue_entity_ids=sql_cue_ids,
+                        pinned_episode_ids=sorted(pinned_episode_ids),
+                        query_text=text,
+                    )
+                except TypeError:
+                    candidate_episodes = self.store.get_lineage_episodes(tl, cutoff_step)
+
+            if candidate_episodes:
+                episodic_policy = getattr(policy, "episodic_policy", DEFAULT_EPISODIC_POLICY)
+                episodes = self.voice_bank.rank_episodes(
+                    current_step=step,
+                    query_text=text,
+                    candidates=candidate_episodes,
+                    scene_entity_ids=cue_entity_ids,
+                    pinned_episode_ids=pinned_episode_ids,
+                    pov_entity_ids=pov_entity_ids,
+                    pov_mode=pov_mode,
+                    policy=episodic_policy,
+                    top_k=top_k_episodes,
+                )
 
         return StepContext(
             timeline_id=tl,
