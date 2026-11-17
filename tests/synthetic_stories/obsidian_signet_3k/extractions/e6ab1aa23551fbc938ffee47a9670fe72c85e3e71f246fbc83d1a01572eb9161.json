@@ -1,0 +1,137 @@
+{
+  "cache_key": "e6ab1aa23551fbc938ffee47a9670fe72c85e3e71f246fbc83d1a01572eb9161",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-16T17:48:03.776625+00:00",
+  "prompt_sha256": "21e03be5de229e493a350cc921e42caa1fe93dbb7dd4f09865d2da5a1be21fdf",
+  "scene_text_sha256": "16ab0d8e7bc443ce105fa7f03dc61598a2b5b28cefbaad30105c335a1a1ecd9f",
+  "scene_text": "Ten years ago, the same chamber had smelled of pine resin and wet wool instead of sour candle smoke. It was winter then — the winter of the ruined harvest, when the granaries of the north stood empty and the border lords spoke openly of secession over their ale. Elena remembered standing exactly here, at the head of this table, and she remembered being younger in a way that had nothing to do with the mirror. Naive, and trusting, and foolish enough to believe that a signed pact was a wall.\n\nThe room had been full of frost-bitten couriers that night, stamping snow from their boots, blowing on their fingers. The historic pact lay open on the oak boards, its ink still wet, eight seals pressed into the wax in a solemn red arc. And at her right hand, steady and earnest, had stood Julian — barely more than a boy, his collar too large for him, his voice shaking only a little as he read the treasury's guarantees aloud to the assembled lords. She had trusted him implicitly. Utterly. That was the thing she remembered most clearly now: the warmth of that trust, how comfortable it had been to wear, like a good winter coat she never once thought to check for holes.\n\nHe had brought her tea afterward, she recalled, and taken the blame for a miscounted ledger no one else would claim, and she had thought: here is a man I could build a kingdom with. The snow had beaten against these very windows. The same long oak table. The same high chairs.\n\nStanding alone in that room in the present, Elena could still feel the ghost of that winter draft on her cheek — and behind it, sharper than any winter, the cold knowledge of how thoroughly she had been wrong.",
+  "usage": {
+    "prompt_tokens": 4026,
+    "completion_tokens": 3767,
+    "total_tokens": 7793,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 3103,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 20959.688,
+    "cost_estimate": {
+      "input_cost_usd": 0.000564,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.001055,
+      "total_cost_usd": 0.001618,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "bitter and disillusioned",
+          "emotional_state": "cold regret",
+          "current_reflection": "recognizes that her past trust in Julian was foolish and misplaced"
+        },
+        "private_state": {
+          "memory": "recalls the winter pact signing ten years ago, when she trusted Julian implicitly"
+        },
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_elena_recalls_winter_pact",
+        "reason": "Elena's present solitude in the Council Chamber and the recent betrayal trigger a painful recollection."
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_elena",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "trust": "betrayed",
+          "sentiment": "bitter regret",
+          "assessment": "her earlier implicit trust was a catastrophic error"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_signet_transfer",
+        "reason": "Reflecting on the winter pact, Elena re-evaluates her past trust in Julian as thoroughly misplaced."
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_winter_pact_signing",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "pact_signing",
+        "summary": "Ten years ago in the Council Chamber, Elena stood at the head of the table as the historic pact was signed; she trusted young Julian implicitly as he read the treasury's guarantees aloud to the assembled lords.",
+        "participants": {
+          "char_elena": "host",
+          "char_julian": "reader"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian"
+        ],
+        "known_by": {
+          "char_elena": "direct",
+          "char_julian": "direct"
+        },
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": "ten years ago",
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 6.0,
+        "metadata": {
+          "era": "past"
+        },
+        "match_score": 0.0
+      },
+      {
+        "episode_id": "ep_elena_recalls_winter_pact",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "recollection",
+        "summary": "Standing alone in the Council Chamber, Elena recalls the winter pact signing ten years ago, when she trusted Julian implicitly, and recognizes how thoroughly that trust was misplaced.",
+        "participants": {
+          "char_elena": "actor"
+        },
+        "witnesses": [
+          "char_elena"
+        ],
+        "known_by": {
+          "char_elena": "direct"
+        },
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 5.5,
+        "metadata": {
+          "references": "ep_winter_pact_signing",
+          "frame": "present reflection on past memory"
+        },
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": "council_chamber"
+  }
+}

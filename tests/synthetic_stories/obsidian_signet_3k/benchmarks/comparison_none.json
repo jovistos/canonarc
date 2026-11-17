@@ -1,0 +1,383 @@
+{
+  "story_slug": "obsidian_signet_3k",
+  "story_title": "The Obsidian Signet Conspiracy (Extended 3K Edition)",
+  "guidance_mode": "none",
+  "models": [
+    {
+      "model_id": "gemini-4-hydrogen",
+      "skipped_cached_run": true,
+      "run_cache_key": "6f529a6ccf18ef29c8a802602268c3b501433df382adf8443931e909487afb9e",
+      "strict_pass_rate": 0.9,
+      "overall_quality_score": 0.9465,
+      "metrics": {
+        "model_id": "gemini-4-hydrogen",
+        "guidance_mode": "none",
+        "overall_quality_score": 0.9465,
+        "category_scores": {
+          "epistemic_score": 0.9643,
+          "spatial_state_score": 0.9229,
+          "pov_retrieval_score": 0.92,
+          "edge_flashback_score": 0.95,
+          "schema_hygiene_score": 1.0
+        },
+        "epistemic_and_witness_metrics": {
+          "witness_precision": 1.0,
+          "witness_recall": 1.0,
+          "witness_f1": 1.0,
+          "epistemic_leak_count": 0,
+          "epistemic_leak_rate": 0.0,
+          "silent_witness_recall": 1.0,
+          "inform_delta_precision": 0.75,
+          "inform_delta_recall": 1.0,
+          "inform_delta_f1": 0.8571,
+          "deception_summary_accuracy": 1.0,
+          "disguise_accuracy": 1.0
+        },
+        "spatial_and_state_metrics": {
+          "location_delta_precision": 1.0,
+          "location_delta_recall": 1.0,
+          "location_delta_f1": 1.0,
+          "room_occupancy_jaccard": 1.0,
+          "room_occupancy_exact_rate": 1.0,
+          "mood_exact_accuracy": 0.7917,
+          "mood_soft_accuracy": 0.7917,
+          "mood_delta_f1": 0.8333,
+          "flashback_guard_passed": true
+        },
+        "edge_and_causal_metrics": {
+          "edge_delta_precision": 1.0,
+          "edge_delta_recall": 1.0,
+          "edge_delta_f1": 1.0,
+          "edge_register_accuracy": 1.0,
+          "causal_link_accuracy": 0.75
+        },
+        "schema_and_id_hygiene": {
+          "first_pass_valid_rate": 1.0,
+          "total_retries": 0,
+          "total_validation_errors": 0,
+          "raw_id_total": 62,
+          "canonical_id_count": 62,
+          "canonical_id_rate": 1.0,
+          "normalized_surface_id_count": 0,
+          "normalized_surface_id_rate": 0.0,
+          "hallucinated_id_count": 0,
+          "hallucinated_id_rate": 0.0,
+          "hallucinated_ids": []
+        },
+        "downstream_pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 0.9703,
+          "pov_episode_recall": 1.0,
+          "pov_secret_leak_count": 1
+        },
+        "steps": []
+      },
+      "extraction_usage": {
+        "prompt_tokens": 36727,
+        "completion_tokens": 2397,
+        "total_tokens": 43527,
+        "cached_prompt_tokens": 0,
+        "reasoning_tokens": 0,
+        "api_calls": 6,
+        "cache_hits": 6,
+        "cache_misses": 0,
+        "retry_count": 0,
+        "validation_errors": 0,
+        "latency_ms": 143790.766,
+        "cost_estimate": {
+          "input_cost_usd": 0.005142,
+          "cached_input_cost_usd": 0.0,
+          "output_cost_usd": 0.000671,
+          "total_cost_usd": 0.005813,
+          "rates_per_1m_usd": {
+            "input_uncached": 0.14,
+            "input_cached": 0.014,
+            "output": 0.28
+          }
+        }
+      }
+    },
+    {
+      "model_id": "deepseek-flash",
+      "skipped_cached_run": true,
+      "run_cache_key": "60a857a976619707cd7ad5c8508ba75b3c31058877ad755f32cb7b82164f0602",
+      "strict_pass_rate": 0.74,
+      "overall_quality_score": 0.8479,
+      "metrics": {
+        "model_id": "deepseek-flash",
+        "guidance_mode": "none",
+        "overall_quality_score": 0.8479,
+        "category_scores": {
+          "epistemic_score": 0.85,
+          "spatial_state_score": 0.8396,
+          "pov_retrieval_score": 0.8275,
+          "edge_flashback_score": 0.7833,
+          "schema_hygiene_score": 1.0
+        },
+        "epistemic_and_witness_metrics": {
+          "witness_precision": 1.0,
+          "witness_recall": 1.0,
+          "witness_f1": 1.0,
+          "epistemic_leak_count": 0,
+          "epistemic_leak_rate": 0.0,
+          "silent_witness_recall": 1.0,
+          "inform_delta_precision": 0.5,
+          "inform_delta_recall": 0.3333,
+          "inform_delta_f1": 0.4,
+          "deception_summary_accuracy": 0.0,
+          "disguise_accuracy": 1.0
+        },
+        "spatial_and_state_metrics": {
+          "location_delta_precision": 1.0,
+          "location_delta_recall": 1.0,
+          "location_delta_f1": 1.0,
+          "room_occupancy_jaccard": 1.0,
+          "room_occupancy_exact_rate": 1.0,
+          "mood_exact_accuracy": 0.5833,
+          "mood_soft_accuracy": 0.5833,
+          "mood_delta_f1": 0.625,
+          "flashback_guard_passed": true
+        },
+        "edge_and_causal_metrics": {
+          "edge_delta_precision": 0.5,
+          "edge_delta_recall": 1.0,
+          "edge_delta_f1": 0.6667,
+          "edge_register_accuracy": 1.0,
+          "causal_link_accuracy": 0.75
+        },
+        "schema_and_id_hygiene": {
+          "first_pass_valid_rate": 1.0,
+          "total_retries": 0,
+          "total_validation_errors": 0,
+          "raw_id_total": 83,
+          "canonical_id_count": 83,
+          "canonical_id_rate": 1.0,
+          "normalized_surface_id_count": 0,
+          "normalized_surface_id_rate": 0.0,
+          "hallucinated_id_count": 0,
+          "hallucinated_id_rate": 0.0,
+          "hallucinated_ids": []
+        },
+        "downstream_pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 0.7452,
+          "pov_episode_recall": 0.9583,
+          "pov_secret_leak_count": 2
+        },
+        "steps": []
+      },
+      "extraction_usage": {
+        "prompt_tokens": 34125,
+        "completion_tokens": 8568,
+        "total_tokens": 42693,
+        "cached_prompt_tokens": 5760,
+        "reasoning_tokens": 5599,
+        "api_calls": 6,
+        "cache_hits": 6,
+        "cache_misses": 0,
+        "retry_count": 0,
+        "validation_errors": 0,
+        "latency_ms": 51789.738,
+        "cost_estimate": {
+          "input_cost_usd": 0.003971,
+          "cached_input_cost_usd": 8.1e-05,
+          "output_cost_usd": 0.002399,
+          "total_cost_usd": 0.006451,
+          "rates_per_1m_usd": {
+            "input_uncached": 0.14,
+            "input_cached": 0.014,
+            "output": 0.28
+          }
+        }
+      }
+    },
+    {
+      "model_id": "qwen/qwen3.6-27b",
+      "skipped_cached_run": true,
+      "run_cache_key": "b10a405fabe7c50a13256cb140260ff3ed9808594d89083be0c7c17e84db2f10",
+      "strict_pass_rate": 0.78,
+      "overall_quality_score": 0.8652,
+      "metrics": {
+        "model_id": "qwen/qwen3.6-27b",
+        "guidance_mode": "none",
+        "overall_quality_score": 0.8652,
+        "category_scores": {
+          "epistemic_score": 0.8345,
+          "spatial_state_score": 0.8821,
+          "pov_retrieval_score": 0.834,
+          "edge_flashback_score": 0.85,
+          "schema_hygiene_score": 1.0
+        },
+        "epistemic_and_witness_metrics": {
+          "witness_precision": 1.0,
+          "witness_recall": 0.7143,
+          "witness_f1": 0.8333,
+          "epistemic_leak_count": 0,
+          "epistemic_leak_rate": 0.0,
+          "silent_witness_recall": 0.6667,
+          "inform_delta_precision": 0.5,
+          "inform_delta_recall": 0.6667,
+          "inform_delta_f1": 0.5714,
+          "deception_summary_accuracy": 1.0,
+          "disguise_accuracy": 1.0
+        },
+        "spatial_and_state_metrics": {
+          "location_delta_precision": 1.0,
+          "location_delta_recall": 1.0,
+          "location_delta_f1": 1.0,
+          "room_occupancy_jaccard": 1.0,
+          "room_occupancy_exact_rate": 1.0,
+          "mood_exact_accuracy": 0.625,
+          "mood_soft_accuracy": 0.6667,
+          "mood_delta_f1": 0.7692,
+          "flashback_guard_passed": true
+        },
+        "edge_and_causal_metrics": {
+          "edge_delta_precision": 0.6667,
+          "edge_delta_recall": 1.0,
+          "edge_delta_f1": 0.8,
+          "edge_register_accuracy": 1.0,
+          "causal_link_accuracy": 0.75
+        },
+        "schema_and_id_hygiene": {
+          "first_pass_valid_rate": 1.0,
+          "total_retries": 0,
+          "total_validation_errors": 0,
+          "raw_id_total": 78,
+          "canonical_id_count": 78,
+          "canonical_id_rate": 1.0,
+          "normalized_surface_id_count": 0,
+          "normalized_surface_id_rate": 0.0,
+          "hallucinated_id_count": 0,
+          "hallucinated_id_rate": 0.0,
+          "hallucinated_ids": []
+        },
+        "downstream_pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 0.9703,
+          "pov_episode_recall": 0.4465,
+          "pov_secret_leak_count": 0
+        },
+        "steps": []
+      },
+      "extraction_usage": {
+        "prompt_tokens": 35194,
+        "completion_tokens": 2766,
+        "total_tokens": 37960,
+        "cached_prompt_tokens": 0,
+        "reasoning_tokens": 0,
+        "api_calls": 6,
+        "cache_hits": 6,
+        "cache_misses": 0,
+        "retry_count": 0,
+        "validation_errors": 0,
+        "latency_ms": 142191.874,
+        "cost_estimate": {
+          "input_cost_usd": 0.004927,
+          "cached_input_cost_usd": 0.0,
+          "output_cost_usd": 0.000774,
+          "total_cost_usd": 0.005702,
+          "rates_per_1m_usd": {
+            "input_uncached": 0.14,
+            "input_cached": 0.014,
+            "output": 0.28
+          }
+        }
+      }
+    },
+    {
+      "model_id": "qwen/qwen3.5-9b",
+      "skipped_cached_run": true,
+      "run_cache_key": "78394ecc0d71bd4f3709527495c782b01a9cbc1a5e5befe2f979288a201edf2e",
+      "strict_pass_rate": 0.72,
+      "overall_quality_score": 0.6997,
+      "metrics": {
+        "model_id": "qwen/qwen3.5-9b",
+        "guidance_mode": "none",
+        "overall_quality_score": 0.6997,
+        "category_scores": {
+          "epistemic_score": 0.6958,
+          "spatial_state_score": 0.709,
+          "pov_retrieval_score": 0.76,
+          "edge_flashback_score": 0.4111,
+          "schema_hygiene_score": 1.0
+        },
+        "epistemic_and_witness_metrics": {
+          "witness_precision": 0.9,
+          "witness_recall": 0.6429,
+          "witness_f1": 0.75,
+          "epistemic_leak_count": 1,
+          "epistemic_leak_rate": 0.1667,
+          "silent_witness_recall": 0.8333,
+          "inform_delta_precision": 1.0,
+          "inform_delta_recall": 0.3333,
+          "inform_delta_f1": 0.5,
+          "deception_summary_accuracy": 0.0,
+          "disguise_accuracy": 0.6667
+        },
+        "spatial_and_state_metrics": {
+          "location_delta_precision": 0.5556,
+          "location_delta_recall": 0.8333,
+          "location_delta_f1": 0.6667,
+          "room_occupancy_jaccard": 0.8889,
+          "room_occupancy_exact_rate": 0.8333,
+          "mood_exact_accuracy": 0.625,
+          "mood_soft_accuracy": 0.625,
+          "mood_delta_f1": 0.5,
+          "flashback_guard_passed": true
+        },
+        "edge_and_causal_metrics": {
+          "edge_delta_precision": 0.2,
+          "edge_delta_recall": 0.25,
+          "edge_delta_f1": 0.2222,
+          "edge_register_accuracy": 0.3333,
+          "causal_link_accuracy": 0.0
+        },
+        "schema_and_id_hygiene": {
+          "first_pass_valid_rate": 1.0,
+          "total_retries": 0,
+          "total_validation_errors": 0,
+          "raw_id_total": 73,
+          "canonical_id_count": 73,
+          "canonical_id_rate": 1.0,
+          "normalized_surface_id_count": 0,
+          "normalized_surface_id_rate": 0.0,
+          "hallucinated_id_count": 0,
+          "hallucinated_id_rate": 0.0,
+          "hallucinated_ids": []
+        },
+        "downstream_pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 0.9494,
+          "pov_episode_recall": 1.0,
+          "pov_secret_leak_count": 3
+        },
+        "steps": []
+      },
+      "extraction_usage": {
+        "prompt_tokens": 35384,
+        "completion_tokens": 2989,
+        "total_tokens": 38373,
+        "cached_prompt_tokens": 0,
+        "reasoning_tokens": 0,
+        "api_calls": 6,
+        "cache_hits": 6,
+        "cache_misses": 0,
+        "retry_count": 0,
+        "validation_errors": 0,
+        "latency_ms": 48660.492,
+        "cost_estimate": {
+          "input_cost_usd": 0.004954,
+          "cached_input_cost_usd": 0.0,
+          "output_cost_usd": 0.000837,
+          "total_cost_usd": 0.005791,
+          "rates_per_1m_usd": {
+            "input_uncached": 0.14,
+            "input_cached": 0.014,
+            "output": 0.28
+          }
+        }
+      }
+    }
+  ]
+}

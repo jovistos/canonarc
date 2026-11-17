@@ -22,7 +22,14 @@ from .episodic import (
     EpisodeRanker,
     EpisodicScoringPolicy,
 )
-from .extractors import CallableExtractor, OpenAICompatibleExtractor
+from .extractors import (
+    CachedDeltaExtractor,
+    CallableExtractor,
+    OpenAICompatibleExtractor,
+    TokenUsage,
+    load_dotenv,
+    resolve_lmstudio_model,
+)
 from .hooks import BaseEngineHooks, EngineHooks
 from .models import (
     AliasRecord,
@@ -54,6 +61,7 @@ from .voice import IngestionGate, VoiceBank
 __all__ = [
     "AliasRecord",
     "BaseEngineHooks",
+    "CachedDeltaExtractor",
     "CallableEmbedder",
     "CallableExtractor",
     "CausalStore",
@@ -93,8 +101,11 @@ __all__ = [
     "TimelineBranchConflictError",
     "TimelineInfo",
     "TimelineSession",
+    "TokenUsage",
     "TranslationPreset",
     "VoiceBank",
     "VoiceExemplar",
     "embed_texts_batch",
+    "load_dotenv",
+    "resolve_lmstudio_model",
 ]

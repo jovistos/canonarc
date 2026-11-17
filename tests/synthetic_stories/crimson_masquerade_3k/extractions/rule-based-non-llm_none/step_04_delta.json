@@ -1,0 +1,36 @@
+{
+  "entities": [],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_rule_4",
+      "timeline_id": "main",
+      "step": 0,
+      "predicate": "flashback",
+      "summary": "Ten years ago, the Council Chamber had worn the same velvet and the same gilded shadows, but Elena had stood within it as a different woman.",
+      "participants": {
+        "char_elena": "participant",
+        "char_julian": "participant"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_julian"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": null,
+      "story_time": "10_years_ago",
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": true,
+  "story_time": "10_years_ago",
+  "chapter_id": null,
+  "scene_id": null
+}

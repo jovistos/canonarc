@@ -1,0 +1,128 @@
+{
+  "cache_key": "88e1ac1c144cfca71bd4fd966f040c505a0026333f425ef9ae44ed73d96174f5",
+  "model": "qwen/qwen3.6-27b",
+  "created_at": "2026-11-16T17:51:41.264546+00:00",
+  "prompt_sha256": "c8acc64d3cd88fbe296bd6ba380134ec599df60e09ed6b1a5826a0bacc0d93f2",
+  "scene_text_sha256": "16ab0d8e7bc443ce105fa7f03dc61598a2b5b28cefbaad30105c335a1a1ecd9f",
+  "scene_text": "Ten years ago, the same chamber had smelled of pine resin and wet wool instead of sour candle smoke. It was winter then — the winter of the ruined harvest, when the granaries of the north stood empty and the border lords spoke openly of secession over their ale. Elena remembered standing exactly here, at the head of this table, and she remembered being younger in a way that had nothing to do with the mirror. Naive, and trusting, and foolish enough to believe that a signed pact was a wall.\n\nThe room had been full of frost-bitten couriers that night, stamping snow from their boots, blowing on their fingers. The historic pact lay open on the oak boards, its ink still wet, eight seals pressed into the wax in a solemn red arc. And at her right hand, steady and earnest, had stood Julian — barely more than a boy, his collar too large for him, his voice shaking only a little as he read the treasury's guarantees aloud to the assembled lords. She had trusted him implicitly. Utterly. That was the thing she remembered most clearly now: the warmth of that trust, how comfortable it had been to wear, like a good winter coat she never once thought to check for holes.\n\nHe had brought her tea afterward, she recalled, and taken the blame for a miscounted ledger no one else would claim, and she had thought: here is a man I could build a kingdom with. The snow had beaten against these very windows. The same long oak table. The same high chairs.\n\nStanding alone in that room in the present, Elena could still feel the ghost of that winter draft on her cheek — and behind it, sharper than any winter, the cold knowledge of how thoroughly she had been wrong.",
+  "usage": {
+    "prompt_tokens": 4316,
+    "completion_tokens": 697,
+    "total_tokens": 5013,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 31666.219,
+    "cost_estimate": {
+      "input_cost_usd": 0.000604,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.000195,
+      "total_cost_usd": 0.000799,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "reflective",
+          "emotional_state": "bitter realization",
+          "cognitive_state": "re-evaluating past trust"
+        },
+        "private_state": {
+          "memory_accessed": "winter_of_ruined_harvest",
+          "realization": "Julian's past loyalty was a facade or she was naive"
+        },
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_flashback_reflection",
+        "reason": "Elena reflects on her past naivety regarding Julian during the winter of the ruined harvest."
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "past_reputation": "trusted_ally",
+          "past_role": "earnest_boy"
+        },
+        "private_state": {
+          "past_action": "read_treasury_guarantees"
+        },
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_flashback_reflection",
+        "reason": "Elena's memory reveals Julian's past behavior and her perception of him."
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_elena",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "current": "distrust",
+          "past": "implicit_trust",
+          "shift": "betrayal_of_trust_realized"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_flashback_reflection",
+        "reason": "Elena realizes her past trust in Julian was misplaced."
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_flashback_reflection",
+        "timeline_id": "main",
+        "step": 4,
+        "predicate": "reflection",
+        "summary": "Elena recalls the winter of the ruined harvest, remembering her naive trust in Julian who appeared earnest and loyal, contrasting it with her current cold knowledge of his betrayal.",
+        "participants": {
+          "char_elena": "observer",
+          "char_julian": "subject_of_memory"
+        },
+        "witnesses": [
+          "char_elena"
+        ],
+        "known_by": {
+          "char_elena": "direct"
+        },
+        "believed_summaries": {},
+        "location_id": "loc_council_chamber",
+        "story_time": "ten_years_ago",
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.5,
+        "metadata": {
+          "context": "internal_monologue",
+          "contrast": "past_trust_vs_present_distrust"
+        },
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": true,
+    "story_time": "ten_years_ago",
+    "chapter_id": null,
+    "scene_id": "loc_council_chamber"
+  }
+}

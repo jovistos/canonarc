@@ -51,15 +51,34 @@ class IngestionGate:
         self.min_quality = min_quality
 
     @staticmethod
-    def _attribution_windows(text: str, start: int, end: int) -> tuple[str, str]:
+    def _attribution_windows(
+        text: str,
+        start: int,
+        end: int,
+        *,
+        prev_text: str = "",
+        next_text: str = "",
+    ) -> tuple[str, str]:
         """Extracts local pre-quote and post-quote attribution clauses."""
         before_raw = text[max(0, start - 140) : start]
+        if start < 140 and prev_text:
+            prefix = prev_text.rstrip()
+            if prefix:
+                head = text[:start]
+                combined_before = f"{prefix} {head}" if head else f"{prefix} "
+                before_raw = combined_before[-140:]
         for sep in ("\n\n", '"', "”", "“", "»", "」", "』"):
             idx = before_raw.rfind(sep)
             if idx != -1:
                 before_raw = before_raw[idx + len(sep) :]
 
         after_raw = text[end : min(len(text), end + 100)]
+        if len(text) - end < 100 and next_text:
+            suffix = next_text.lstrip()
+            if suffix:
+                tail = text[end:]
+                combined_after = f"{tail} {suffix}" if tail else f" {suffix}"
+                after_raw = combined_after[:100]
         for sep in ("\n\n", "\n", '"', "”", "“", "«", "「", "『"):
             idx = after_raw.find(sep)
             if idx != -1:
@@ -72,6 +91,8 @@ class IngestionGate:
         text: str,
         *,
         source_text: str = "",
+        prev_text: str = "",
+        next_text: str = "",
         speaker_resolver: Callable[[str, str], tuple[str | None, str | None, str | None]] | None = None,
         on_rejected: Callable[[str, str, dict[str, Any]], None] | None = None,
     ) -> list[DialogueCandidate]:
@@ -128,7 +149,11 @@ class IngestionGate:
                 speaker_surface: str | None = None
                 if speaker_resolver is not None:
                     before_win, after_win = self._attribution_windows(
-                        text, match.start(), match.end()
+                        text,
+                        match.start(),
+                        match.end(),
+                        prev_text=prev_text,
+                        next_text=next_text,
                     )
                     speaker_id, addressee_id, speaker_surface = speaker_resolver(
                         before_win, after_win

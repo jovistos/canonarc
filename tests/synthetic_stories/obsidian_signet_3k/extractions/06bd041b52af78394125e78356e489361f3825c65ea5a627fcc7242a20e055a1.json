@@ -1,0 +1,346 @@
+{
+  "cache_key": "06bd041b52af78394125e78356e489361f3825c65ea5a627fcc7242a20e055a1",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-16T17:47:42.749266+00:00",
+  "prompt_sha256": "d5f2ddaa76457a78621e07b4d36f1535940ecf2852832a832c32b919a5667c54",
+  "scene_text_sha256": "a3993029e0653d0b9c556c9b36ebab35f8953762f94d0cb1b86e878d22176cc4",
+  "scene_text": "\"Empty them,\" Elena said. \"Every pocket. Every fold. Now.\" She held out one hand, palm up, and her rings caught the candlelight like a row of tiny executions. Julian's breath came in short, ragged pulls. He fumbled at his coat as though his fingers had forgotten their business, and for one long moment the whole chamber seemed to hang suspended between one heartbeat and the next.\n\nThen he moved. Not toward Elena — toward the courier. He seized the grey-gloved hand and forced something into it: a heavy ring of black stone, dull-polished, cold as a drowned coin, its flat face cut with a signet no honest hand should have carried. \"Take this cursed ring and hide it deep inside the stone vault before the guards arrive!\" His voice cracked on the last word. The courier's fingers closed around the Obsidian Signet automatically, and Julian was already running — boots skidding on the flagstones, shoulder clipping a side table so that a decanter went over and spilled red across the ledgers.\n\nHe wrenched open the low iron door behind the tapestry, the one that led down into the Archive Vault, and vanished into the dark mouth of the stairwell. The hooded courier stood frozen for an instant, staring down at the black ring in the grey glove — then bolted after him, hood flying back in the slipstream, wool cloak snapping.\n\nElena remained alone in the Council Chamber amid the overturned wine and the guttering candles. She stared at the open vault door, at the darkness beyond it, and her fury slowly hardened into something older and colder: the certainty of a woman watching a decade of trust burn down a stairwell she had built with her own hands.",
+  "usage": {
+    "prompt_tokens": 3963,
+    "completion_tokens": 3522,
+    "total_tokens": 7485,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 1389,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 17482.81,
+    "cost_estimate": {
+      "input_cost_usd": 0.000555,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.000986,
+      "total_cost_usd": 0.001541,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_courier",
+        "canonical_name": "The Hooded Courier",
+        "kind": "character",
+        "base_attributes": {
+          "role": "courier",
+          "attire": "grey gloves, hooded wool cloak"
+        },
+        "state": {
+          "location_id": "loc_vault",
+          "status": "fleeing into the Archive Vault stairwell",
+          "carrying": "item_signet"
+        },
+        "private_state": {
+          "emotion": "frozen shock, then reflexive flight",
+          "intent": "hide the black ring as ordered, or escape"
+        },
+        "merge_state": true,
+        "add_aliases": [
+          {
+            "alias": "the courier",
+            "entity_id": "char_courier",
+            "kind": "epithet",
+            "known_to": null,
+            "persona_name": null,
+            "valid_from_step": 0,
+            "valid_to_step": null
+          },
+          {
+            "alias": "the hooded courier",
+            "entity_id": "char_courier",
+            "kind": "epithet",
+            "known_to": null,
+            "persona_name": null,
+            "valid_from_step": 0,
+            "valid_to_step": null
+          },
+          {
+            "alias": "the grey-gloved hand",
+            "entity_id": "char_courier",
+            "kind": "epithet",
+            "known_to": null,
+            "persona_name": null,
+            "valid_from_step": 3,
+            "valid_to_step": null
+          }
+        ],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_signet_transfer",
+        "reason": "Courier appears on-page as a distinct acting entity receiving the signet and fleeing."
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_council",
+          "mood": "fury hardened into cold certainty",
+          "posture": "alone amid overturned wine and guttering candles",
+          "focus": "the open vault door and the darkness beyond"
+        },
+        "private_state": {
+          "trust_in_julian": "burned down",
+          "belief": "Julian's flight confirms he stole the Obsidian Signet",
+          "grief": "a decade of trust she built herself, ending down a stairwell"
+        },
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_flees_to_vault",
+        "reason": "Emotional shift from hot accusation to cold, settled certainty of betrayal."
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_vault",
+          "mood": "panicked, breath ragged, desperate",
+          "status": "fugitive, fled through the iron door behind the tapestry",
+          "physical": "boots skidding, clipped a side table, spilled decanter"
+        },
+        "private_state": {
+          "fear": "high",
+          "guilt": "acting on it — bribed the courier to hide the ring",
+          "intent": "escape the guards via the Archive Vault"
+        },
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_flees_to_vault",
+        "reason": "Julian breaks and runs rather than submit to the search."
+      },
+      {
+        "entity_id": "item_signet",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "holder": "char_courier",
+          "concealment": "closed inside a grey glove",
+          "location_id": "loc_vault",
+          "sought_by": [
+            "char_elena"
+          ],
+          "instruction": "to be hidden deep inside the stone vault"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_signet_transfer",
+        "reason": "Obsidian Signet passed from Julian to the courier and carried toward the Archive Vault."
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_elena",
+        "target_id": "char_julian",
+        "relation_type": "trust",
+        "state": {
+          "status": "broken",
+          "note": "decade of trust burned down a stairwell she built"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_flees_to_vault",
+        "reason": "Julian's flight proves his guilt to Elena."
+      },
+      {
+        "source_id": "char_elena",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "disposition": "cold, hard hostility",
+          "pursuit": "will hunt him"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_flees_to_vault",
+        "reason": null
+      },
+      {
+        "source_id": "char_julian",
+        "target_id": "char_elena",
+        "relation_type": "stance",
+        "state": {
+          "fear": 0.9,
+          "avoidance": true,
+          "note": "ran rather than face her search"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_elena_demands_search",
+        "reason": null
+      },
+      {
+        "source_id": "char_julian",
+        "target_id": "char_courier",
+        "relation_type": "coercion",
+        "state": {
+          "demand": "take the cursed ring and hide it in the stone vault",
+          "transferred": "item_signet",
+          "coercive": true
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_signet_transfer",
+        "reason": "Julian forced the signet into the courier's hand."
+      },
+      {
+        "source_id": "char_courier",
+        "target_id": "char_julian",
+        "relation_type": "obligation",
+        "state": {
+          "holding": "item_signet",
+          "followed": true,
+          "note": "bolted down the vault stairwell after Julian"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_flees_to_vault",
+        "reason": null
+      },
+      {
+        "source_id": "item_signet",
+        "target_id": "char_courier",
+        "relation_type": "held_by",
+        "state": {
+          "since": "step 3",
+          "concealment": "grey glove"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_signet_transfer",
+        "reason": null
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_elena_demands_search",
+        "timeline_id": "main",
+        "step": 3,
+        "predicate": "confrontation",
+        "summary": "Elena ordered Julian to empty every pocket and fold, holding out her ringed hand like a row of tiny executions while he stammered and fumbled at his coat.",
+        "participants": {
+          "char_elena": "actor",
+          "char_julian": "target",
+          "char_courier": "bystander"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "char_courier"
+        ],
+        "known_by": {
+          "char_elena": "direct",
+          "char_julian": "direct",
+          "char_courier": "direct"
+        },
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": "scene_vault_flight",
+        "consolidated_from": [],
+        "salience": 5.0,
+        "metadata": {},
+        "match_score": 0.0
+      },
+      {
+        "episode_id": "ep_julian_signet_transfer",
+        "timeline_id": "main",
+        "step": 3,
+        "predicate": "item_transfer",
+        "summary": "Cornered, Julian seized the courier's grey-gloved hand and forced the Obsidian Signet into it, rasping an order to hide the cursed ring deep inside the stone vault before the guards arrived.",
+        "participants": {
+          "char_julian": "actor",
+          "char_courier": "recipient",
+          "item_signet": "instrument",
+          "char_elena": "observer"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "char_courier"
+        ],
+        "known_by": {
+          "char_elena": "direct",
+          "char_julian": "direct",
+          "char_courier": "direct"
+        },
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": "scene_vault_flight",
+        "consolidated_from": [],
+        "salience": 8.5,
+        "metadata": {
+          "item": "Obsidian Signet",
+          "intended_hiding_place": "loc_vault"
+        },
+        "match_score": 0.0
+      },
+      {
+        "episode_id": "ep_julian_flees_to_vault",
+        "timeline_id": "main",
+        "step": 3,
+        "predicate": "flight",
+        "summary": "Julian wrenched open the iron door behind the tapestry and vanished down the Archive Vault stairwell, clipping a side table and spilling wine across the ledgers; the courier, black ring in his glove, bolted after him, leaving Elena alone in the Council Chamber.",
+        "participants": {
+          "char_julian": "actor",
+          "char_courier": "follower",
+          "char_elena": "observer",
+          "item_signet": "instrument"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "char_courier"
+        ],
+        "known_by": {
+          "char_elena": "direct",
+          "char_julian": "direct",
+          "char_courier": "direct"
+        },
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": "scene_vault_flight",
+        "consolidated_from": [],
+        "salience": 7.5,
+        "metadata": {
+          "route": "iron door behind the tapestry, down into loc_vault"
+        },
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": "scene_vault_flight"
+  }
+}

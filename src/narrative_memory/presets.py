@@ -134,8 +134,25 @@ class InteractiveFictionPreset:
 
     def extraction_instructions(self) -> str:
         return (
-            "Analyze the scene outcome and emit a StepDelta JSON diff recording any changes in "
-            "character mood, disguises, relationship shifts, new aliases, or discrete plot episodes."
+            "Analyze the scene chunk and emit a StepDelta JSON diff following these 6-Tier rules:\n"
+            "1. **Entities (`entities`) — State Keys & Delta Discipline**:\n"
+            "   - Emit an `EntityDelta` ONLY for characters whose `location_id`, `mood`, or `add_aliases` changed in this chunk.\n"
+            "   - **Room Moves (`state['location_id']`)**: When a character exits, enters, or flees into a different room/location, set `state['location_id']` to the exact canonical `loc_*` ID where they are at the END of the chunk. If multiple characters move or chase each other into a room, update `location_id` for ALL of them.\n"
+            "   - **Mood Shifts (`state['mood']`)**: When a character's emotion changes, set `state['mood']` to a single lowercase canonical word (prefer: `'furious'`, `'panicked'`, `'restless'`, `'determined'`, `'shocked'`, `'indignant'`, `'calm'`, `'confident'`, `'watchful'`, `'nervous'`). Set `caused_by_episode_id` to the triggering episode's ID.\n"
+            "   - **Disguise Unmasking (`add_aliases`)**: Do NOT re-add existing aliases unless a disguise is unmasked. When a disguised character reveals their true identity to someone, emit `add_aliases=[AliasRecord(alias='<disguise_alias>', entity_id='<char_id>', kind='disguise', persona_name='<persona>', known_to=[...])]` containing BOTH previously aware character IDs and the newly informed character ID.\n"
+            "2. **Edges (`edges`) — Stance & Artifact Possession**:\n"
+            "   - **Item Handoff (`relation_type='possesses'`)**: When an artifact/item is handed to another character, emit `EdgeDelta(source_id='<recipient_char_id>', target_id='<artifact_id>', relation_type='possesses', state={'status': 'concealed'}, caused_by_episode_id='<ep_id>')`.\n"
+            "   - **Stance & Register Shift (`relation_type='stance'`)**: When a character's interpersonal attitude or grammatical register shifts (e.g., dropping formal `'Vi'` to informal `'ti'` during an accusation, unmasking, or reprimand), emit `EdgeDelta(source_id='<speaker_id>', target_id='<target_id>', relation_type='stance', state={'register': 'ti', 'tone': '<furious|commanding|stern>', 'trust': <negative_float>}, caused_by_episode_id='<ep_id>')`.\n"
+            "3. **Episodes (`episodes`) — Single Primary Event & Strict Witness Scoping**:\n"
+            "   - Emit at most **1 primary `EpisodeRecord`** for the main plot event in the chunk (using `predicate` such as `'briefing'`, `'confrontation'`, `'item_transfer'`, `'flashback'`, or `'revelation'`). If a chunk only contains a truth reveal / memory wipe referencing earlier events, emit 0 new episodes and use `inform` (`InformDelta`) instead.\n"
+            "   - **CRITICAL Witness Rule**: Every character in `participants` or `witnesses` is granted direct epistemic knowledge of the event. NEVER include a character in `participants` or `witnesses` if they already stepped out of the room (e.g., onto a balcony) before the event started, or if the event occurs in another room (e.g., inside a vault). Conversely, ALWAYS include all characters who are physically inside that room during the event in `witnesses`—even if they remain silent in the shadows or in disguise.\n"
+            "4. **Flashbacks (`is_flashback=True`)**:\n"
+            "   - If the chunk depicts a memory/flashback to the past (e.g., ten years ago), set `is_flashback=True` and `story_time='10_years_ago'` on the `StepDelta` and record a single `'flashback'` episode (`witnesses` = only the characters involved in that past memory).\n"
+            "5. **Epistemic Transitions on Prior Episodes (`inform` / `InformDelta`)**:\n"
+            "   - Do NOT emit `InformDelta` with `epistemic='direct'` (direct witnesses belong in `episode.witnesses`).\n"
+            "   - **`epistemic='deceived'`**: When a character lies to someone (`entity_id`) with a cover story to explain away an **earlier confrontation/theft episode** from `### Recent Episode IDs`, do NOT create a new episode for the lie; instead emit `InformDelta(episode_id='<earlier_confrontation_episode_id>', entity_id='<listener_id>', epistemic='deceived', believed_summary='<the false cover story>')`.\n"
+            "   - **`epistemic='told'`**: When someone informs a character (`entity_id`) of the truth about an **earlier confrontation/theft episode** from `### Recent Episode IDs`, emit `InformDelta(episode_id='<earlier_confrontation_episode_id>', entity_id='<listener_id>', epistemic='told')`.\n"
+            "   - **`epistemic='forgotten'`**: When a character (`entity_id`) drinks a draught or triggers a device that wipes their memory of an **earlier flashback episode** from `### Recent Episode IDs`, emit `InformDelta(episode_id='<earlier_flashback_episode_id>', entity_id='<target_id>', epistemic='forgotten')`."
         )
 
 

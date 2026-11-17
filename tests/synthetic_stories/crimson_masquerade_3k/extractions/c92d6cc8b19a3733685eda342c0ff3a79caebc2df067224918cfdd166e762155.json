@@ -1,0 +1,68 @@
+{
+  "cache_key": "c92d6cc8b19a3733685eda342c0ff3a79caebc2df067224918cfdd166e762155",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-13T18:44:48.380336+00:00",
+  "prompt_sha256": "36d6d3077160f039e69a8f6ad0843cca731910e6e7f1dcdebf1ad0db99145925",
+  "scene_text_sha256": "fb6b3ba72ebd4ccadd961ae7f257a89caaea738b8dd5ca8cf725b4e9080aa985",
+  "scene_text": "The Council Chamber hung above the Grand Canal like a jewel box suspended over black water, its velvet drapes breathing with the damp draft that slipped through the leaded windows. Candles in gilt sconces threw long, nervous shadows across the mosaic floor, and the air smelled of wax, salt, and old parchment. Below, a gondola knocked softly against the water-steps, and the sound traveled up through the stone like a secret. Elena, calm as a blade laid flat upon silk, stood at the head of the table while Marcus, the old general, leaned over the ledgers with the confidence of a man who had never once doubted the map in his own hand. Julian, the young treasurer, hovered at the table’s edge, his fingers twitching whenever the guards outside shifted their halberds. Near the doorway, the hooded courier waited in perfect stillness, a sealed satchel held against her breast, her face hidden beneath a rain-dark hood.\n\nElena turned a page and let the silence do its work. “Molim vas da pažljivo pregledate ove poverljive izveštaje pre nego što kraljevska straža zatvori kapije,” she said, addressing Marcus with the crisp courtesy of a command wrapped in diplomacy. The old general grunted, squinting at the columns of figures, and the courier stepped forward at last. She bowed low, the hem of her cloak brushing the marble, and spoke in a voice carefully flattened by the hood. “Ponizno vam donosim zapečaćene depeše sa severne granice koje zahtevaju vašu hitnu vojnu procenu.” The seals caught the candlelight, red wax stamped with a northern wolf. The courier’s stillness was more unnerving than any whisper.\n\nMarcus took the depeches but did not break them immediately; he weighed them, as if distrust were a form of prudence. Julian’s gaze darted from the satchel to Elena’s hands and back again. “Yes, indeed,” he murmured, a brief filler reply that fell into the room and vanished like a pebble into deep water. Elena did not look at him. The hooded courier glided back into the shadow beside the door, and the inspection continued, each rustle of parchment sharpening the tension until the chamber felt as taut as a drawn wire.",
+  "usage": {
+    "prompt_tokens": 4029,
+    "completion_tokens": 262,
+    "total_tokens": 4291,
+    "cached_prompt_tokens": 3328,
+    "reasoning_tokens": 63,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "cost_estimate": {
+      "input_cost_usd": 9.8e-05,
+      "cached_input_cost_usd": 4.7e-05,
+      "output_cost_usd": 7.3e-05,
+      "total_cost_usd": 0.000218,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_step1_opening_briefing",
+        "timeline_id": "main",
+        "step": 1,
+        "predicate": "briefing",
+        "summary": "Elena directed Marcus to review confidential reports before the royal guard closed the gates, while a hooded courier delivered sealed despatches from the northern frontier bearing the wolf seal and requested urgent military assessment. Julian watched uneasily from the table's edge.",
+        "participants": {
+          "char_elena": "actor",
+          "char_marcus": "target",
+          "char_lyra": "messenger"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_marcus",
+          "char_lyra",
+          "char_julian"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 3.2,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

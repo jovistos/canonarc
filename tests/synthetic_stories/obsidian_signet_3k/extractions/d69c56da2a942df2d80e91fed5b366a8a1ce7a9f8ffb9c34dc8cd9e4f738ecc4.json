@@ -1,0 +1,258 @@
+{
+  "cache_key": "d69c56da2a942df2d80e91fed5b366a8a1ce7a9f8ffb9c34dc8cd9e4f738ecc4",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-16T17:57:52.119676+00:00",
+  "prompt_sha256": "32ed5be9ec6c0aa0d92b01c7f2608c1073d74c39aed1fc56cba17d714ae26dca",
+  "scene_text_sha256": "d75d92aa109c67ae0312fa18021efecb73176ae095550e307a36ad9651fe027c",
+  "scene_text": "The vault stairwell glowed, and Lyra came up out of it with her hood thrown back and the Obsidian Signet held high in her bare hand. The candlelight slid around the black stone and found no reflection in it at all. Marcus turned, saw the ring, and his weather-beaten face went through surprise, suspicion, and then a slow, terrible comprehension as Lyra spoke — plainly, without ornament — of the pocket emptied in this room, of the ring pressed into a courier's glove, of the stolen charters and the lie about raiders that had been stitched together before she had even reached the top step.\n\nMarcus's jaw set until the muscle jumped beneath his scar. Indignant heat flooded his cheeks, and he wheeled on the young treasurer with a roar that rattled the decanters. \"Kako se usuđuješ da obmanjuješ vojni savet dok držimo dokaze u rukama!\"\n\nJulian was cornered against the long oak table, three pairs of eyes pinning him there like knives through a moth. His hands opened and closed. And then — with the strange, jerky calm of a man who has prepared for exactly this — he reached inside his collar and drew out a small glass phial of cloudy amber liquid. He drank it in one swallow before anyone could cross the room. The phial fell and shattered.\n\nJulian blinked. Then blinked again, and the terror drained out of his features, replaced by the bland confusion of a sleeper woken in an unfamiliar house. He looked at the ring, at Marcus's fury, at Elena's cold stare, and there was nothing in his face but polite bewilderment. He did not remember the winter pact. He did not remember the snow at the windows, the tea, the trust, the ten years of it. He did not even remember why he was afraid. Elena watched the man she had built a kingdom beside become a stranger in a single breath, and somewhere far below the Council Chamber, the last candle guttered out.",
+  "usage": {
+    "prompt_tokens": 4094,
+    "completion_tokens": 3916,
+    "total_tokens": 8010,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 2437,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 19364.28,
+    "cost_estimate": {
+      "input_cost_usd": 0.000573,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.001096,
+      "total_cost_usd": 0.00167,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "consciousness": "confused"
+        },
+        "private_state": {
+          "memory_wiped": true,
+          "remembers_winter_pact": false,
+          "remembers_charters": false,
+          "remembers_elena": false,
+          "emotional_state": "bewildered",
+          "condition": "memory erased"
+        },
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_drinks_potion",
+        "reason": "Julian drank a memory-erasing phial and lost his memories of the winter pact and his bond with Elena."
+      },
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "emotional_state": "furious",
+          "resolve": "punish Julian"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_lyra_exposes_julian",
+        "reason": "Marcus learned of Julian's theft and deception from Lyra and reacted with rage."
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {},
+        "private_state": {
+          "emotional_state": "devastated",
+          "realization": "Julian no longer remembers their shared history"
+        },
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_drinks_potion",
+        "reason": "Elena watched Julian lose all memory of their ten-year bond."
+      },
+      {
+        "entity_id": "char_lyra",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "emotional_state": "resolute"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_lyra_exposes_julian",
+        "reason": "Lyra openly confronted Julian before the council with the stolen signet."
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_marcus",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "stance": "hostile",
+          "trust": -0.9,
+          "anger": 0.9,
+          "betrayed": true
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_lyra_exposes_julian",
+        "reason": "Marcus realized Julian had deceived the military council."
+      },
+      {
+        "source_id": "char_elena",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "stance": "estranged",
+          "grief": 0.9,
+          "betrayed": true
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_drinks_potion",
+        "reason": "Elena saw Julian become a stranger who no longer remembers her."
+      },
+      {
+        "source_id": "char_lyra",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "stance": "condemning",
+          "resolve": 0.9
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_lyra_exposes_julian",
+        "reason": "Lyra exposed Julian's lies and demanded accountability."
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_lyra_exposes_julian",
+        "timeline_id": "main",
+        "step": 6,
+        "predicate": "revelation",
+        "summary": "Lyra entered the Council Chamber with the Obsidian Signet, exposing Julian's theft, the false charters, and his raider lie to Marcus.",
+        "participants": {
+          "char_lyra": "accuser",
+          "char_julian": "accused",
+          "char_marcus": "judge",
+          "char_elena": "witness",
+          "item_signet": "evidence"
+        },
+        "witnesses": [
+          "char_marcus",
+          "char_elena",
+          "char_julian",
+          "char_lyra"
+        ],
+        "known_by": {
+          "char_marcus": "direct",
+          "char_elena": "direct",
+          "char_julian": "direct",
+          "char_lyra": "direct"
+        },
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 9.5,
+        "metadata": {},
+        "match_score": 0.0
+      },
+      {
+        "episode_id": "ep_julian_drinks_potion",
+        "timeline_id": "main",
+        "step": 6,
+        "predicate": "memory_erasure",
+        "summary": "Julian drank a phial of amber liquid, erasing his memories of the winter pact and his ten-year bond with Elena.",
+        "participants": {
+          "char_julian": "actor",
+          "char_elena": "witness",
+          "char_lyra": "witness",
+          "char_marcus": "witness"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_lyra",
+          "char_marcus"
+        ],
+        "known_by": {
+          "char_elena": "direct",
+          "char_lyra": "direct",
+          "char_marcus": "direct"
+        },
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 9.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [
+      {
+        "episode_id": "ep_julian_flees_signet_to_vault",
+        "entity_id": "char_marcus",
+        "epistemic": "told",
+        "believed_summary": null
+      },
+      {
+        "episode_id": "ep_julian_lies_raiders",
+        "entity_id": "char_marcus",
+        "epistemic": "told",
+        "believed_summary": "Julian's raider story was a lie; he stole the signet himself."
+      },
+      {
+        "episode_id": "ep_julian_flees_signet_to_vault",
+        "entity_id": "char_elena",
+        "epistemic": "told",
+        "believed_summary": null
+      },
+      {
+        "episode_id": "ep_lyra_reveals_identity",
+        "entity_id": "char_marcus",
+        "epistemic": "direct",
+        "believed_summary": null
+      },
+      {
+        "episode_id": "ep_lyra_reveals_identity",
+        "entity_id": "char_elena",
+        "epistemic": "direct",
+        "believed_summary": null
+      }
+    ],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

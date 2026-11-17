@@ -1,0 +1,81 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_vault"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_002",
+      "reason": "Julian flees into the Archive Vault."
+    },
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_vault"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_002",
+      "reason": "Lyra chases Julian into the Archive Vault."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_julian",
+      "target_id": "item_signet",
+      "relation_type": "possesses",
+      "state": {
+        "status": "concealed"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_002",
+      "reason": "Julian hands the Obsidian Signet to Lyra."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_003",
+      "timeline_id": "main",
+      "step": 3,
+      "predicate": "item_transfer",
+      "summary": "Julian forces the Obsidian Signet into Lyra's possession and flees to the Archive Vault.",
+      "participants": {
+        "char_julian": "actor",
+        "char_lyra": "recipient"
+      },
+      "witnesses": [
+        "char_elena"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": 0,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

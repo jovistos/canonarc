@@ -1,0 +1,36 @@
+{
+  "entities": [],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_flashback_pact",
+      "timeline_id": "main",
+      "step": 4,
+      "predicate": "flashback",
+      "summary": "Elena recalls signing the historic pact ten years ago with Julian, whom she trusted implicitly.",
+      "participants": {
+        "char_elena": "actor",
+        "char_julian": "participant"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_julian"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": "10_years_ago",
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": true,
+  "story_time": "10_years_ago",
+  "chapter_id": null,
+  "scene_id": null
+}

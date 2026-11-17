@@ -1,0 +1,89 @@
+{
+  "cache_key": "41ce5abf367e27bc35255ffffe518cb97548c38e4a78352edbdb466804f6820a",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-16T18:51:09.449776+00:00",
+  "prompt_sha256": "fc44a70b9db89fda246dc923cf31dd359ee9cac9acee184e16fbe8d19eb32177",
+  "scene_text_sha256": "d520bfbba50974cd77141d0a90e1cca29107e9a5684bd08986f33d2e4713841d",
+  "scene_text": "The Council Chamber had soured with candle smoke. Forty tallow candles burned along the long oak table, their flames bowing each time the great doors breathed, and the shadows of four people slid across the polished grain like conspirators who had not yet chosen sides. Elena sat at the head of the table, her hands folded over a lacquered case of sealed reports, calm as a frozen lake under winter starlight. Beside her, the old general Marcus sprawled in his chair with the easy arrogance of a man who had never lost a war he cared about, one boot hooked over the table's edge, wine untouched at his elbow. Across from him the young treasurer Julian perched on the forward inch of his seat, fingers laced tight, jaw working silently as though he were chewing a stone. And behind them all, near the door, stood the hooded courier: grey wool, a scarf drawn across the mouth, eyes watchful inside the hood's shadow, saying nothing at all.\n\nElena lifted the case and set it before Marcus with a soft click of the brass clasp. \"Molim vas da pažljivo pregledate ove poverljive izveštaje pre nego što kraljevska straža zatvori kapije.\" Her voice carried no heat, only the flat weight of a woman accustomed to being obeyed before the sentence ended. Marcus grunted, thumbed the wax seals one by one, and did not look up.\n\nThe hooded courier stepped forward then, boots whispering on the flagstones, and bowed low enough that the hood swallowed the candlelight. \"Ponizno vam donosim zapečaćene depeše sa severne granice koje zahtevaju vašu hitnu vojnu procenu.\" The voice was muffled, carefully flattened, neither young nor old. Elena's gaze drifted to the courier's gloves — fine leather, city-stitched, far too costly for a border rider — and something behind her eyes went very still.\n\nJulian cleared his throat twice before any sound came out. \"Yes, indeed.\" The two words fell into the silence and died there, absurd and small. A candle spat. Marcus turned a page. The courier straightened, hands folded, and watched Julian the way a hawk watches a mouse pretending to be a stone.",
+  "usage": {
+    "prompt_tokens": 5362,
+    "completion_tokens": 663,
+    "total_tokens": 6025,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 436,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 4976.361,
+    "cost_estimate": {
+      "input_cost_usd": 0.000751,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.000186,
+      "total_cost_usd": 0.000936,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "watchful"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_briefing_1",
+        "reason": "Elena notices the courier's costly city-stitched gloves and grows suspicious."
+      }
+    ],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_briefing_1",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "briefing",
+        "summary": "Elena presented sealed confidential reports to Marcus for review while the hooded courier delivered northern border dispatches; Julian stammered awkwardly and Elena grew suspicious of the courier's fine gloves.",
+        "participants": {
+          "char_elena": "actor",
+          "char_marcus": "recipient",
+          "char_lyra": "courier",
+          "char_julian": "observer"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_marcus",
+          "char_julian",
+          "char_lyra"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 4.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "naive_trusting",
+        "trust_in_julian": "implicit"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step4_past_flashback",
+      "reason": "Flashback: during the winter treaty signing, Elena was young and naive, trusting Julian implicitly."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_elena",
+      "target_id": "char_julian",
+      "relation_type": "trust",
+      "state": {
+        "level": "implicit",
+        "context": "winter siege treaty signing"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_step4_past_flashback",
+      "reason": "Elena trusted Julian implicitly during the treaty signing."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_step4_past_flashback",
+      "timeline_id": "main",
+      "step": 4,
+      "predicate": "flashback",
+      "summary": "Ten years ago during the winter siege, Elena trusted Julian at the treaty signing.",
+      "participants": {
+        "char_elena": "experiencer",
+        "char_julian": "companion"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_julian"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": "10_years_ago",
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 6.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": true,
+  "story_time": "10_years_ago",
+  "chapter_id": null,
+  "scene_id": null
+}

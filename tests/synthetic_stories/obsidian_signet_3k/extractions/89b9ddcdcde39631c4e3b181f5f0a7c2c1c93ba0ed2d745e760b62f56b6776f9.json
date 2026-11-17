@@ -1,0 +1,248 @@
+{
+  "cache_key": "89b9ddcdcde39631c4e3b181f5f0a7c2c1c93ba0ed2d745e760b62f56b6776f9",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-16T17:57:05.522175+00:00",
+  "prompt_sha256": "cf966f9eed453e55d712bb62e97b7794feacaf4ddc7e95cbc4aea75942cc1724",
+  "scene_text_sha256": "a3993029e0653d0b9c556c9b36ebab35f8953762f94d0cb1b86e878d22176cc4",
+  "scene_text": "\"Empty them,\" Elena said. \"Every pocket. Every fold. Now.\" She held out one hand, palm up, and her rings caught the candlelight like a row of tiny executions. Julian's breath came in short, ragged pulls. He fumbled at his coat as though his fingers had forgotten their business, and for one long moment the whole chamber seemed to hang suspended between one heartbeat and the next.\n\nThen he moved. Not toward Elena — toward the courier. He seized the grey-gloved hand and forced something into it: a heavy ring of black stone, dull-polished, cold as a drowned coin, its flat face cut with a signet no honest hand should have carried. \"Take this cursed ring and hide it deep inside the stone vault before the guards arrive!\" His voice cracked on the last word. The courier's fingers closed around the Obsidian Signet automatically, and Julian was already running — boots skidding on the flagstones, shoulder clipping a side table so that a decanter went over and spilled red across the ledgers.\n\nHe wrenched open the low iron door behind the tapestry, the one that led down into the Archive Vault, and vanished into the dark mouth of the stairwell. The hooded courier stood frozen for an instant, staring down at the black ring in the grey glove — then bolted after him, hood flying back in the slipstream, wool cloak snapping.\n\nElena remained alone in the Council Chamber amid the overturned wine and the guttering candles. She stared at the open vault door, at the darkness beyond it, and her fury slowly hardened into something older and colder: the certainty of a woman watching a decade of trust burn down a stairwell she had built with her own hands.",
+  "usage": {
+    "prompt_tokens": 8024,
+    "completion_tokens": 6352,
+    "total_tokens": 14376,
+    "cached_prompt_tokens": 3840,
+    "reasoning_tokens": 4718,
+    "api_calls": 2,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 1,
+    "validation_errors": 1,
+    "latency_ms": 32988.736,
+    "cost_estimate": {
+      "input_cost_usd": 0.000586,
+      "cached_input_cost_usd": 5.4e-05,
+      "output_cost_usd": 0.001779,
+      "total_cost_usd": 0.002418,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "cold fury",
+          "emotional_state": "betrayed; fury hardening into cold certainty",
+          "trust_julian": "shattered",
+          "current_location": "loc_council"
+        },
+        "private_state": {
+          "resolve": "watch the vault stairwell; decade of trust burning down"
+        },
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_flees_signet_to_vault",
+        "reason": "Elena witnessed Julian pass the Obsidian Signet to the courier and flee into the Archive Vault"
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "panicked; desperate",
+          "status": "fleeing",
+          "current_location": "loc_vault",
+          "carrying": "none"
+        },
+        "private_state": {
+          "guilt": "stolen signet; fear of guards",
+          "intent": "escape through Archive Vault"
+        },
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_flees_signet_to_vault",
+        "reason": "Julian forced the Obsidian Signet into the courier's hand and fled down the vault stairwell"
+      },
+      {
+        "entity_id": "char_lyra",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {
+          "courier_role": "northern dispatches"
+        },
+        "state": {
+          "mood": "frozen then alarmed",
+          "role": "hooded courier",
+          "status": "bolting after Julian",
+          "current_location": "loc_vault",
+          "carrying": "item_signet"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [
+          {
+            "alias": "the hooded courier",
+            "entity_id": "char_lyra",
+            "kind": "epithet",
+            "known_to": null,
+            "persona_name": null,
+            "valid_from_step": 3,
+            "valid_to_step": null
+          }
+        ],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_flees_signet_to_vault",
+        "reason": "Lyra received the Obsidian Signet from Julian and followed him into the Archive Vault"
+      },
+      {
+        "entity_id": "item_signet",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "holder": "char_lyra",
+          "status": "concealed; being hidden",
+          "last_location": "loc_council",
+          "destination": "loc_vault",
+          "visibility": "hidden in grey glove"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_flees_signet_to_vault",
+        "reason": "Julian transferred the Obsidian Signet to the courier with orders to hide it in the stone vault"
+      },
+      {
+        "entity_id": "loc_vault",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "door": "open",
+          "occupants": "char_julian; char_lyra approaching",
+          "alert": "disturbed"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_flees_signet_to_vault",
+        "reason": "Julian wrenched open the iron door and vanished into the Archive Vault stairwell"
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_elena",
+        "target_id": "char_julian",
+        "relation_type": "trust",
+        "state": {
+          "status": "broken",
+          "sentiment": "betrayal",
+          "reason": "stole Obsidian Signet and fled"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_flees_signet_to_vault",
+        "reason": "Elena watched Julian give the signet to the courier and run"
+      },
+      {
+        "source_id": "char_julian",
+        "target_id": "char_elena",
+        "relation_type": "stance",
+        "state": {
+          "sentiment": "fear; desperation",
+          "status": "fleeing",
+          "trust": "none"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_flees_signet_to_vault",
+        "reason": "Julian panicked under Elena's demand and fled"
+      },
+      {
+        "source_id": "char_julian",
+        "target_id": "char_lyra",
+        "relation_type": "instruction",
+        "state": {
+          "action": "hide Obsidian Signet deep inside the stone vault",
+          "item": "item_signet",
+          "urgency": "before guards arrive"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_flees_signet_to_vault",
+        "reason": "Julian seized the courier's hand and forced the signet into it"
+      },
+      {
+        "source_id": "char_lyra",
+        "target_id": "char_julian",
+        "relation_type": "complicity",
+        "state": {
+          "status": "following",
+          "role": "courier carrying signet",
+          "location": "loc_vault"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_julian_flees_signet_to_vault",
+        "reason": "Lyra bolted after Julian into the Archive Vault"
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_julian_flees_signet_to_vault",
+        "timeline_id": "main",
+        "step": 3,
+        "predicate": "item_transfer",
+        "summary": "Elena demanded Julian empty his pockets; Julian forced the Obsidian Signet into the hooded courier's hand, ordered it hidden in the Archive Vault, and fled down the vault stairwell with the courier following.",
+        "participants": {
+          "char_elena": "accuser/witness",
+          "char_julian": "actor/fleeing",
+          "char_lyra": "courier/recipient",
+          "item_signet": "transferred object",
+          "loc_council": "location",
+          "loc_vault": "destination"
+        },
+        "witnesses": [
+          "char_elena"
+        ],
+        "known_by": {
+          "char_elena": "direct",
+          "char_julian": "direct",
+          "char_lyra": "direct"
+        },
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 9.0,
+        "metadata": {
+          "outcome": "signet passed to courier; Julian and courier flee into Archive Vault; Elena left alone"
+        },
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}
