@@ -95,6 +95,11 @@ CREATE TABLE IF NOT EXISTS episode_epistemics (
 
 CREATE INDEX IF NOT EXISTS idx_episode_epistemics_lookup
     ON episode_epistemics(timeline_id, episode_id, step DESC);
+
+CREATE TABLE IF NOT EXISTS store_metadata (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
 """
 
 LINEAGE_CTE_SQL = """
@@ -396,6 +401,79 @@ class CausalStore:
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         self.close()
+
+    # --- Embedding Provenance & Re-indexing ---
+
+    def get_embedding_metadata(self) -> tuple[str | None, int | None]:
+        """Returns (embedder_id, embedding_dim) recorded in store_metadata, or infers dim from existing BLOBs."""
+        with self._lock:
+            rows = self.conn.execute(
+                "SELECT key, value FROM store_metadata WHERE key IN ('embedder_id', 'embedding_dim')"
+            ).fetchall()
+            meta = {row["key"]: row["value"] for row in rows}
+            embedder_id = meta.get("embedder_id")
+            raw_dim = meta.get("embedding_dim")
+            if raw_dim is not None:
+                return embedder_id, int(raw_dim)
+
+            # Fallback for legacy DBs created before store_metadata existed
+            for table in ("episodes", "voice_exemplars"):
+                row = self.conn.execute(
+                    f"SELECT length(embedding) AS byte_len FROM {table} WHERE length(embedding) > 0 LIMIT 1"
+                ).fetchone()
+                if row and row["byte_len"]:
+                    return embedder_id, int(row["byte_len"]) // 4
+            return embedder_id, None
+
+    def set_embedding_metadata(self, embedder_id: str, embedding_dim: int) -> None:
+        """Persists the active embedder_id and embedding_dim in store_metadata."""
+        with self.transaction():
+            self.conn.execute(
+                "INSERT OR REPLACE INTO store_metadata (key, value) VALUES ('embedder_id', ?)",
+                (embedder_id,),
+            )
+            self.conn.execute(
+                "INSERT OR REPLACE INTO store_metadata (key, value) VALUES ('embedding_dim', ?)",
+                (str(int(embedding_dim)),),
+            )
+
+    def list_all_episodes_for_reembed(self) -> list[tuple[str, str, str]]:
+        """Returns (timeline_id, episode_id, summary) for all stored episodes."""
+        with self._lock:
+            rows = self.conn.execute(
+                "SELECT timeline_id, episode_id, summary FROM episodes"
+            ).fetchall()
+            return [(row["timeline_id"], row["episode_id"], row["summary"]) for row in rows]
+
+    def list_all_voice_exemplars_for_reembed(self) -> list[tuple[str, str, str]]:
+        """Returns (timeline_id, exemplar_id, text) for all stored voice exemplars."""
+        with self._lock:
+            rows = self.conn.execute(
+                "SELECT timeline_id, exemplar_id, text FROM voice_exemplars"
+            ).fetchall()
+            return [(row["timeline_id"], row["exemplar_id"], row["text"]) for row in rows]
+
+    def update_episode_embeddings(self, updates: Sequence[tuple[str, str, bytes]]) -> int:
+        """Updates embedding BLOBs for (timeline_id, episode_id, emb_bytes) pairs."""
+        if not updates:
+            return 0
+        with self.transaction():
+            self.conn.executemany(
+                "UPDATE episodes SET embedding = ? WHERE timeline_id = ? AND episode_id = ?",
+                [(emb, tl, eid) for tl, eid, emb in updates],
+            )
+            return len(updates)
+
+    def update_voice_embeddings(self, updates: Sequence[tuple[str, str, bytes]]) -> int:
+        """Updates embedding BLOBs for (timeline_id, exemplar_id, emb_bytes) pairs."""
+        if not updates:
+            return 0
+        with self.transaction():
+            self.conn.executemany(
+                "UPDATE voice_exemplars SET embedding = ? WHERE timeline_id = ? AND exemplar_id = ?",
+                [(emb, tl, xid) for tl, xid, emb in updates],
+            )
+            return len(updates)
 
     # --- Timelines & Branching ---
 

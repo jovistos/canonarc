@@ -40,7 +40,7 @@ def _render_tree(timelines: Sequence[TimelineInfo]) -> str:
 
 
 def _cmd_tree(args: argparse.Namespace) -> int:
-    with NarrativeMemoryEngine(args.db_path) as engine:
+    with NarrativeMemoryEngine(args.db_path, on_embedder_mismatch="ignore") as engine:
         timelines = engine.list_timelines()
     if args.json:
         print(json.dumps([t.model_dump() for t in timelines], indent=2))
@@ -73,7 +73,7 @@ def _cmd_inspect(args: argparse.Namespace) -> int:
 
 
 def _cmd_diff(args: argparse.Namespace) -> int:
-    with NarrativeMemoryEngine(args.db_path) as engine:
+    with NarrativeMemoryEngine(args.db_path, on_embedder_mismatch="ignore") as engine:
         diff = engine.diff_timelines(args.timeline_a, args.timeline_b, at_step=args.step)
     if args.json:
         print(json.dumps(diff, indent=2))
@@ -89,7 +89,7 @@ def _cmd_diff(args: argparse.Namespace) -> int:
 
 
 def _cmd_history(args: argparse.Namespace) -> int:
-    with NarrativeMemoryEngine(args.db_path, timeline_id=args.timeline) as engine:
+    with NarrativeMemoryEngine(args.db_path, timeline_id=args.timeline, on_embedder_mismatch="ignore") as engine:
         hist = engine.get_history(args.subject_key, timeline_id=args.timeline, record_type=args.type)
     if args.json:
         print(json.dumps(hist, indent=2))

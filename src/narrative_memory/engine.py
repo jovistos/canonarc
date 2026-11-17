@@ -6,12 +6,18 @@ import hashlib
 import json
 import re
 import uuid
+import warnings
 from collections.abc import Iterator
 from contextlib import AbstractContextManager
 from pathlib import Path
 from typing import Any, Literal, Sequence
 
-from .embedders import Embedder, embed_texts_batch
+from .embedders import (
+    Embedder,
+    EmbedderMismatchError,
+    embed_texts_batch,
+    get_embedder_info,
+)
 from .episodic import DEFAULT_EPISODIC_POLICY, EpisodeRanker
 from .extractors import DeltaExtractor
 from .hooks import EngineHooks
@@ -393,6 +399,7 @@ class NarrativeMemoryEngine:
         extractor: DeltaExtractor | None = None,
         episode_ranker: EpisodeRanker | None = None,
         hooks: Sequence[EngineHooks] = (),
+        on_embedder_mismatch: Literal["raise", "warn", "reindex", "ignore"] = "warn",
     ) -> None:
         self.store: MemoryStore = store if store is not None else CausalStore(db_path)
         self._default_timeline = timeline_id
@@ -406,6 +413,9 @@ class NarrativeMemoryEngine:
         self.mention_resolver: MentionResolver = mention_resolver or DefaultLexicalResolver()
         self.extractor: DeltaExtractor | None = extractor
         self._hooks: list[EngineHooks] = list(hooks)
+        self._on_embedder_mismatch = on_embedder_mismatch
+        self._embedder_verified = False
+        self._check_embedder_compatibility()
 
     @property
     def active_timeline(self) -> str:
@@ -448,6 +458,119 @@ class NarrativeMemoryEngine:
 
     def close(self) -> None:
         self.store.close()
+
+    def _check_embedder_compatibility(self) -> None:
+        """Verifies that the active embedder matches any embedder/dimension recorded in the store."""
+        get_meta = getattr(self.store, "get_embedding_metadata", None)
+        if not callable(get_meta):
+            return
+        stored_id, stored_dim = get_meta()
+        if stored_id is None and stored_dim is None:
+            return
+        current_id, current_dim = get_embedder_info(self.voice_bank.embedder)
+        id_mismatch = stored_id is not None and stored_id != current_id
+        dim_mismatch = stored_dim is not None and current_dim is not None and stored_dim != current_dim
+        if not id_mismatch and not dim_mismatch:
+            self._embedder_verified = True
+            return
+
+        msg = (
+            f"Store embeddings were created with embedder={stored_id!r}, dim={stored_dim}, "
+            f"but engine was initialized with embedder={current_id!r}, dim={current_dim}."
+        )
+        policy = self._on_embedder_mismatch
+        if policy == "raise":
+            raise EmbedderMismatchError(msg)
+        if policy == "reindex":
+            self.reindex_embeddings()
+            return
+        if policy == "warn":
+            warnings.warn(
+                f"{msg} Call engine.reindex_embeddings() to migrate stored vectors.",
+                UserWarning,
+                stacklevel=3,
+            )
+
+    def _record_embedder_metadata(self, vectors: Sequence[Any]) -> None:
+        """Records embedder_id and vector dimension in store_metadata on first write."""
+        if self._embedder_verified or not vectors:
+            return
+        set_meta = getattr(self.store, "set_embedding_metadata", None)
+        get_meta = getattr(self.store, "get_embedding_metadata", None)
+        if not callable(set_meta) or not callable(get_meta):
+            self._embedder_verified = True
+            return
+        dim = int(len(vectors[0]))
+        if dim <= 0:
+            return
+        stored_id, stored_dim = get_meta()
+        current_id, _ = get_embedder_info(self.voice_bank.embedder)
+        if stored_id is None and stored_dim is None:
+            set_meta(current_id, dim)
+            self._embedder_verified = True
+            return
+        if (stored_id is not None and stored_id != current_id) or (
+            stored_dim is not None and stored_dim != dim
+        ):
+            msg = (
+                f"Store embeddings were created with embedder={stored_id!r}, dim={stored_dim}, "
+                f"but active embedder produced embedder={current_id!r}, dim={dim}."
+            )
+            if self._on_embedder_mismatch == "raise":
+                raise EmbedderMismatchError(msg)
+            if self._on_embedder_mismatch == "warn":
+                warnings.warn(
+                    f"{msg} Call engine.reindex_embeddings() to migrate stored vectors.",
+                    UserWarning,
+                    stacklevel=3,
+                )
+        self._embedder_verified = True
+
+    def reindex_embeddings(self, *, batch_size: int = 128) -> dict[str, int]:
+        """Re-embeds all stored episodes and voice exemplars in batches using the active embedder."""
+        list_ep = getattr(self.store, "list_all_episodes_for_reembed", None)
+        list_vo = getattr(self.store, "list_all_voice_exemplars_for_reembed", None)
+        upd_ep = getattr(self.store, "update_episode_embeddings", None)
+        upd_vo = getattr(self.store, "update_voice_embeddings", None)
+        set_meta = getattr(self.store, "set_embedding_metadata", None)
+        if not all(callable(fn) for fn in (list_ep, list_vo, upd_ep, upd_vo, set_meta)):
+            raise NotImplementedError("Active store backend does not support reindex_embeddings().")
+
+        ep_rows: list[tuple[str, str, str]] = list_ep()
+        vo_rows: list[tuple[str, str, str]] = list_vo()
+        step_size = max(1, batch_size)
+        detected_dim: int | None = None
+
+        ep_updates: list[tuple[str, str, bytes]] = []
+        for i in range(0, len(ep_rows), step_size):
+            chunk = ep_rows[i : i + step_size]
+            vecs = embed_texts_batch(self.voice_bank.embedder, [r[2] for r in chunk])
+            if vecs and detected_dim is None:
+                detected_dim = int(len(vecs[0]))
+            for (tl, eid, _), vec in zip(chunk, vecs):
+                ep_updates.append((tl, eid, vec.tobytes()))
+
+        vo_updates: list[tuple[str, str, bytes]] = []
+        for i in range(0, len(vo_rows), step_size):
+            chunk = vo_rows[i : i + step_size]
+            vecs = embed_texts_batch(self.voice_bank.embedder, [r[2] for r in chunk])
+            if vecs and detected_dim is None:
+                detected_dim = int(len(vecs[0]))
+            for (tl, xid, _), vec in zip(chunk, vecs):
+                vo_updates.append((tl, xid, vec.tobytes()))
+
+        current_id, known_dim = get_embedder_info(self.voice_bank.embedder)
+        final_dim = detected_dim or known_dim
+        if final_dim is None:
+            probe = self.voice_bank.embedder.embed_text("probe")
+            final_dim = int(len(probe))
+
+        with self._store_transaction():
+            n_ep = upd_ep(ep_updates)
+            n_vo = upd_vo(vo_updates)
+            set_meta(current_id, final_dim)
+        self._embedder_verified = True
+        return {"episodes": n_ep, "voice_exemplars": n_vo}
 
     def __enter__(self) -> NarrativeMemoryEngine:
         return self
@@ -1066,6 +1189,7 @@ class NarrativeMemoryEngine:
             vectors = embed_texts_batch(
                 self.voice_bank.embedder, [ep.summary for ep in prepared_episodes]
             )
+            self._record_embedder_metadata(vectors)
             for ep, vec in zip(prepared_episodes, vectors):
                 ep_embeddings[ep.episode_id] = vec.tobytes()
 
@@ -1103,6 +1227,7 @@ class NarrativeMemoryEngine:
             indexed.append(ep.model_copy(update={"episode_id": ep_id, "step": step, "timeline_id": tl}))
 
         vectors = embed_texts_batch(self.voice_bank.embedder, [ep.summary for ep in indexed])
+        self._record_embedder_metadata(vectors)
         to_store = [(item, vec.tobytes()) for item, vec in zip(indexed, vectors)]
         self.store.insert_episodes(to_store, timeline_id=tl)
         return indexed
@@ -1329,6 +1454,7 @@ class NarrativeMemoryEngine:
 
         if indexed:
             vectors = embed_texts_batch(self.voice_bank.embedder, [ex.text for ex in indexed])
+            self._record_embedder_metadata(vectors)
             to_store = [(item, vec.tobytes()) for item, vec in zip(indexed, vectors)]
             self.store.insert_voice_exemplars(to_store, timeline_id=tl)
         return indexed

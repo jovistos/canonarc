@@ -78,10 +78,15 @@ By default, `narrative-memory` ships with `OfflineNgramEmbedder`:
 - **Unicode & CJK-aware tokenization** (`_tokenize_units`): Tokenizes Latin/Cyrillic alphanumeric words as well as CJK ideographs, Hiragana/Katakana, and Hangul syllables + adjacent character bigrams so non-space-delimited languages work out of the box.
 - **Weinberger signed CRC32 feature hashing**: Uses `zlib.crc32` for both bucket index and a `±1` sign bit to cancel hash-collision bias cleanly across Python processes.
 - **Batch Embedding**: Implements `embed_batch(texts)` (with `embed_texts_batch()` helper) so committing batches of voice exemplars or episodes uses a single vectorized call when backed by remote/GPU embedders.
-- **Automatic dimension-mismatch guard**: If you switch embedders on an existing database, `VoiceBank` and `DefaultEpisodeRanker` automatically re-embed mismatched stored vectors on the fly.
+- **Embedder provenance & mismatch detection**: `CausalStore` records `embedder_id` and `embedding_dim` in `store_metadata` on first write (and infers `embedding_dim` for legacy DBs). When reopening a database with a different embedder or dimension, `NarrativeMemoryEngine(..., on_embedder_mismatch=...)` supports:
+  - `"warn"` *(default)*: Emits a `UserWarning` advising migration.
+  - `"raise"`: Raises `EmbedderMismatchError` immediately (catches both dimension mismatches and same-dimension model swaps).
+  - `"reindex"`: Automatically runs `engine.reindex_embeddings()` in batches on startup.
+  - `"ignore"`: Suppresses the startup check (`VoiceBank` and `DefaultEpisodeRanker` still fall back to on-the-fly re-embedding on shape mismatch).
+- **Batched migration**: Call `engine.reindex_embeddings(batch_size=128)` at any time to re-embed all stored episodes and voice exemplars in batches and update `store_metadata`.
 
 ### Built-in Adapters
-- `CallableEmbedder(fn, batch_fn=...)`: Wrap any custom Python function or local Sentence-Transformers model.
+- `CallableEmbedder(fn, batch_fn=..., embedder_id=..., dim=...)`: Wrap any custom Python function or local Sentence-Transformers model.
 - `OpenAICompatibleEmbedder(model=..., base_url=..., api_key=...)`: Zero-dependency `urllib.request` client for OpenAI, LM Studio, vLLM, or OpenRouter `/v1/embeddings` endpoints.
 - `OllamaEmbedder(model=..., base_url=...)`: Local Ollama `/api/embed` client with batch support.
 - Or implement the `Embedder` protocol directly (`embed_text(str) -> np.ndarray`, optionally `embed_batch(Sequence[str]) -> list[np.ndarray]`).

@@ -3,10 +3,12 @@ from __future__ import annotations
 from .embedders import (
     CallableEmbedder,
     Embedder,
+    EmbedderMismatchError,
     OfflineNgramEmbedder,
     OllamaEmbedder,
     OpenAICompatibleEmbedder,
     embed_texts_batch,
+    get_embedder_info,
 )
 from .engine import (
     DefaultLexicalResolver,
@@ -75,6 +77,7 @@ __all__ = [
     "DomainPreset",
     "EdgeDelta",
     "Embedder",
+    "EmbedderMismatchError",
     "EngineHooks",
     "EntityDelta",
     "EntityRecord",
@@ -106,6 +109,7 @@ __all__ = [
     "VoiceBank",
     "VoiceExemplar",
     "embed_texts_batch",
+    "get_embedder_info",
     "load_dotenv",
     "resolve_lmstudio_model",
 ]
