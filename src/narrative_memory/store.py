@@ -853,6 +853,21 @@ class CausalStore:
             alias_payload = {"alias": alias_str, "kind": default_kind}
 
         subject_key = self.alias_subject_key(target_entity_id, alias_str)
+        existing_revs = self.get_active_revisions(
+            timeline_id, step, record_type="alias", subject_key=subject_key
+        )
+        if existing_revs:
+            existing_payload = existing_revs[0]["payload"]
+            # Protect active disguise aliases from accidental downgrade to 'epithet' when an LLM re-emits the alias
+            if (
+                existing_payload.get("kind") == "disguise"
+                and alias_payload.get("kind") == "epithet"
+                and alias_payload.get("known_to") is None
+            ):
+                return
+            if existing_payload == alias_payload:
+                return
+
         self.conn.execute(
             """
             INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, source_id, target_id, is_tombstone, payload)
@@ -967,26 +982,35 @@ class CausalStore:
                 if reason is None and active and ed.merge_state and not has_state_mutation:
                     reason = active.reason
 
-                payload: dict[str, Any] = {
-                    "kind": kind,
-                    "canonical_name": canonical_name,
-                    "base_attributes": base_attrs,
-                    "state": current_state,
-                }
-                if current_private:
-                    payload["private_state"] = current_private
-                if caused_by is not None:
-                    payload["caused_by_episode_id"] = caused_by
-                if reason is not None:
-                    payload["reason"] = reason
-
-                self.conn.execute(
-                    """
-                    INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, source_id, target_id, is_tombstone, payload)
-                    VALUES (?, ?, 'entity', ?, ?, NULL, 0, ?)
-                    """,
-                    (timeline_id, step, ed.entity_id, ed.entity_id, json.dumps(payload)),
+                is_noop_entity_state = (
+                    active is not None
+                    and kind == active.kind
+                    and canonical_name == active.canonical_name
+                    and base_attrs == active.base_attributes
+                    and current_state == active.state
+                    and current_private == active.private_state
                 )
+                if not is_noop_entity_state:
+                    payload: dict[str, Any] = {
+                        "kind": kind,
+                        "canonical_name": canonical_name,
+                        "base_attributes": base_attrs,
+                        "state": current_state,
+                    }
+                    if current_private:
+                        payload["private_state"] = current_private
+                    if caused_by is not None:
+                        payload["caused_by_episode_id"] = caused_by
+                    if reason is not None:
+                        payload["reason"] = reason
+
+                    self.conn.execute(
+                        """
+                        INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, source_id, target_id, is_tombstone, payload)
+                        VALUES (?, ?, 'entity', ?, ?, NULL, 0, ?)
+                        """,
+                        (timeline_id, step, ed.entity_id, ed.entity_id, json.dumps(payload)),
+                    )
 
                 # Add new aliases
                 for alias in ed.add_aliases:
@@ -1040,6 +1064,9 @@ class CausalStore:
                 reason = rd.reason
                 if reason is None and active_edge and rd.merge and not has_edge_mutation:
                     reason = active_edge.reason
+
+                if active_edge is not None and edge_state == active_edge.state:
+                    continue
 
                 edge_payload = dict(edge_state)
                 if caused_by is not None or reason is not None:

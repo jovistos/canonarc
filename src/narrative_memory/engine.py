@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import contextlib
 import contextvars
+import hashlib
 import json
+import re
 import uuid
 from collections.abc import Iterator
 from contextlib import AbstractContextManager
@@ -51,6 +53,8 @@ class StepTransaction:
         location_id: str | None = None,
         timeline_id: str | None = None,
         rerun_clean: bool = True,
+        prev_text: str = "",
+        next_text: str = "",
     ) -> None:
         self.engine = engine
         self.step = step
@@ -64,8 +68,11 @@ class StepTransaction:
         self.location_id = location_id
         self.timeline_id = timeline_id or engine.active_timeline
         self.rerun_clean = rerun_clean
+        self.prev_text = prev_text
+        self.next_text = next_text
         self._context: StepContext | None = None
         self._staged_delta: StepDelta | None = None
+        self.last_raw_delta: StepDelta | None = None
         self._staged_exemplars: list[VoiceExemplar] = []
         self._staged_episodes: list[EpisodeRecord] = []
         self._bypass_gate = False
@@ -87,6 +94,7 @@ class StepTransaction:
         self._context = self.engine.retrieve_context(
             self.step,
             text=self.text,
+            prev_text=self.prev_text,
             mentions=self.mentions,
             top_k_voice=self.top_k_voice,
             top_k_episodes=self.top_k_episodes,
@@ -126,13 +134,23 @@ class StepTransaction:
         exemplars: Sequence[VoiceExemplar] = (),
         episodes: Sequence[EpisodeRecord] = (),
         bypass_gate: bool = False,
+        prev_text: str | None = None,
+        next_text: str | None = None,
     ) -> StepDelta:
         """Runs the configured DeltaExtractor on scene_text, normalizes IDs, and stages the StepDelta."""
         active_extractor = extractor or self.engine.extractor
         if active_extractor is None:
             raise ValueError("No DeltaExtractor provided to StepTransaction or NarrativeMemoryEngine.")
-        prompt = self.engine.build_extraction_prompt(self.context, scene_text)
+        effective_prev = self.prev_text if prev_text is None else prev_text
+        effective_next = self.next_text if next_text is None else next_text
+        prompt = self.engine.build_extraction_prompt(
+            self.context,
+            scene_text,
+            prev_text=effective_prev,
+            next_text=effective_next,
+        )
         raw_delta = active_extractor.extract_delta(prompt, scene_text)
+        self.last_raw_delta = raw_delta
         normalized = self.engine.normalize_delta(raw_delta, step=self.step, timeline_id=self.timeline_id)
         self.commit(normalized, exemplars=exemplars, episodes=episodes, bypass_gate=bypass_gate)
         return normalized
@@ -177,6 +195,7 @@ class TimelineSession:
         step: int,
         *,
         text: str = "",
+        prev_text: str = "",
         mentions: Sequence[str] = (),
         top_k_voice: int = 3,
         top_k_episodes: int = 5,
@@ -193,6 +212,7 @@ class TimelineSession:
         return self.engine.retrieve_context(
             step,
             text=text,
+            prev_text=prev_text,
             mentions=mentions,
             top_k_voice=top_k_voice,
             top_k_episodes=top_k_episodes,
@@ -221,6 +241,8 @@ class TimelineSession:
         edge_types: Sequence[str] | None = None,
         location_id: str | None = None,
         rerun_clean: bool = True,
+        prev_text: str = "",
+        next_text: str = "",
     ) -> StepTransaction:
         return self.engine.step_transaction(
             step,
@@ -234,6 +256,8 @@ class TimelineSession:
             location_id=location_id,
             timeline_id=self.timeline_id,
             rerun_clean=rerun_clean,
+            prev_text=prev_text,
+            next_text=next_text,
         )
 
     def apply_delta(self, step: int, delta: StepDelta) -> list[EpisodeRecord]:
@@ -269,9 +293,16 @@ class TimelineSession:
         *,
         source_text: str = "",
         step: int | None = None,
+        prev_text: str = "",
+        next_text: str = "",
     ) -> list[DialogueCandidate]:
         return self.engine.extract_dialogue_candidates(
-            text, source_text=source_text, step=step, timeline_id=self.timeline_id
+            text,
+            source_text=source_text,
+            step=step,
+            timeline_id=self.timeline_id,
+            prev_text=prev_text,
+            next_text=next_text,
         )
 
     def index_voice_exemplars(
@@ -333,8 +364,17 @@ class TimelineSession:
     def format_context(self, ctx: StepContext) -> str:
         return self.engine.format_context(ctx)
 
-    def build_extraction_prompt(self, ctx: StepContext, scene_text: str) -> str:
-        return self.engine.build_extraction_prompt(ctx, scene_text)
+    def build_extraction_prompt(
+        self,
+        ctx: StepContext,
+        scene_text: str,
+        *,
+        prev_text: str = "",
+        next_text: str = "",
+    ) -> str:
+        return self.engine.build_extraction_prompt(
+            ctx, scene_text, prev_text=prev_text, next_text=next_text
+        )
 
 
 class NarrativeMemoryEngine:
@@ -445,6 +485,7 @@ class NarrativeMemoryEngine:
         step: int,
         *,
         text: str = "",
+        prev_text: str = "",
         mentions: Sequence[str] = (),
         top_k_voice: int = 3,
         top_k_episodes: int = 5,
@@ -490,6 +531,48 @@ class NarrativeMemoryEngine:
             pov_set=pov_set,
             pov_mode=pov_mode,
         )
+
+        # Read-Only Coreference Halo: if target chunk has < 2 characters (e.g. pronoun-only),
+        # resolve fallback mentions from prev_text so active characters/edges stay in context.
+        entity_by_id = {e.entity_id: e for e in active_entities}
+        primary_char_ids = {
+            m.entity_id
+            for m in resolved_mentions
+            if m.entity_id.startswith("masked:")
+            or (
+                (ent := entity_by_id.get(m.entity_id)) is None
+                or ent.kind == "character"
+            )
+        }
+        if prev_text.strip() and len(primary_char_ids) < 2:
+            halo_raw = self.mention_resolver.resolve(
+                text=prev_text,
+                explicit_mentions=(),
+                entities=active_entities,
+                aliases=active_aliases,
+            )
+            halo_mentions, halo_masks, halo_pierced = self._apply_epistemic_disguises(
+                raw_mentions=halo_raw,
+                aliases=active_aliases,
+                pov_set=pov_set,
+                pov_mode=pov_mode,
+            )
+            seen_resolved_ids = {m.entity_id for m in resolved_mentions}
+            for m in halo_mentions:
+                real_id = m.entity_id.removeprefix("masked:")
+                if (
+                    m.entity_id in seen_resolved_ids
+                    or real_id in seen_resolved_ids
+                    or f"masked:{real_id}" in seen_resolved_ids
+                ):
+                    continue
+                seen_resolved_ids.add(m.entity_id)
+                resolved_mentions.append(m)
+                if real_id in halo_masks:
+                    disguise_masks.setdefault(real_id, halo_masks[real_id])
+            for k, v in halo_pierced.items():
+                if k not in disguise_masks:
+                    pierced_disguises.setdefault(k, v)
 
         resolved_entity_ids = {m.entity_id for m in resolved_mentions}
         masked_real_ids = set(disguise_masks.keys())
@@ -942,6 +1025,8 @@ class NarrativeMemoryEngine:
         location_id: str | None = None,
         timeline_id: str | None = None,
         rerun_clean: bool = True,
+        prev_text: str = "",
+        next_text: str = "",
     ) -> StepTransaction:
         return StepTransaction(
             self,
@@ -956,6 +1041,8 @@ class NarrativeMemoryEngine:
             location_id=location_id,
             timeline_id=timeline_id,
             rerun_clean=rerun_clean,
+            prev_text=prev_text,
+            next_text=next_text,
         )
 
     # --- State & Episode Mutation ---
@@ -1141,6 +1228,8 @@ class NarrativeMemoryEngine:
         source_text: str = "",
         step: int | None = None,
         timeline_id: str | None = None,
+        prev_text: str = "",
+        next_text: str = "",
     ) -> list[DialogueCandidate]:
         tl = timeline_id or self.active_timeline
         if step is None:
@@ -1151,34 +1240,55 @@ class NarrativeMemoryEngine:
 
         active_entities = self.store.get_all_active_entities(tl, cutoff_step)
         active_aliases = self.store.get_all_active_aliases(tl, cutoff_step)
+        speaker_entities = [
+            e for e in active_entities if e.kind not in ("location", "artifact", "term")
+        ]
+        speaker_entity_ids = {e.entity_id for e in speaker_entities}
+        speaker_aliases = [
+            a for a in active_aliases if not speaker_entity_ids or a.entity_id in speaker_entity_ids
+        ]
+
+        def _resolve_in_segment(segment: str) -> tuple[str | None, str | None, str | None]:
+            mentions = self.mention_resolver.resolve(
+                text=segment,
+                explicit_mentions=(),
+                entities=speaker_entities,
+                aliases=speaker_aliases,
+            )
+            if not mentions:
+                return None, None, None
+            seg_lower = segment.lower()
+            ordered = sorted(
+                mentions,
+                key=lambda m: (
+                    idx if (idx := seg_lower.find(m.surface_text.lower())) != -1 else len(seg_lower)
+                ),
+            )
+            speaker_id = ordered[0].entity_id
+            speaker_surface = ordered[0].surface_text
+            addressee_id = next(
+                (m.entity_id for m in ordered[1:] if m.entity_id != speaker_id),
+                None,
+            )
+            return speaker_id, addressee_id, speaker_surface
 
         def _resolve_speaker(before_win: str, after_win: str) -> tuple[str | None, str | None, str | None]:
-            if not active_entities and not active_aliases:
+            if not speaker_entities and not speaker_aliases:
                 return None, None, None
-            for window in (before_win, after_win):
-                if not window:
-                    continue
-                mentions = self.mention_resolver.resolve(
-                    text=window,
-                    explicit_mentions=(),
-                    entities=active_entities,
-                    aliases=active_aliases,
-                )
-                if mentions:
-                    win_lower = window.lower()
-                    ordered = sorted(
-                        mentions,
-                        key=lambda m: (
-                            idx if (idx := win_lower.find(m.surface_text.lower())) != -1 else len(win_lower)
-                        ),
-                    )
-                    speaker_id = ordered[0].entity_id
-                    speaker_surface = ordered[0].surface_text
-                    addressee_id = next(
-                        (m.entity_id for m in ordered[1:] if m.entity_id != speaker_id),
-                        None,
-                    )
-                    return speaker_id, addressee_id, speaker_surface
+            if before_win:
+                # Prefer the immediate sentence/clause preceding the quote before falling back to full window
+                immediate_clause = re.split(r"[.!?]\s+", before_win.strip())[-1]
+                if immediate_clause and immediate_clause != before_win.strip():
+                    spk, addr, surf = _resolve_in_segment(immediate_clause)
+                    if spk is not None:
+                        return spk, addr, surf
+                spk, addr, surf = _resolve_in_segment(before_win)
+                if spk is not None:
+                    return spk, addr, surf
+            if after_win:
+                spk, addr, surf = _resolve_in_segment(after_win)
+                if spk is not None:
+                    return spk, addr, surf
             return None, None, None
 
         def _on_gate1_rejected(span: str, reason: str, meta: dict[str, Any]) -> None:
@@ -1188,6 +1298,8 @@ class NarrativeMemoryEngine:
         return self.voice_bank.gate.extract_candidates(
             text,
             source_text=source_text,
+            prev_text=prev_text,
+            next_text=next_text,
             speaker_resolver=_resolve_speaker,
             on_rejected=_on_gate1_rejected if self._hooks else None,
         )
@@ -1322,7 +1434,14 @@ class NarrativeMemoryEngine:
         """Formats StepContext into prompt text using the active DomainPreset."""
         return self.preset.format_prompt_context(ctx)
 
-    def build_extraction_prompt(self, ctx: StepContext, scene_text: str) -> str:
+    def build_extraction_prompt(
+        self,
+        ctx: StepContext,
+        scene_text: str,
+        *,
+        prev_text: str = "",
+        next_text: str = "",
+    ) -> str:
         """Builds a structured extraction prompt combining preset instructions, active IDs, and StepDelta schema."""
         seen_entity_ids: set[str] = set()
         entity_lines: list[str] = []
@@ -1348,8 +1467,24 @@ class NarrativeMemoryEngine:
             parts.append("\n".join(episode_lines))
         parts.append("### Target StepDelta JSON Schema:")
         parts.append(schema_json)
-        parts.append("### Scene Text to Extract From:")
+        has_halo = bool(prev_text.strip() or next_text.strip())
+        if prev_text.strip():
+            parts.append(
+                "### Preceding Context (Already Committed — Use ONLY to resolve pronouns like he/she/they; DO NOT re-extract events):"
+            )
+            parts.append(prev_text.strip())
+        if has_halo:
+            parts.append(
+                "### Target Scene Chunk (EXTRACT ONLY state changes and episodes occurring in THIS text):"
+            )
+        else:
+            parts.append("### Scene Text to Extract From:")
         parts.append(scene_text)
+        if next_text.strip():
+            parts.append(
+                "### Following Context (Read-Only Lookahead — Use ONLY to identify speakers/addressees of trailing dialogue; DO NOT extract future events):"
+            )
+            parts.append(next_text.strip())
         return "\n\n".join(parts)
 
     def normalize_delta(
@@ -1392,9 +1527,15 @@ class NarrativeMemoryEngine:
 
         ep_id_map: dict[str, str] = {}
         norm_episodes: list[EpisodeRecord] = []
-        for ep in delta.episodes:
+        for idx, ep in enumerate(delta.episodes):
             old_id = ep.episode_id
-            new_id = old_id or f"ep_{step if step is not None else 0}_{uuid.uuid4().hex[:8]}"
+            if old_id:
+                new_id = old_id
+            else:
+                digest = hashlib.sha256(
+                    f"{tl}:{step if step is not None else 0}:{idx}:{ep.predicate}:{ep.summary}".encode("utf-8")
+                ).hexdigest()[:8]
+                new_id = f"ep_{step if step is not None else 0}_{digest}"
             if old_id:
                 ep_id_map[old_id] = new_id
             norm_participants = {_norm_id(k): v for k, v in ep.participants.items()}
@@ -1415,10 +1556,34 @@ class NarrativeMemoryEngine:
                 )
             )
 
-        norm_entities = [
+        def _norm_entity_state(state_dict: dict[str, Any]) -> dict[str, Any]:
+            if not state_dict:
+                return state_dict
+            out = dict(state_dict)
+            if "location_id" in out and isinstance(out["location_id"], str):
+                out["location_id"] = _norm_id(out["location_id"])
+            else:
+                for alt_loc_key in ("location", "current_location"):
+                    if alt_loc_key in out and isinstance(out[alt_loc_key], str):
+                        resolved_loc = _norm_id(out[alt_loc_key])
+                        if resolved_loc.startswith("loc_") or resolved_loc in {
+                            e.entity_id for e in entities if e.kind == "location"
+                        }:
+                            out.pop(alt_loc_key, None)
+                            out["location_id"] = resolved_loc
+                            break
+            if "mood" not in out:
+                for alt_mood_key in ("emotional_state", "emotion"):
+                    if alt_mood_key in out and isinstance(out[alt_mood_key], str) and out[alt_mood_key].strip():
+                        out["mood"] = out[alt_mood_key].strip()
+                        break
+            return out
+
+        raw_norm_entities = [
             ed.model_copy(
                 update={
                     "entity_id": _norm_id(ed.entity_id),
+                    "state": _norm_entity_state(ed.state),
                     "caused_by_episode_id": ep_id_map.get(ed.caused_by_episode_id, ed.caused_by_episode_id)
                     if ed.caused_by_episode_id
                     else None,
@@ -1426,6 +1591,27 @@ class NarrativeMemoryEngine:
             )
             for ed in delta.entities
         ]
+        # Merge multiple intra-step EntityDeltas for the same entity_id in order
+        merged_entities_by_id: dict[str, Any] = {}
+        for ed in raw_norm_entities:
+            existing = merged_entities_by_id.get(ed.entity_id)
+            if existing is None or ed.remove or existing.remove:
+                merged_entities_by_id[ed.entity_id] = ed
+            else:
+                merged_entities_by_id[ed.entity_id] = existing.model_copy(
+                    update={
+                        "kind": ed.kind or existing.kind,
+                        "canonical_name": ed.canonical_name or existing.canonical_name,
+                        "base_attributes": {**existing.base_attributes, **ed.base_attributes},
+                        "state": {**existing.state, **ed.state},
+                        "private_state": {**existing.private_state, **ed.private_state},
+                        "add_aliases": [*existing.add_aliases, *ed.add_aliases],
+                        "remove_aliases": [*existing.remove_aliases, *ed.remove_aliases],
+                        "caused_by_episode_id": ed.caused_by_episode_id or existing.caused_by_episode_id,
+                        "reason": ed.reason or existing.reason,
+                    }
+                )
+        norm_entities = list(merged_entities_by_id.values())
         norm_edges = [
             rd.model_copy(
                 update={
