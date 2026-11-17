@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import Literal, Protocol, Sequence
 
-from rapidfuzz import fuzz
+from rapidfuzz import fuzz, process
 
 from .embedders import _CJK_CHAR_RE
 from .models import AliasRecord, EntityRecord, ResolvedMention
@@ -141,32 +141,80 @@ class DefaultLexicalResolver:
                 token_spans = [
                     (m.group(0), m.start(), m.end()) for m in re.finditer(r"\w+", text_lower)
                 ]
-                for phrase, ent_id, candidate_via in candidates:
-                    if ent_id in matched_entity_ids or len(phrase) < 4:
-                        continue
-                    n_words = len(phrase.split())
-                    if n_words <= 0 or len(token_spans) < n_words:
-                        continue
-                    max_len_diff = max(3, int(len(phrase) * 0.4))
-                    for idx in range(len(token_spans) - n_words + 1):
+                n_tokens = len(token_spans)
+                # Lazily cache deduplicated non-overlapping windows and trigram index per word count
+                windows_cache: dict[int, tuple[list[str], dict[str, set[int]]]] = {}
+
+                def _get_windows(n_words: int) -> tuple[list[str], dict[str, set[int]]]:
+                    cached = windows_cache.get(n_words)
+                    if cached is not None:
+                        return cached
+                    wins: list[str] = []
+                    seen_wins: set[str] = set()
+                    tri_index: dict[str, set[int]] = {}
+                    for idx in range(n_tokens - n_words + 1):
                         w_start = token_spans[idx][1]
                         w_end = token_spans[idx + n_words - 1][2]
                         if any(w_start < e and w_end > s for s, e in matched_spans):
                             continue
                         window = " ".join(token_spans[j][0] for j in range(idx, idx + n_words))
-                        if abs(len(phrase) - len(window)) > max_len_diff:
+                        if window in seen_wins:
                             continue
-                        score = fuzz.WRatio(phrase, window, score_cutoff=self.fuzzy_threshold)
-                        if score >= self.fuzzy_threshold:
-                            _add(
-                                window,
-                                ent_id,
-                                "fuzzy",
-                                conf=round(score / 100.0, 3),
-                                matched_source=candidate_via,
-                                matched_phrase=phrase,
-                            )
-                            matched_entity_ids.add(ent_id)
-                            break
+                        seen_wins.add(window)
+                        wi = len(wins)
+                        wins.append(window)
+                        for k in range(len(window) - 2):
+                            tri_index.setdefault(window[k : k + 3], set()).add(wi)
+                    cached = (wins, tri_index)
+                    windows_cache[n_words] = cached
+                    return cached
+
+                for phrase, ent_id, candidate_via in candidates:
+                    if ent_id in matched_entity_ids or len(phrase) < 4:
+                        continue
+                    n_words = len(phrase.split())
+                    if n_words <= 0 or n_tokens < n_words:
+                        continue
+                    wins, tri_index = _get_windows(n_words)
+                    if not wins:
+                        continue
+                    max_len_diff = max(3, int(len(phrase) * 0.4))
+                    phrase_len = len(phrase)
+                    if phrase_len >= 6 and self.fuzzy_threshold >= 80.0:
+                        cand_indices: set[int] = set()
+                        for k in range(phrase_len - 2):
+                            hits = tri_index.get(phrase[k : k + 3])
+                            if hits:
+                                cand_indices.update(hits)
+                        if not cand_indices:
+                            continue
+                        sub_wins = [
+                            wins[wi]
+                            for wi in sorted(cand_indices)
+                            if abs(phrase_len - len(wins[wi])) <= max_len_diff
+                        ]
+                    else:
+                        sub_wins = [
+                            w for w in wins if abs(phrase_len - len(w)) <= max_len_diff
+                        ]
+                    if not sub_wins:
+                        continue
+                    match = process.extractOne(
+                        phrase,
+                        sub_wins,
+                        scorer=fuzz.WRatio,
+                        score_cutoff=self.fuzzy_threshold,
+                    )
+                    if match is not None:
+                        best_window, score, _ = match
+                        _add(
+                            best_window,
+                            ent_id,
+                            "fuzzy",
+                            conf=round(score / 100.0, 3),
+                            matched_source=candidate_via,
+                            matched_phrase=phrase,
+                        )
+                        matched_entity_ids.add(ent_id)
 
         return resolved
