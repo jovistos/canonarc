@@ -28,10 +28,35 @@ def _tokenize_units(text: str) -> tuple[list[str], bool]:
     return units, (cjk_count / len(units)) >= 0.5
 
 
+class EmbedderMismatchError(RuntimeError):
+    """Raised when an existing store's recorded embedder or vector dimension conflicts with the active embedder."""
+
+
 class Embedder(Protocol):
     """Protocol for dense or sparse text embedding."""
 
     def embed_text(self, text: str) -> np.ndarray: ...
+
+
+def get_embedder_info(embedder: Embedder) -> tuple[str, int | None]:
+    """Returns (embedder_id, known_dim) for metadata tracking and mismatch detection."""
+    explicit_id = getattr(embedder, "embedder_id", None)
+    if explicit_id:
+        embedder_id = str(explicit_id)
+    else:
+        cls_name = type(embedder).__qualname__
+        model = getattr(embedder, "model", None)
+        dim_attr = getattr(embedder, "dim", None)
+        if model is not None:
+            embedder_id = f"{cls_name}(model={model})"
+        elif dim_attr is not None:
+            embedder_id = f"{cls_name}(dim={dim_attr})"
+        else:
+            embedder_id = cls_name
+
+    raw_dim = getattr(embedder, "dim", None)
+    known_dim = int(raw_dim) if isinstance(raw_dim, int) and raw_dim > 0 else None
+    return embedder_id, known_dim
 
 
 def embed_texts_batch(embedder: Embedder, texts: Sequence[str]) -> list[np.ndarray]:
@@ -93,9 +118,13 @@ class CallableEmbedder:
         fn: Callable[[str], Sequence[float] | np.ndarray],
         *,
         batch_fn: Callable[[Sequence[str]], Sequence[Sequence[float] | np.ndarray]] | None = None,
+        embedder_id: str | None = None,
+        dim: int | None = None,
     ) -> None:
         self._fn = fn
         self._batch_fn = batch_fn
+        self.embedder_id = embedder_id
+        self.dim = dim
 
     def embed_text(self, text: str) -> np.ndarray:
         return np.asarray(self._fn(text), dtype=np.float32)
@@ -119,12 +148,14 @@ class OpenAICompatibleEmbedder:
         base_url: str = "https://api.openai.com/v1",
         timeout: float = 30.0,
         headers: dict[str, str] | None = None,
+        dim: int | None = None,
     ) -> None:
         self.model = model
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.headers = dict(headers) if headers else {}
+        self.dim = dim
 
     def _request(self, inputs: list[str]) -> list[np.ndarray]:
         payload = json.dumps({"model": self.model, "input": inputs}).encode("utf-8")
@@ -161,10 +192,12 @@ class OllamaEmbedder:
         model: str = "nomic-embed-text",
         base_url: str = "http://localhost:11434",
         timeout: float = 30.0,
+        dim: int | None = None,
     ) -> None:
         self.model = model
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+        self.dim = dim
 
     def _request(self, inputs: list[str]) -> list[np.ndarray]:
         payload = json.dumps({"model": self.model, "input": inputs}).encode("utf-8")
