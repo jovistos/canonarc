@@ -208,10 +208,36 @@ class StepContext(BaseModel):
 - `MemoryStore`: Storage protocol implemented by `CausalStore`. Inject a custom backend via `CanonArcEngine(store=my_store)`. `CausalStore` also provides `get_known_episode_ids()` and bounded/pre-filtered `get_lineage_episodes(..., limit=..., pov_entity_ids=..., cue_entity_ids=..., pinned_episode_ids=..., query_text=...)` backed by SQLite FTS5 (`episodes_fts`).
 - `MentionResolver`: Pluggable entity/coreference resolution protocol (`resolve(text, explicit_mentions, entities, aliases) -> list[ResolvedMention]`). Defaults to `DefaultLexicalResolver(fuzzy_threshold=88.0)`, which uses word-boundary matching and optional `rapidfuzz` inflection matching.
 - `EpisodeRanker` / `EpisodicScoringPolicy`: Pluggable Tier 6 episodic memory ranker (`DefaultEpisodeRanker`) decoupled from `VoiceBank`, configurable via `SchemaPolicy.episodic_policy`.
-- `Embedder` & Built-in Adapters: `OfflineNgramEmbedder`, `CallableEmbedder`, `OpenAICompatibleEmbedder`, and `OllamaEmbedder`, all supporting `embed_batch()`. Embedder provenance (`embedder_id`, `embedding_dim`) is recorded in `store_metadata`, with `on_embedder_mismatch` (`"warn"`, `"raise"`, `"reindex"`, `"ignore"`), `EmbedderMismatchError`, and `get_embedder_info()`.
-- `DeltaExtractor` & Built-in Adapters: `CallableExtractor` and `OpenAICompatibleExtractor` for LLM-backed `StepDelta` extraction with validation retries.
 - `EngineHooks` / `BaseEngineHooks`: Middleware callbacks (`on_before_commit`, `on_after_commit`, `on_rollback`, `on_branch`, `on_gate_rejected`).
 - `SchemaPolicy`: Frozen dataclass on `DomainPreset.policy` defining `edge_layer_order`, `facade_relation`, `belief_relation`, `hard_filter_keys`, `soft_boost_weights`, `fallback_on_empty_hard_filter`, `hard_filter_mismatch_penalty`, and `episodic_policy`.
+
+---
+
+## Embedders (`canonarc.embedders`)
+
+- `Embedder` (Protocol): `embed_text(text: str) -> np.ndarray`, plus optional `embed_batch(texts: Sequence[str]) -> list[np.ndarray]`.
+- `OfflineNgramEmbedder(dim: int = 128)`: Default zero-dependency character/word n-gram embedder with CJK unit tokenization and Weinberger signed CRC32 feature hashing.
+- `CallableEmbedder(fn, *, batch_fn=None, embedder_id=None, dim=None)`: Wraps any custom Python function or in-process model (e.g. `SentenceTransformer.encode`).
+- `OpenAICompatibleEmbedder(*, model="text-embedding-3-small", api_key=None, base_url="https://api.openai.com/v1", timeout=30.0, headers=None, dim=None)`: Zero-dependency `urllib.request` client for OpenAI, LM Studio, LiteLLM, or vLLM `/v1/embeddings` endpoints.
+- `OllamaEmbedder(*, model="nomic-embed-text", base_url="http://localhost:11434", timeout=30.0, dim=None)`: Zero-dependency client for local Ollama `/api/embed` endpoints.
+- `embed_texts_batch(embedder, texts)` & `get_embedder_info(embedder)`: Helper utilities for batch vectorization and provenance metadata (`embedder_id`, `embedding_dim`) stored in `store_metadata`. Raises `EmbedderMismatchError` when `on_embedder_mismatch="raise"`.
+
+---
+
+## Extractors & Token Telemetry (`canonarc.extractors`)
+
+- `DeltaExtractor` (Protocol): `extract_delta(prompt: str, scene_text: str) -> StepDelta`.
+- `CallableExtractor(fn, *, max_retries=1, repair_fn=None)`: Wraps any `(prompt: str, schema: dict) -> str | dict | StepDelta` callable with `<think>` block stripping, Markdown JSON fence stripping, Pydantic validation, and automatic validation-error retry prompts.
+- `OpenAICompatibleExtractor(*, model="gpt-4o-mini", api_key=None, base_url="https://api.openai.com/v1", temperature=0.0, max_tokens=None, reasoning_effort=None, response_format=None, use_json_object_format=True, timeout=120.0, max_retries=1, system_prompt=..., headers=None)`:
+  - Zero-dependency HTTP client for OpenAI-compatible `/chat/completions` endpoints with transient HTTP retry (`429`, `5xx`), automatic fallback when an endpoint rejects `response_format={"type": "json_object"}`, and `last_usage` / `total_usage` (`TokenUsage`) tracking.
+  - **Convenience Factory Methods:**
+    - `OpenAICompatibleExtractor.from_lmstudio(*, model=None, base_url=None, ...)`: Connects to local LM Studio (`http://localhost:1234/v1`) and auto-discovers the currently loaded LLM via `resolve_lmstudio_model()` when `model` is omitted.
+    - `OpenAICompatibleExtractor.from_gemini(*, model=None, api_key=None, ...)`: Pre-configured for Google Gemini's OpenAI-compatible endpoint (`GEMINI_API_KEY`).
+    - `OpenAICompatibleExtractor.from_deepseek(*, model=None, api_key=None, ...)`: Pre-configured for the DeepSeek API (`DEEPSEEK_API_KEY`).
+- `CachedDeltaExtractor(extractor, cache_dir, *, model_id=None, system_prompt=None, bypass_cache=False)`:
+  - Content-addressed SHA-256 disk-caching wrapper around any `DeltaExtractor`. Tracks both `billable_usage` (0 tokens on cache hits) and `historical_usage` (`TokenUsage`).
+- `TokenUsage`: Dataclass recording `prompt_tokens`, `completion_tokens`, `total_tokens`, `cached_prompt_tokens`, `reasoning_tokens`, `api_calls`, `cache_hits`, `cache_misses`, `retry_count`, `validation_errors`, `latency_ms`, and `.estimate_cost_usd(...)`.
+- `load_dotenv(dotenv_path=".env", *, override=False) -> dict[str, str]`: Zero-dependency `.env` loader.
 
 ---
 

@@ -147,9 +147,11 @@ Stores immutable N-ary narrative events with semantic roles, optional narrative 
 The database tracks:
 1. `timelines`: DAG of branching timelines (`parent_id`, `fork_step`).
 2. `graph_revisions`: Append-only materialized snapshots of entities, typed edges, and aliases.
-3. `voice_exemplars`: Historical dialogue exemplars with vector embeddings.
-4. `episodes`: Discrete plot episodes with semantic participant maps, locations, salience, and embeddings.
+3. `voice_exemplars`: Historical dialogue exemplars with vector embeddings (`PRIMARY KEY (timeline_id, exemplar_id)`).
+4. `episodes`: Discrete plot episodes with semantic participant maps, locations, salience, and embeddings (`PRIMARY KEY (timeline_id, episode_id)`).
 5. `episode_epistemics`: Join table recording who knows which episode (`"direct"`, `"told"`, `"deceived"`, `"forgotten"`, `"suppressed"`).
+6. `episodes_fts`: SQLite FTS5 virtual table (with sync triggers) for bounded candidate pre-filtering.
+7. `store_metadata`: Key-value table tracking `embedder_id` and `embedding_dim` provenance.
 
 ### 2.2 The Lineage Resolution CTE: Point-in-Time Resolution with Windowed Trajectory
 ```sql
@@ -290,7 +292,7 @@ See [`tests/test_episodic_memory.py`](../tests/test_episodic_memory.py) for the 
 | Subsystem | Primary Code File | Key Classes & Functions | Responsibility |
 | :--- | :--- | :--- | :--- |
 | **Data Models** | [`src/canonarc/models.py`](../src/canonarc/models.py) | `EntityRecord`, `DirectedEdgeRecord`, `EpisodeRecord`, `InformDelta`, `VoiceExemplar`, `StepDelta`, `ResolvedMention` | Pydantic v2 schemas modeling Tiers 1–6 & `EpistemicMode` |
-| **Storage & Causal Graph** | [`src/canonarc/store.py`](../src/canonarc/store.py) | `MemoryStore`, `CausalStore`, Recursive CTE | 5-table SQLite storage, lineage traversal, snapshots, timeline deletions, atomic rollbacks |
+| **Storage & Causal Graph** | [`src/canonarc/store.py`](../src/canonarc/store.py) | `MemoryStore`, `CausalStore`, Recursive CTE | SQLite storage (`timelines`, `graph_revisions`, `voice_exemplars`, `episodes`, `episode_epistemics`, `episodes_fts`, `store_metadata`), lineage traversal, snapshots, timeline deletions, atomic rollbacks |
 | **Embedders** | [`src/canonarc/embedders.py`](../src/canonarc/embedders.py) | `Embedder`, `OfflineNgramEmbedder`, `CallableEmbedder`, `OpenAICompatibleEmbedder`, `OllamaEmbedder` | Pluggable vectorizers with CJK tokenization, signed CRC32 hashing, and batching |
 | **Voice Bank & Gates** | [`src/canonarc/voice.py`](../src/canonarc/voice.py) | `VoiceBank`, `IngestionGate` | Multi-alphabet regex extraction, Root-TTR gate, hard-register cascade |
 | **Episodic Ranker** | [`src/canonarc/episodic.py`](../src/canonarc/episodic.py) | `EpisodeRanker`, `DefaultEpisodeRanker`, `EpisodicScoringPolicy` | Deceived-POV safe hybrid 4-signal Tier 6 scorer |
