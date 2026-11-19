@@ -14,7 +14,7 @@ from .engine import (
     DefaultLexicalResolver,
     DeltaExtractor,
     MentionResolver,
-    NarrativeMemoryEngine,
+    CanonArcEngine,
     StepTransaction,
     TimelineSession,
 )
@@ -90,7 +90,7 @@ __all__ = [
     "InteractiveFictionPreset",
     "MemoryStore",
     "MentionResolver",
-    "NarrativeMemoryEngine",
+    "CanonArcEngine",
     "OfflineNgramEmbedder",
     "OllamaEmbedder",
     "OpenAICompatibleEmbedder",

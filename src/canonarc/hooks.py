@@ -6,7 +6,7 @@ from .models import EpisodeRecord, StepDelta, TimelineInfo, VoiceExemplar
 
 
 class EngineHooks(Protocol):
-    """Observability and middleware lifecycle hook interface for NarrativeMemoryEngine."""
+    """Observability and middleware lifecycle hook interface for CanonArcEngine."""
 
     def on_before_commit(
         self,
