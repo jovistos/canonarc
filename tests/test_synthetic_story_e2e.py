@@ -4,7 +4,7 @@ from pathlib import Path
 import os
 import pytest
 
-from narrative_memory import (
+from canonarc import (
     CachedDeltaExtractor,
     OpenAICompatibleExtractor,
     StepDelta,

@@ -4,14 +4,14 @@ import sys
 import numpy as np
 import pytest
 
-from narrative_memory import (
+from canonarc import (
     CausalStore,
     DefaultLexicalResolver,
     EdgeDelta,
     EntityDelta,
     EntityRecord,
     EpisodeRecord,
-    NarrativeMemoryEngine,
+    CanonArcEngine,
     OfflineNgramEmbedder,
     ResolvedMention,
     SchemaPolicy,
@@ -25,7 +25,7 @@ from narrative_memory import (
 
 def test_custom_store_injection():
     custom_store = CausalStore(":memory:")
-    engine = NarrativeMemoryEngine(store=custom_store)
+    engine = CanonArcEngine(store=custom_store)
     assert engine.store is custom_store
     engine.register_entity(EntityRecord(entity_id="a1", canonical_name="Trader Alice"), step=0)
     ctx = engine.retrieve_context(step=1, mentions=["Trader Alice"])
@@ -42,7 +42,7 @@ def test_schema_policy_domain_keys_and_sparse_fallback():
         hard_filter_mismatch_penalty=0.2,
     )
     preset = SimulationPreset(policy=policy)
-    engine = NarrativeMemoryEngine(":memory:", preset=preset)
+    engine = CanonArcEngine(":memory:", preset=preset)
 
     engine.register_entity(EntityRecord(entity_id="agent_risk", canonical_name="RiskOfficer"), step=0)
     engine.register_entity(EntityRecord(entity_id="agent_desk", canonical_name="TradingDesk"), step=0)
@@ -98,7 +98,7 @@ def test_schema_policy_domain_keys_and_sparse_fallback():
 
 
 def test_word_boundary_and_fuzzy_mention_resolver():
-    engine = NarrativeMemoryEngine(
+    engine = CanonArcEngine(
         ":memory:",
         mention_resolver=DefaultLexicalResolver(fuzzy_threshold=85.0),
     )
@@ -124,7 +124,7 @@ def test_word_boundary_and_fuzzy_mention_resolver():
     assert ctx_inflected.resolved_mentions[0].matched_via == "fuzzy"
 
     # Default engine (without explicit fallback_on_empty_mentions) must NOT dump all entities on empty match
-    default_engine = NarrativeMemoryEngine(":memory:")
+    default_engine = CanonArcEngine(":memory:")
     default_engine.register_entity(EntityRecord(entity_id="char_art", canonical_name="Art"), step=0)
     default_engine.register_entity(EntityRecord(entity_id="char_zh", canonical_name="李雷"), step=0)
 
@@ -142,7 +142,7 @@ def test_custom_mention_resolver_and_pov_fallback():
         def resolve(self, text, explicit_mentions, entities, aliases):
             return [ResolvedMention(surface_text="he", entity_id="char_bob", matched_via="alias")]
 
-    engine = NarrativeMemoryEngine(":memory:", mention_resolver=StubNERResolver())
+    engine = CanonArcEngine(":memory:", mention_resolver=StubNERResolver())
     engine.register_entity(EntityRecord(entity_id="char_alice", canonical_name="Alice"), step=0)
     engine.register_entity(EntityRecord(entity_id="char_bob", canonical_name="Bob"), step=0)
 
@@ -189,7 +189,7 @@ def test_extraction_prompt_normalization_and_transaction():
                 ],
             )
 
-    engine = NarrativeMemoryEngine(":memory:", extractor=MockExtractor())
+    engine = CanonArcEngine(":memory:", extractor=MockExtractor())
     engine.register_entity(EntityRecord(entity_id="char_arthur", canonical_name="Arthur"), step=0)
     engine.register_entity(EntityRecord(entity_id="char_merlin", canonical_name="Merlin"), step=0)
 
@@ -212,7 +212,7 @@ def test_deterministic_ngram_embedder_across_subprocesses():
     src_dir = str(Path(__file__).resolve().parents[1] / "src")
     env = {**os.environ, "PYTHONPATH": src_dir}
     code = (
-        "from narrative_memory.voice import OfflineNgramEmbedder; "
+        "from canonarc.voice import OfflineNgramEmbedder; "
         "import json; "
         "v = OfflineNgramEmbedder(dim=32).embed_text('Arthur drew Excalibur').tolist(); "
         "print(json.dumps(v))"
@@ -232,7 +232,7 @@ def test_dimension_mismatch_guard_in_voice_bank():
 
 
 def test_branch_isolation_rollback_guard_snapshot_and_state_key_deletion():
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(
         EntityRecord(entity_id="c1", canonical_name="Alice", state={"mood": "calm", "disguise": "bard"}),
         step=0,
@@ -277,7 +277,7 @@ def test_branch_isolation_rollback_guard_snapshot_and_state_key_deletion():
     with tempfile.TemporaryDirectory() as tmp:
         snap_path = Path(tmp) / "snap.db"
         engine.export_snapshot(snap_path, at_step=3, timeline_id="alt")
-        snap_engine = NarrativeMemoryEngine(snap_path)
+        snap_engine = CanonArcEngine(snap_path)
         snap_ctx = snap_engine.retrieve_context(step=4, mentions=["Alice"], top_k_voice=1)
         assert len(snap_ctx.voice_exemplars) == 1
         assert snap_ctx.entities[0].valid_from_step == 2

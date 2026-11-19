@@ -4,17 +4,17 @@ from pathlib import Path
 
 import pytest
 
-from narrative_memory import (
+from canonarc import (
     AliasRecord,
     EdgeDelta,
     EntityDelta,
     EntityRecord,
     EpisodeRecord,
-    NarrativeMemoryEngine,
+    CanonArcEngine,
     StepDelta,
     VoiceExemplar,
 )
-from narrative_memory.store import CausalStore, TimelineBranchConflictError
+from canonarc.store import CausalStore, TimelineBranchConflictError
 
 
 def test_sqlite_pragmas_and_foreign_keys():
@@ -40,7 +40,7 @@ def test_sqlite_pragmas_and_foreign_keys():
 
 def test_timeline_head_step_and_fork_step_required():
     """TimelineInfo.head_step reflects max step across tables, and fork_step=None is rejected for branches."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(EntityRecord(entity_id="char_a", canonical_name="Alice"), step=0)
     engine.commit_step(
         step=12,
@@ -69,7 +69,7 @@ def test_timeline_head_step_and_fork_step_required():
 
 def test_alias_scoping_case_normalization_and_safe_removal():
     """Shared epithets across entities do not collide, and mixed-case aliases tombstone cleanly."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(
         EntityRecord(entity_id="char_a", canonical_name="Alice"),
         aliases=["The Captain", "The Old Wizard"],
@@ -143,7 +143,7 @@ def test_get_history_branch_dedup_tombstones_and_large_steps():
 
 def test_export_snapshot_preserves_epistemics_trajectory_and_voice():
     """export_snapshot preserves raw episode_epistemics, prior_state trajectory, and voice_exemplars."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(
         EntityRecord(entity_id="char_arthur", canonical_name="Arthur", state={"mood": "calm"}),
         step=0,
@@ -179,7 +179,7 @@ def test_export_snapshot_preserves_epistemics_trajectory_and_voice():
     with tempfile.TemporaryDirectory() as tmpdir:
         snap_path = Path(tmpdir) / "save_25.sqlite"
         engine.export_snapshot(snap_path, at_step=25)
-        loaded = NarrativeMemoryEngine(snap_path)
+        loaded = CanonArcEngine(snap_path)
 
         # 1. Voice exemplar survived
         voice = loaded.store.get_lineage_voice_exemplars("main", 25, "char_arthur")
@@ -208,7 +208,7 @@ def test_export_snapshot_preserves_epistemics_trajectory_and_voice():
 
 def test_step_transaction_preserves_data_on_exception_and_guards_branches():
     """StepTransaction does not delete >= step data if an exception occurs inside the with-block."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(EntityRecord(entity_id="char_a", canonical_name="Alice", state={"hp": 10}), step=0)
     engine.commit_step(
         step=5,
@@ -234,7 +234,7 @@ def test_step_transaction_preserves_data_on_exception_and_guards_branches():
 
 def test_deceived_believed_summary_preserved_and_multipov_all_isolation():
     """Re-asserting deceived without summary preserves believed_summary; pov_mode='all' isolates secrets."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(
         EntityRecord(
             entity_id="char_alice",
@@ -311,7 +311,7 @@ def test_deceived_believed_summary_preserved_and_multipov_all_isolation():
 
 def test_lexical_resolver_finditer_and_subphrase_guard():
     """Shorter canonical name appearing after a longer alias is still found; shorter alias inside longer phrase is skipped."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(EntityRecord(entity_id="char_arthur", canonical_name="Arthur"), step=0)
     engine.register_entity(
         EntityRecord(entity_id="char_impostor", canonical_name="Mordred"),
@@ -348,7 +348,7 @@ def test_lexical_resolver_finditer_and_subphrase_guard():
 
 def test_provenance_not_inherited_on_unrelated_state_mutation():
     """Mutating state without caused_by_episode_id/reason does not carry over stale provenance."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(EntityRecord(entity_id="char_a", canonical_name="Alice", state={"mood": "calm"}), step=0)
     engine.commit_step(
         step=5,
@@ -377,7 +377,7 @@ def test_provenance_not_inherited_on_unrelated_state_mutation():
 
 def test_step_transaction_atomic_rollback_on_commit_failure(monkeypatch):
     """If commit_step fails in StepTransaction.__exit__, rollback_to is also rolled back atomically."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(EntityRecord(entity_id="char_a", canonical_name="Alice", state={"hp": 10}), step=0)
     engine.commit_step(
         step=5,
@@ -400,11 +400,11 @@ def test_step_transaction_atomic_rollback_on_commit_failure(monkeypatch):
 
 
 def test_causal_store_thread_safety_and_asyncio_to_thread(tmp_path):
-    """NarrativeMemoryEngine can be used across worker threads and asyncio.to_thread without ProgrammingError."""
+    """CanonArcEngine can be used across worker threads and asyncio.to_thread without ProgrammingError."""
     import asyncio
     from concurrent.futures import ThreadPoolExecutor
 
-    engine = NarrativeMemoryEngine(tmp_path / "threaded.db")
+    engine = CanonArcEngine(tmp_path / "threaded.db")
     engine.register_entity(EntityRecord(entity_id="char_a", canonical_name="Alice", state={"hp": 100}), step=0)
 
     def worker(step_num: int) -> str:
@@ -432,9 +432,9 @@ def test_causal_store_thread_safety_and_asyncio_to_thread(tmp_path):
 def test_copresent_scene_entities_isolated_from_1hop_social_graph_neighbors():
     """1-hop social graph neighbors stay in related_entities/background_edges rather than
     polluting co-present scene entities, ignorant annotations, or episode causal pinning."""
-    from narrative_memory.presets import InteractiveFictionPreset
+    from canonarc.presets import InteractiveFictionPreset
 
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(
         EntityRecord(
             entity_id="char_arthur",

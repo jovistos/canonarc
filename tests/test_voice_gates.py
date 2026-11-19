@@ -1,5 +1,5 @@
-from narrative_memory.voice import IngestionGate, OfflineNgramEmbedder, VoiceBank
-from narrative_memory.models import VoiceExemplar
+from canonarc.voice import IngestionGate, OfflineNgramEmbedder, VoiceBank
+from canonarc.models import VoiceExemplar
 
 
 def test_anti_drift_gate():
@@ -86,7 +86,7 @@ def test_offline_embedder_deterministic_across_pythonhashseed():
 
     src_dir = str(Path(__file__).resolve().parents[1] / "src")
     code = (
-        "from narrative_memory.voice import OfflineNgramEmbedder; "
+        "from canonarc.voice import OfflineNgramEmbedder; "
         "e = OfflineNgramEmbedder(); "
         "print(e.embed_text('The ancient parchment reveals an ominous portent.').tobytes().hex())"
     )
@@ -132,9 +132,9 @@ def test_cjk_ingestion_gate_and_boilerplate_rejection():
 
 def test_dialogue_candidate_speaker_attribution_and_indexing():
     """extract_dialogue_candidates attributes speaker_id/addressee_id and bridges to index_voice_exemplars."""
-    from narrative_memory import EntityRecord, NarrativeMemoryEngine
+    from canonarc import EntityRecord, CanonArcEngine
 
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(EntityRecord(entity_id="char_merlin", canonical_name="Merlin"), step=0)
     engine.register_entity(EntityRecord(entity_id="char_arthur", canonical_name="Arthur"), step=0)
 
@@ -164,8 +164,8 @@ def test_dialogue_candidate_speaker_attribution_and_indexing():
 
 def test_voice_bank_register_fallback_note_and_disable():
     """Switching to a new register falls back with a warning note by default, or returns [] if disabled."""
-    from narrative_memory.models import StepContext
-    from narrative_memory.presets import (
+    from canonarc.models import StepContext
+    from canonarc.presets import (
         InteractiveFictionPreset,
         SchemaPolicy,
         SimulationPreset,

@@ -1,7 +1,7 @@
-from narrative_memory import (
+from canonarc import (
     EdgeDelta,
     EntityRecord,
-    NarrativeMemoryEngine,
+    CanonArcEngine,
     StepDelta,
     VoiceExemplar,
 )
@@ -11,7 +11,7 @@ def test_multiparty_voice_resolution_preserves_all_copresent_registers():
     """Arthur in a room with both Merlin (ti/furious) and the Queen (Vi/reverent)
     must receive exemplars for both registers via Round-Robin rather than locking
     onto an arbitrary first edge."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(EntityRecord(entity_id="char_arthur", canonical_name="Arthur"), step=0)
     engine.register_entity(EntityRecord(entity_id="char_merlin", canonical_name="Merlin"), step=0)
     engine.register_entity(EntityRecord(entity_id="char_queen", canonical_name="Queen"), step=0)
@@ -79,7 +79,7 @@ def test_multiparty_voice_resolution_preserves_all_copresent_registers():
 
 def test_per_pair_facade_does_not_contaminate_other_addressees():
     """A facade edge toward a Spy must not override Arthur's genuine stance toward Lancelot."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(EntityRecord(entity_id="char_arthur", canonical_name="Arthur"), step=0)
     engine.register_entity(EntityRecord(entity_id="char_spy", canonical_name="Spy"), step=0)
     engine.register_entity(EntityRecord(entity_id="char_lancelot", canonical_name="Lancelot"), step=0)
@@ -135,7 +135,7 @@ def test_per_pair_facade_does_not_contaminate_other_addressees():
 
 def test_offscreen_facade_does_not_override_inscene_stance():
     """An active facade toward an absent character must not override an in-scene stance."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(EntityRecord(entity_id="char_arthur", canonical_name="Arthur"), step=0)
     engine.register_entity(EntityRecord(entity_id="char_merlin", canonical_name="Merlin"), step=0)
     engine.register_entity(EntityRecord(entity_id="char_absent_king", canonical_name="Leodegrance"), step=0)
@@ -194,7 +194,7 @@ def test_offscreen_facade_does_not_override_inscene_stance():
 def test_per_pair_edge_layer_merging_preserves_split_register_and_tone():
     """A base/kinship edge carrying register and a stance edge carrying tone
     for the same target must merge rather than dropping one attribute."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(EntityRecord(entity_id="char_arthur", canonical_name="Arthur"), step=0)
     engine.register_entity(EntityRecord(entity_id="char_morgana", canonical_name="Morgana"), step=0)
 

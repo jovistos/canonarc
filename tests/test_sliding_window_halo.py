@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-from narrative_memory import (
+from canonarc import (
     AliasRecord,
     CallableExtractor,
     EdgeDelta,
     EntityDelta,
     EntityRecord,
-    NarrativeMemoryEngine,
+    CanonArcEngine,
     StepDelta,
 )
 
 
-def _seed_council_cast(engine: NarrativeMemoryEngine) -> None:
+def _seed_council_cast(engine: CanonArcEngine) -> None:
     engine.register_entity(
         EntityRecord(entity_id="char_elena", canonical_name="Elena", state={"mood": "calm"}),
         step=0,
@@ -41,7 +41,7 @@ def _seed_council_cast(engine: NarrativeMemoryEngine) -> None:
 
 def test_retrieve_context_prev_text_fallback_resolves_pronouns_and_edges() -> None:
     """prev_text resolves active characters & edges when target chunk has < 2 character mentions."""
-    with NarrativeMemoryEngine(":memory:") as engine:
+    with CanonArcEngine(":memory:") as engine:
         _seed_council_cast(engine)
 
         # Without prev_text: pronoun-only chunk resolves nothing
@@ -79,7 +79,7 @@ def test_retrieve_context_prev_text_fallback_resolves_pronouns_and_edges() -> No
 
 def test_retrieve_context_prev_text_respects_epistemic_disguise() -> None:
     """Fallback mentions from prev_text still obey POV disguise masking."""
-    with NarrativeMemoryEngine(":memory:") as engine:
+    with CanonArcEngine(":memory:") as engine:
         _seed_council_cast(engine)
         engine.register_entity(
             EntityRecord(entity_id="char_lyra", canonical_name="Lyra", state={"mood": "watchful"}),
@@ -108,7 +108,7 @@ def test_retrieve_context_prev_text_respects_epistemic_disguise() -> None:
 
 def test_extract_dialogue_candidates_split_attribution_and_no_halo_leak() -> None:
     """prev_text / next_text attribute boundary-split quotes without extracting quotes from the halo."""
-    with NarrativeMemoryEngine(":memory:") as engine:
+    with CanonArcEngine(":memory:") as engine:
         _seed_council_cast(engine)
 
         # 1. Trailing quote in chunk k, speaker tag at start of chunk k+1 (next_text)
@@ -152,7 +152,7 @@ def test_extract_dialogue_candidates_split_attribution_and_no_halo_leak() -> Non
 
 def test_build_extraction_prompt_and_step_transaction_fence_read_only_halo() -> None:
     """build_extraction_prompt and StepTransaction fence prev_text/next_text as read-only."""
-    with NarrativeMemoryEngine(":memory:") as engine:
+    with CanonArcEngine(":memory:") as engine:
         _seed_council_cast(engine)
 
         captured_prompts: list[str] = []
@@ -189,7 +189,7 @@ def test_build_extraction_prompt_and_step_transaction_fence_read_only_halo() -> 
 
 def test_store_apply_delta_idempotent_state_guard_preserves_trajectory() -> None:
     """store.apply_delta skips no-op entity/edge revisions while still applying alias updates."""
-    with NarrativeMemoryEngine(":memory:") as engine:
+    with CanonArcEngine(":memory:") as engine:
         _seed_council_cast(engine)
 
         # Step 4: Elena calm -> furious; stance Vi/suspicious -> ti/furious

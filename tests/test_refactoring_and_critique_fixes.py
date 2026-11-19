@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 import pytest
 
-from narrative_memory import (
+from canonarc import (
     AliasRecord,
     BaseEngineHooks,
     CallableEmbedder,
@@ -18,19 +18,19 @@ from narrative_memory import (
     EpisodeRecord,
     EpisodicScoringPolicy,
     InformDelta,
-    NarrativeMemoryEngine,
+    CanonArcEngine,
     OfflineNgramEmbedder,
     SchemaPolicy,
     StepDelta,
     TimelineBranchConflictError,
     VoiceExemplar,
 )
-from narrative_memory.cli import main as cli_main
+from canonarc.cli import main as cli_main
 
 
 def test_disguise_fuzzy_alias_and_comention_do_not_leak():
     """Fuzzy-matched disguise aliases and canonical co-mentions must not leak true identity."""
-    engine = NarrativeMemoryEngine(
+    engine = CanonArcEngine(
         ":memory:",
         mention_resolver=DefaultLexicalResolver(fuzzy_threshold=82.0),
     )
@@ -130,7 +130,7 @@ def test_shared_alias_text_scan_and_partial_overlap_guard():
 
 def test_deceived_pov_semantic_search_uses_believed_summary():
     """Deceived POV semantic scoring matches against believed_summary, not hidden ground truth."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(EntityRecord(entity_id="char_arthur", canonical_name="Arthur"), step=0)
     engine.register_entity(EntityRecord(entity_id="char_merlin", canonical_name="Merlin"), step=0)
 
@@ -287,7 +287,7 @@ def test_cte_same_step_branch_override_and_snapshot_revision_count(tmp_path):
 
 def test_normalize_delta_intra_step_new_entity_and_alias():
     """normalize_delta resolves entities and non-disguise aliases created within the same StepDelta."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(EntityRecord(entity_id="char_arthur", canonical_name="Arthur"), step=0)
 
     raw = StepDelta(
@@ -321,7 +321,7 @@ def test_normalize_delta_intra_step_new_entity_and_alias():
 
 def test_multipov_all_mode_belief_state_consistency():
     """In pov_mode='all', belief_state only overrides attributes shared by all POV observers."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(
         EntityRecord(
             entity_id="char_arthur",
@@ -367,7 +367,7 @@ def test_multipov_all_mode_belief_state_consistency():
 
 def test_epistemic_forgetting_and_suppression():
     """Episodes can be forgotten, suppressed, or overwritten to deceived at a later step."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(EntityRecord(entity_id="char_arthur", canonical_name="Arthur"), step=0)
     engine.register_entity(EntityRecord(entity_id="char_merlin", canonical_name="Merlin"), step=0)
 
@@ -412,7 +412,7 @@ def test_epistemic_forgetting_and_suppression():
 
 def test_flashback_mode_narrative_time_and_episode_consolidation():
     """Flashbacks do not clobber present-day entity/edge states, and consolidate_episodes compacts old events."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(
         EntityRecord(entity_id="char_arthur", canonical_name="Arthur", state={"mood": "furious"}),
         step=0,
@@ -489,7 +489,7 @@ def test_flashback_mode_narrative_time_and_episode_consolidation():
 
 def test_delete_timeline_cascade_and_branch_conflict():
     """delete_timeline enforces branch safety unless cascade=True and rejects deleting main."""
-    with NarrativeMemoryEngine(":memory:") as engine:
+    with CanonArcEngine(":memory:") as engine:
         engine.register_entity(EntityRecord(entity_id="char_a", canonical_name="Alice"), step=0)
         engine.branch(at_step=0, name="route_a")
         engine.branch(at_step=1, name="route_a_sub", from_timeline="route_a")
@@ -544,10 +544,10 @@ def test_sessions_hooks_batch_embedder_extractor_ranker_and_cli(tmp_path):
     custom_policy = SchemaPolicy(
         episodic_policy=EpisodicScoringPolicy(salience_weight=0.5),
     )
-    from narrative_memory.presets import InteractiveFictionPreset
+    from canonarc.presets import InteractiveFictionPreset
 
     db_file = tmp_path / "cli_test.sqlite"
-    with NarrativeMemoryEngine(
+    with CanonArcEngine(
         db_file,
         embedder=CountingBatchEmbedder(),
         extractor=extractor,
@@ -618,7 +618,7 @@ def test_embedder_metadata_mismatch_and_reindex(tmp_path):
     """Store records embedder_id & dim; reopening with another embedder warns, raises, or reindexes."""
     db_file = tmp_path / "embedder_meta.db"
 
-    with NarrativeMemoryEngine(db_file, embedder=OfflineNgramEmbedder(dim=64)) as engine:
+    with CanonArcEngine(db_file, embedder=OfflineNgramEmbedder(dim=64)) as engine:
         engine.register_entity(EntityRecord(entity_id="char_arthur", canonical_name="Arthur"), step=0)
         engine.commit_step(
             step=1,
@@ -644,7 +644,7 @@ def test_embedder_metadata_mismatch_and_reindex(tmp_path):
     # Different dimension -> warn by default
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        with NarrativeMemoryEngine(db_file, embedder=OfflineNgramEmbedder(dim=128)) as engine:
+        with CanonArcEngine(db_file, embedder=OfflineNgramEmbedder(dim=128)) as engine:
             assert any("OfflineNgramEmbedder(dim=64)" in str(w.message) for w in caught)
 
     # Same dimension (64), different embedder_id -> raise when strict
@@ -654,10 +654,10 @@ def test_embedder_metadata_mismatch_and_reindex(tmp_path):
         dim=64,
     )
     with pytest.raises(EmbedderMismatchError, match="custom-model-v1"):
-        NarrativeMemoryEngine(db_file, embedder=alt_same_dim, on_embedder_mismatch="raise").close()
+        CanonArcEngine(db_file, embedder=alt_same_dim, on_embedder_mismatch="raise").close()
 
     # Different dimension + on_embedder_mismatch="reindex" migrates stored BLOBs in batches
-    with NarrativeMemoryEngine(
+    with CanonArcEngine(
         db_file, embedder=OfflineNgramEmbedder(dim=128), on_embedder_mismatch="reindex"
     ) as engine:
         assert engine.store.get_embedding_metadata() == ("OfflineNgramEmbedder(dim=128)", 128)
@@ -669,7 +669,7 @@ def test_embedder_metadata_mismatch_and_reindex(tmp_path):
     # Re-opening with the migrated embedder now succeeds cleanly without warnings
     with warnings.catch_warnings(record=True) as caught_after:
         warnings.simplefilter("always")
-        with NarrativeMemoryEngine(
+        with CanonArcEngine(
             db_file, embedder=OfflineNgramEmbedder(dim=128), on_embedder_mismatch="raise"
         ) as engine:
             counts = engine.reindex_embeddings()
