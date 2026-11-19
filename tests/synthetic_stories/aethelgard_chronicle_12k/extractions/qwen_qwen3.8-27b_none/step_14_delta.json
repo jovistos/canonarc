@@ -1,0 +1,75 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council",
+        "mood": "watchful"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step14_briefing",
+      "reason": null
+    },
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council",
+        "mood": "nervous"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step14_briefing",
+      "reason": null
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_step14_briefing",
+      "timeline_id": "main",
+      "step": 14,
+      "predicate": "briefing",
+      "summary": "Marcus and Julian enter the Council Chamber, where Marcus reports lights in the eastern spire and Julian presents the treasury accounts, while Isolde confirms an inquiry is underway.",
+      "participants": {
+        "char_marcus": "actor",
+        "char_julian": "actor",
+        "char_elena": "target",
+        "char_isolde": "target"
+      },
+      "witnesses": [
+        "char_marcus",
+        "char_julian",
+        "char_elena",
+        "char_isolde"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 6.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

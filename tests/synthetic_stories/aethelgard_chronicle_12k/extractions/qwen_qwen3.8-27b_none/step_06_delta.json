@@ -1,0 +1,80 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_isolde",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step6_briefing",
+      "reason": "Isolde enters the Council Chamber from the Inner Courtyard."
+    },
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "confident"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step6_briefing",
+      "reason": "Marcus feels relief and confidence believing Julian's cover story about external threats."
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_step6_briefing",
+      "timeline_id": "main",
+      "step": 6,
+      "predicate": "briefing",
+      "summary": "Isolde enters the Council Chamber to announce a tribunal audit regarding the signet and ledgers, while Marcus, believing Julian's lie, welcomes the external inquiry.",
+      "participants": {
+        "char_isolde": "actor",
+        "char_elena": "target",
+        "char_marcus": "target",
+        "char_julian": "target"
+      },
+      "witnesses": [
+        "char_isolde",
+        "char_elena",
+        "char_marcus",
+        "char_julian"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_step2_confrontation",
+      "entity_id": "char_marcus",
+      "epistemic": "deceived",
+      "believed_summary": "The Obsidian Signet was stolen by northern raiders/bandits, not by Julian."
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

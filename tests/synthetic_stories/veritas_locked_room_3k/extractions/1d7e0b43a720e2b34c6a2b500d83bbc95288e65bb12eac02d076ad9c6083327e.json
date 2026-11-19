@@ -1,0 +1,163 @@
+{
+  "cache_key": "1d7e0b43a720e2b34c6a2b500d83bbc95288e65bb12eac02d076ad9c6083327e",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T19:41:14.580611+00:00",
+  "prompt_sha256": "dff55dddc0b27bb321cff470df568a8893fdd40c2a24ab8be77c4c375d6814a9",
+  "scene_text_sha256": "7cbdde8d49e5f0f2d1d44e1421a8c777a2c72b52935fdfbf1f14bb6e68733b04",
+  "scene_text": "Cornered and desperate, Thorne reached deep into the inner pocket of his waistcoat, his fingers closing around cold, notched metal. With a frantic glance at Vane, the physician lunged sideways toward the shrouded figure by the bookshelves and thrust the Brass Ledger Key into the veiled locksmith's gloved hand. \"Take this cursed key and hide it deep inside the stone cellar before the constables arrive!\" Thorne hissed, his voice cracking under the strain of sheer terror.\n\nBefore Vane could intercept him, Thorne bolted through the side service door, his heavy footsteps clattering down the narrow wooden stairs that led toward the kitchens and the damp brick expanse of the Wine Cellar below. The veiled locksmith did not hesitate; with a swift, fluid motion, the cloaked figure pocketed the Brass Ledger Key and swept out after the fleeing doctor, determined not to let him vanish into the subterranean dark.\n\nLeft momentarily alone in the Mahogany Study, Vane stood rigid by the desk, listening to the distant slam of the cellar door echoing up through the floorboards. A moment later, the main door creaked open, and Mina stepped cautiously across the threshold. Having grown uneasy in the mist-filled quiet of the Glass Conservatory, the young ward had walked through the corridor to check on the council, only to find the room in disarray and the chief inspector staring grimly at the empty doorway.\n\n\"Inspector Vane?\" Mina asked softly, her eyes darting from the scattered toxicology papers to the overturned chair near the hearth. Vane turned toward her, forcing his features back into a mask of practiced calm, though his pulse still hammered in his temples. \"Stay here, Miss Mina,\" he instructed gently, gesturing toward the settee. \"The matter is nearly concluded, though I fear the truth lies somewhere beneath our feet.\"",
+  "usage": {
+    "prompt_tokens": 5759,
+    "completion_tokens": 1178,
+    "total_tokens": 6937,
+    "cached_prompt_tokens": 1152,
+    "reasoning_tokens": 543,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 5626.794,
+    "cost_estimate": {
+      "input_cost_usd": 0.000645,
+      "cached_input_cost_usd": 1.6e-05,
+      "output_cost_usd": 0.00033,
+      "total_cost_usd": 0.000991,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_thorne",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_cellar",
+          "mood": "panicked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_thorne_key_handoff",
+        "reason": "Fled down the service stairs into the Wine Cellar."
+      },
+      {
+        "entity_id": "char_giles",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_cellar",
+          "mood": "determined"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_thorne_key_handoff",
+        "reason": "Pursued the fleeing physician into the Wine Cellar after pocketing the key."
+      },
+      {
+        "entity_id": "char_vane",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_study",
+          "mood": "calm"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_thorne_key_handoff",
+        "reason": "Remained in the study, forcing his features into practiced calm."
+      },
+      {
+        "entity_id": "char_mina",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_study",
+          "mood": "nervous"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_thorne_key_handoff",
+        "reason": "Left the conservatory uneasily and entered the study in disarray."
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_giles",
+        "target_id": "item_ledger_key",
+        "relation_type": "possesses",
+        "state": {
+          "status": "concealed"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_thorne_key_handoff",
+        "reason": "Thorne thrust the Brass Ledger Key into the veiled locksmith's gloved hand."
+      },
+      {
+        "source_id": "char_thorne",
+        "target_id": "item_ledger_key",
+        "relation_type": "possesses",
+        "state": {},
+        "merge": true,
+        "remove": true,
+        "caused_by_episode_id": "ep_thorne_key_handoff",
+        "reason": "Thorne surrendered the key to the veiled locksmith."
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_thorne_key_handoff",
+        "timeline_id": "main",
+        "step": 3,
+        "predicate": "item_transfer",
+        "summary": "Cornered by Vane, Thorne thrust the Brass Ledger Key into the veiled locksmith's hand and fled toward the Wine Cellar; the locksmith pocketed it and gave chase, while Mina entered the study to find Vane alone.",
+        "participants": {
+          "char_thorne": "actor",
+          "char_giles": "recipient",
+          "item_ledger_key": "instrument",
+          "char_vane": "observer"
+        },
+        "witnesses": [
+          "char_thorne",
+          "char_giles",
+          "char_vane"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_study",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.5,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

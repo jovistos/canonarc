@@ -1,0 +1,70 @@
+{
+  "cache_key": "f9bc10cf918cd70707bcf9ca76294ddb41332d44c37dd3b5fef824f0a5ccb30c",
+  "model": "rule-based-non-llm",
+  "created_at": "2026-11-19T19:45:31.909683+00:00",
+  "prompt_sha256": "be1ae744b98930461325457d9adec621e481ede03c02c0d477667fe8d8e2d154",
+  "scene_text_sha256": "1454b808197a8baf292977a1f514111170bffde574b41fa2b55cbbc3ce306fa6",
+  "scene_text": "Lyra turned from Elena to Marcus, and the old general's confidence hardened into attention as though a blade had been laid across his palms. She spoke without ornament: the second step of the deception had not been an outside theft, nor a forgery by the tribunal's enemies. Julian, the young treasurer, had opened the treasury seal himself, moved the siege fund into a false account, and then presented the missing coin as evidence of foreign sabotage. The Council Chamber went silent in a way that made the guttering lamps sound loud. Marcus's jaw set; his broad shoulders squared beneath the dark wool of his coat; the old soldier's face darkened from confidence to indignation as the shape of the betrayal became clear.\n\nHe rose so sharply that his chair scraped stone. \"Kako se usuđuješ da obmanjuješ vojni savet dok držimo dokaze u rukama!\" he barked, the words cracking through the vaulted hall. Julian flinched as though struck, his nervous hands flying to the table edge, his ledger and inkstand rattling. Lyra did not soften the blow. She laid out the copied page, the false seal, the transfer mark that matched Julian's own cipher, and watched Marcus's anger turn from heat to something colder and more dangerous. 'Step by step,' she said, 'the treasurer built the lie, and step by step we have pulled it down. The theft in the second step was not the tribunal's work. It was his.'\n\nMarcus rounded on Julian, disgust plain in every line of his face. The young treasurer opened his mouth, but no defense came; the Council Chamber had become a court, and the old general's fury was its first verdict. Elena let the silence stretch until Julian's breathing grew audible, thin and quick. Lyra stood beside the evidence with her hands folded, watchful as a judge who had already read the sentence. The councillors shifted in their seats, and the dawn light crept across the table like a slow accusation. Marcus pointed one blunt finger at Julian and then at the ledgers, his voice dropping to a dangerous rumble. 'No more sums,' he said. 'No more seals. You will answer here, before every witness.' Julian looked to Elena, but the Iron Chancellor's calm had become a wall.",
+  "usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 1.977,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_rule_23",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "confrontation",
+        "summary": "Lyra turned from Elena to Marcus, and the old general's confidence hardened into attention as though a blade had been laid across his palms.",
+        "participants": {
+          "char_elena": "participant",
+          "char_julian": "participant"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "char_lyra",
+          "char_marcus"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

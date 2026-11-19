@@ -1,0 +1,85 @@
+{
+  "cache_key": "ddf5d5fcd42c7cbbc165726ca6a17880d6249c22b4c2d81a9b86d30f72af4492",
+  "model": "qwen/qwen3.8-27b",
+  "created_at": "2026-11-19T21:18:18.110309+00:00",
+  "prompt_sha256": "8e5068a82151fde132d34797f19878114e789d210060b8878275af539d75e503",
+  "scene_text_sha256": "ae298028ed14ac5f90ced9c83df73955df91d1b2ed10f0d4dd9c996040f32971",
+  "scene_text": "Elena stood alone in the Council Chamber, and the vast vaulted hall seemed to breathe around her with the cold hush of a tomb. Present fury still burned beneath her ribs, sharp as a blade drawn across silk, but the tall windows and empty chairs pulled her backward through the years. The candlelight guttered, the stone columns softened, and suddenly it was ten years ago—another winter, another crisis, another Elena. She had been younger then, naive and trusting, her voice not yet armored in iron. The city had teetered on the edge of famine and faction, and the historic pact signing had promised to bind the noble houses to the crown with oaths and ink.\n\nShe remembered Julian as he had been: eager, bright-eyed, his ledger open beneath his trembling hands, his assurances falling like fresh snow. He had sworn the accounts were clean, the seals authentic, the northern envoys honorable. Elena had believed him. She had signed beside him while the frost crept across the council table and the bells of Aethelgard rang out a brittle peace. Julian had smiled then, and she had taken that smile as proof of loyalty, never noticing how carefully he kept his sleeve over the document's lower margin.\n\nNow, standing in the same chamber years later, Elena felt the old trust curdle into something colder. The memory held her in its gray light: the scrape of quills, the scent of wax, the way Julian had said her name as though it were a vow. She had been so certain that the pact would hold. She had been so certain of him. The chamber around her remained empty, but the past crowded close, every polished banner and shadowed alcove accusing her of the same flaw she now hunted in others.\n\nThe vision thinned. Elena drew a slow breath and let the present room harden around her again—the Council Chamber, the winter dusk beyond the windows, the furious patience of a woman who had learned what trust could cost.",
+  "usage": {
+    "prompt_tokens": 6213,
+    "completion_tokens": 309,
+    "total_tokens": 6522,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 10987.12,
+    "cost_estimate": {
+      "input_cost_usd": 0.00087,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 8.7e-05,
+      "total_cost_usd": 0.000956,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step2_confrontation",
+        "reason": "Elena's mood shifts from calm to furious as she reflects on the confrontation and her past trust in Julian."
+      }
+    ],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_step4_flashback",
+        "timeline_id": "main",
+        "step": 4,
+        "predicate": "flashback",
+        "summary": "Elena recalls a memory from ten years ago where she signed a historic pact with Julian, trusting his assurances of clean accounts and honorable envoys, unaware of his deception.",
+        "participants": {
+          "char_elena": "actor",
+          "char_julian": "target"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": "10_years_ago",
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": true,
+    "story_time": "10_years_ago",
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

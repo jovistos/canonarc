@@ -1,0 +1,166 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [
+        {
+          "alias": "the hooded courier",
+          "entity_id": "char_lyra",
+          "kind": "disguise",
+          "known_to": [
+            "char_elena",
+            "char_julian",
+            "char_marcus"
+          ],
+          "persona_name": "Courier",
+          "valid_from_step": 0,
+          "valid_to_step": null
+        }
+      ],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_lyra_unmasks_julian_vault",
+      "reason": "Walks openly into the Council Chamber as Lyra, revealing to Marcus that the courier was her"
+    },
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "furious"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_marcus_confronts_julian_chamber",
+      "reason": "Veteran commander's concern hardens into stern fury at Julian's deception"
+    },
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "shocked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_marcus_confronts_julian_chamber",
+      "reason": "Cornered by Marcus's rebuke, then left blank and shaking after drinking the memory draught"
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "furious"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_marcus_confronts_julian_chamber",
+      "reason": "Her preserved fury now fully visible and colder than the vault below"
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_marcus",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "furious",
+        "trust": -0.9
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_marcus_confronts_julian_chamber",
+      "reason": "Marcus turns on Julian for deceiving the military council"
+    },
+    {
+      "source_id": "char_lyra",
+      "target_id": "item_signet",
+      "relation_type": "possesses",
+      "state": {
+        "status": "revealed"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_marcus_confronts_julian_chamber",
+      "reason": "Lyra brings the Obsidian Signet openly into the Council Chamber and sets it on the table"
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_marcus_confronts_julian_chamber",
+      "timeline_id": "main",
+      "step": 6,
+      "predicate": "confrontation",
+      "summary": "Lyra brings the Obsidian Signet into the Council Chamber and tells Marcus the full truth of Julian's theft and flight; Marcus furiously rebukes Julian, and Julian swallows a memory-erasing draught, forgetting the old pact and the trust Elena once placed in him.",
+      "participants": {
+        "char_lyra": "informant",
+        "char_marcus": "accuser",
+        "char_julian": "target",
+        "char_elena": "observer",
+        "item_signet": "instrument"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_marcus",
+        "char_julian",
+        "char_lyra"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_elena_accuses_julian_theft",
+      "entity_id": "char_marcus",
+      "epistemic": "told",
+      "believed_summary": null
+    },
+    {
+      "episode_id": "ep_julian_passes_signet_courier",
+      "entity_id": "char_marcus",
+      "epistemic": "told",
+      "believed_summary": null
+    },
+    {
+      "episode_id": "ep_elena_flashback_pact_signing",
+      "entity_id": "char_julian",
+      "epistemic": "forgotten",
+      "believed_summary": null
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

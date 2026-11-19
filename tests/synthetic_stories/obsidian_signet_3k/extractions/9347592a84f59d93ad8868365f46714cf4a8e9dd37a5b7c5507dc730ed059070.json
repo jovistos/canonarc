@@ -1,0 +1,133 @@
+{
+  "cache_key": "9347592a84f59d93ad8868365f46714cf4a8e9dd37a5b7c5507dc730ed059070",
+  "model": "qwen/qwen3.8-27b",
+  "created_at": "2026-11-19T21:11:23.217043+00:00",
+  "prompt_sha256": "61d9f4e1c98b0a7f6b18fb4dedf6518a4886054dbe1a5c5238c3f51a57700915",
+  "scene_text_sha256": "6f092494c13dbb775fa5a23c519c89bf229a39b5cd6590bf443e08258753c5ba",
+  "scene_text": "Marcus read for a long while, and the chamber grew hotter and closer with every page. At last he shoved the reports aside, muttered something about clerks who could not tell a supply column from a funeral procession, and rose so abruptly his chair scraped a raw line into the oak floor. \"The air in here is a dead man's breath,\" he announced, and no one disagreed. He crossed to the tall glass doors, hauled one open, and stepped out onto the Windy Balcony, where the dusk wind was already tearing at the courtyard banners below. The heavy doors swung shut behind him and cut the chamber in two.\n\nElena was on her feet before the latch had finished clicking. The calm she had worn all evening peeled away like a mask of thin tin, and what remained beneath was furious — a cold, precise, terrifying fury that made the candle flames seem to lean away from her. She rounded the table in three strides and stopped in front of Julian, close enough that he had to crane his neck back to meet her eyes.\n\n\"Prestani sa tim bednim lažima, izdajniče, jer znam da si sinoć ukrao crni pečat iz komore!\" Each word dropped like a nail being driven. Julian's face drained from pink to grey to a sickly parchment white; his panicked hands found the table edge and gripped it as though the floor had begun to tilt. \"I— I don't know what you mean,\" he managed, and the lie was so thin it practically let the light through.\n\nBehind them, in the shadows by the door, the hooded courier had not moved an inch. The wool hood stayed lowered, the grey scarf stayed drawn, and the courier's eyes went from Elena to Julian and back again, quiet and watchful, hoarding every word like a coin nobody would ever get back.",
+  "usage": {
+    "prompt_tokens": 5697,
+    "completion_tokens": 554,
+    "total_tokens": 6251,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 12953.688,
+    "cost_estimate": {
+      "input_cost_usd": 0.000798,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.000155,
+      "total_cost_usd": 0.000953,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_balcony"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step2_confrontation",
+        "reason": "Marcus exits the Council Chamber onto the Windy Balcony."
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step2_confrontation",
+        "reason": "Elena's calm demeanor shifts to cold, precise fury upon confronting Julian."
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "panicked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step2_confrontation",
+        "reason": "Julian becomes panicked and pale after Elena's accusation."
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_elena",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "register": "ti",
+          "tone": "furious",
+          "trust": -0.9
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_step2_confrontation",
+        "reason": "Elena drops formal register to informal 'ti' and uses accusatory language ('izdajniče')."
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_step2_confrontation",
+        "timeline_id": "main",
+        "step": 2,
+        "predicate": "confrontation",
+        "summary": "Elena confronts Julian, accusing him of stealing the Obsidian Signet, while Marcus exits to the balcony and Lyra watches from the shadows.",
+        "participants": {
+          "char_elena": "accuser",
+          "char_julian": "accused"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "char_lyra"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council_chamber",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.5,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

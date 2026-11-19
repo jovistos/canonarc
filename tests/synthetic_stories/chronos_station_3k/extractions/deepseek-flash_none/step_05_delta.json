@@ -1,0 +1,137 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council",
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_lyra_unmasks_julian_vault",
+      "reason": "Julian fled up the rear stairs from the vault into the Council Chamber, still pale and breathless"
+    },
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council",
+        "mood": "nervous"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_lyra_unmasks_julian_vault",
+      "reason": "Marcus stepped back into the Council Chamber from the Windy Balcony and heard Julian's grim news"
+    },
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {},
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [
+        {
+          "alias": "the hooded courier",
+          "entity_id": "char_lyra",
+          "kind": "disguise",
+          "known_to": [
+            "char_elena",
+            "char_julian"
+          ],
+          "persona_name": "Courier",
+          "valid_from_step": 0,
+          "valid_to_step": null
+        }
+      ],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_lyra_unmasks_julian_vault",
+      "reason": "Lyra threw back her hood and mask, revealing herself to Julian"
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "indignant"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_lyra_unmasks_julian_vault",
+      "reason": "Elena's fury is banked but burning as she hears Julian's convenient tale"
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_lyra",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "commanding",
+        "trust": -0.5
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_lyra_unmasks_julian_vault",
+      "reason": "Lyra drops formal address and demands the false charters in the informal, threatening register"
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_lyra_unmasks_julian_vault",
+      "timeline_id": "main",
+      "step": 5,
+      "predicate": "revelation",
+      "summary": "Backed against the frozen records in the Archive Vault, Julian is shocked as the hooded courier throws back her disguise to reveal herself as Lyra and demands all the false charters, threatening the royal dungeon by dawn.",
+      "participants": {
+        "char_lyra": "actor",
+        "char_julian": "target",
+        "item_signet": "instrument"
+      },
+      "witnesses": [
+        "char_julian",
+        "char_lyra"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_vault",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_elena_accuses_julian_theft",
+      "entity_id": "char_marcus",
+      "epistemic": "deceived",
+      "believed_summary": "Northern raiders broke into the annex and stole the Obsidian Signet while Julian defended the ledger, escaping by a hair as the vault fell into chaos."
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

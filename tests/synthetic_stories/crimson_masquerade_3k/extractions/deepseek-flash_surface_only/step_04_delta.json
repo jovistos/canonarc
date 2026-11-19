@@ -1,0 +1,36 @@
+{
+  "entities": [],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_flashback_pact_003",
+      "timeline_id": "main",
+      "step": 3,
+      "predicate": "flashback",
+      "summary": "Ten years ago, snowbound Venice: Elena, young and trusting, signed the historic pact in the Council Chamber while Julian, the young treasurer, pressed the seals and steadied her with careful arithmetic; she mistook his nervousness for devotion.",
+      "participants": {
+        "char_elena": "signer",
+        "char_julian": "confidant"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_julian"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": "10_years_ago",
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 6.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": true,
+  "story_time": "10_years_ago",
+  "chapter_id": null,
+  "scene_id": null
+}

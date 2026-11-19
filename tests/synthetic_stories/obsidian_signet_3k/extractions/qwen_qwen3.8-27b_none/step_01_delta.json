@@ -1,0 +1,46 @@
+{
+  "entities": [],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_step1_briefing",
+      "timeline_id": "main",
+      "step": 1,
+      "predicate": "briefing",
+      "summary": "Elena presents sealed reports to Marcus and the hooded courier delivers urgent northern border dispatches in the Council Chamber.",
+      "participants": {
+        "char_elena": "actor",
+        "char_marcus": "recipient",
+        "char_lyra": "messenger",
+        "char_julian": "observer",
+        "item_signet": "instrument"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_julian",
+        "char_lyra",
+        "char_marcus"
+      ],
+      "known_by": {
+        "char_elena": "direct",
+        "char_julian": "direct",
+        "char_lyra": "direct",
+        "char_marcus": "direct"
+      },
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 5.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

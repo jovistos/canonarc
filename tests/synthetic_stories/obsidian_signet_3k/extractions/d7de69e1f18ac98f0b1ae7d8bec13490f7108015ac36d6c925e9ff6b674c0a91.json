@@ -1,0 +1,86 @@
+{
+  "cache_key": "d7de69e1f18ac98f0b1ae7d8bec13490f7108015ac36d6c925e9ff6b674c0a91",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T19:48:15.501234+00:00",
+  "prompt_sha256": "e27885851d9c644928cd7e3398a141dff676be15c6d3e46b30d5bfe906a9cc58",
+  "scene_text_sha256": "16ab0d8e7bc443ce105fa7f03dc61598a2b5b28cefbaad30105c335a1a1ecd9f",
+  "scene_text": "Ten years ago, the same chamber had smelled of pine resin and wet wool instead of sour candle smoke. It was winter then — the winter of the ruined harvest, when the granaries of the north stood empty and the border lords spoke openly of secession over their ale. Elena remembered standing exactly here, at the head of this table, and she remembered being younger in a way that had nothing to do with the mirror. Naive, and trusting, and foolish enough to believe that a signed pact was a wall.\n\nThe room had been full of frost-bitten couriers that night, stamping snow from their boots, blowing on their fingers. The historic pact lay open on the oak boards, its ink still wet, eight seals pressed into the wax in a solemn red arc. And at her right hand, steady and earnest, had stood Julian — barely more than a boy, his collar too large for him, his voice shaking only a little as he read the treasury's guarantees aloud to the assembled lords. She had trusted him implicitly. Utterly. That was the thing she remembered most clearly now: the warmth of that trust, how comfortable it had been to wear, like a good winter coat she never once thought to check for holes.\n\nHe had brought her tea afterward, she recalled, and taken the blame for a miscounted ledger no one else would claim, and she had thought: here is a man I could build a kingdom with. The snow had beaten against these very windows. The same long oak table. The same high chairs.\n\nStanding alone in that room in the present, Elena could still feel the ghost of that winter draft on her cheek — and behind it, sharper than any winter, the cold knowledge of how thoroughly she had been wrong.",
+  "usage": {
+    "prompt_tokens": 5587,
+    "completion_tokens": 721,
+    "total_tokens": 6308,
+    "cached_prompt_tokens": 1152,
+    "reasoning_tokens": 465,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 4154.673,
+    "cost_estimate": {
+      "input_cost_usd": 0.000621,
+      "cached_input_cost_usd": 1.6e-05,
+      "output_cost_usd": 0.000202,
+      "total_cost_usd": 0.000839,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_chamber_council",
+          "mood": "indignant"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_winter_pact_memory",
+        "reason": "Standing alone in the chamber, remembering the winter pact and the depth of her misplaced trust in Julian."
+      }
+    ],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_winter_pact_memory",
+        "timeline_id": "main",
+        "step": 4,
+        "predicate": "flashback",
+        "summary": "Ten years ago in the same council chamber, during the winter of the ruined harvest, Elena stood at the head of the oak table as the historic northern pact was sealed with eight seals, trusting young Julian utterly as he read the treasury's guarantees aloud to the assembled lords and couriers.",
+        "participants": {
+          "char_elena": "head_of_table",
+          "char_julian": "reader_of_guarantees"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_chamber_council",
+        "story_time": "10_years_ago",
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": true,
+    "story_time": "10_years_ago",
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

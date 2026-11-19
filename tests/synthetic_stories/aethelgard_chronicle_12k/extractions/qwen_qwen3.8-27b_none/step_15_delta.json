@@ -1,0 +1,102 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step15_confrontation",
+      "reason": null
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "calm"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step15_confrontation",
+      "reason": null
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_isolde",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "formal",
+        "tone": "stern",
+        "trust": -0.8
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_step15_confrontation",
+      "reason": null
+    },
+    {
+      "source_id": "char_elena",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "formal",
+        "tone": "stern",
+        "trust": -0.9
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_step15_confrontation",
+      "reason": null
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_step15_confrontation",
+      "timeline_id": "main",
+      "step": 15,
+      "predicate": "confrontation",
+      "summary": "Isolde presents the Brass Cipher Cylinder as evidence of Julian's involvement, and Elena presses him to explain the cipher's presence, causing Julian to panic and admit to a 'precaution' against the Chancellor.",
+      "participants": {
+        "char_isolde": "actor",
+        "char_elena": "actor",
+        "char_julian": "target",
+        "item_cipher_cylinder": "instrument"
+      },
+      "witnesses": [
+        "char_isolde",
+        "char_elena",
+        "char_julian",
+        "char_marcus"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

@@ -1,0 +1,39 @@
+{
+  "entities": [],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_step4_flashback",
+      "timeline_id": "main",
+      "step": 4,
+      "predicate": "flashback",
+      "summary": "Elena recalls the winter crisis ten years ago, remembering her naive trust in Julian and the signing of the historic pact where the Obsidian Signet was present.",
+      "participants": {
+        "char_elena": "actor",
+        "char_julian": "target"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_julian"
+      ],
+      "known_by": {
+        "char_elena": "direct",
+        "char_julian": "direct"
+      },
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": "10_years_ago",
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": true,
+  "story_time": "10_years_ago",
+  "chapter_id": null,
+  "scene_id": null
+}

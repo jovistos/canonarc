@@ -1,0 +1,103 @@
+{
+  "cache_key": "19f70d19b863782fdd2dde02580b34814d07a04491665e4dc9fdaa84243bc7d2",
+  "model": "rule-based-non-llm",
+  "created_at": "2026-11-19T19:48:41.844408+00:00",
+  "prompt_sha256": "db64e84f58db60c7f106069b094027160cc3cb47099b3725c280484a8167209f",
+  "scene_text_sha256": "d75d92aa109c67ae0312fa18021efecb73176ae095550e307a36ad9651fe027c",
+  "scene_text": "The vault stairwell glowed, and Lyra came up out of it with her hood thrown back and the Obsidian Signet held high in her bare hand. The candlelight slid around the black stone and found no reflection in it at all. Marcus turned, saw the ring, and his weather-beaten face went through surprise, suspicion, and then a slow, terrible comprehension as Lyra spoke — plainly, without ornament — of the pocket emptied in this room, of the ring pressed into a courier's glove, of the stolen charters and the lie about raiders that had been stitched together before she had even reached the top step.\n\nMarcus's jaw set until the muscle jumped beneath his scar. Indignant heat flooded his cheeks, and he wheeled on the young treasurer with a roar that rattled the decanters. \"Kako se usuđuješ da obmanjuješ vojni savet dok držimo dokaze u rukama!\"\n\nJulian was cornered against the long oak table, three pairs of eyes pinning him there like knives through a moth. His hands opened and closed. And then — with the strange, jerky calm of a man who has prepared for exactly this — he reached inside his collar and drew out a small glass phial of cloudy amber liquid. He drank it in one swallow before anyone could cross the room. The phial fell and shattered.\n\nJulian blinked. Then blinked again, and the terror drained out of his features, replaced by the bland confusion of a sleeper woken in an unfamiliar house. He looked at the ring, at Marcus's fury, at Elena's cold stare, and there was nothing in his face but polite bewilderment. He did not remember the winter pact. He did not remember the snow at the windows, the tea, the trust, the ten years of it. He did not even remember why he was afraid. Elena watched the man she had built a kingdom beside become a stranger in a single breath, and somewhere far below the Council Chamber, the last candle guttered out.",
+  "usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 1.764,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_6",
+        "reason": null
+      },
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_6",
+        "reason": null
+      }
+    ],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_rule_6",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "confrontation",
+        "summary": "The vault stairwell glowed, and Lyra came up out of it with her hood thrown back and the Obsidian Signet held high in her bare hand.",
+        "participants": {
+          "char_elena": "participant",
+          "char_julian": "participant"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "char_lyra",
+          "char_marcus"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

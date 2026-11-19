@@ -1,0 +1,151 @@
+{
+  "cache_key": "605724a8f4a3aa2d691b22744568e8c442de12d9992f972497f9150a2e7c894e",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T21:02:46.840603+00:00",
+  "prompt_sha256": "4e9b0ef549b98c8780c96a3e156336bde47f78b0eda4c367e1b0a60dfb67f204",
+  "scene_text_sha256": "7cbdde8d49e5f0f2d1d44e1421a8c777a2c72b52935fdfbf1f14bb6e68733b04",
+  "scene_text": "Cornered and desperate, Thorne reached deep into the inner pocket of his waistcoat, his fingers closing around cold, notched metal. With a frantic glance at Vane, the physician lunged sideways toward the shrouded figure by the bookshelves and thrust the Brass Ledger Key into the veiled locksmith's gloved hand. \"Take this cursed key and hide it deep inside the stone cellar before the constables arrive!\" Thorne hissed, his voice cracking under the strain of sheer terror.\n\nBefore Vane could intercept him, Thorne bolted through the side service door, his heavy footsteps clattering down the narrow wooden stairs that led toward the kitchens and the damp brick expanse of the Wine Cellar below. The veiled locksmith did not hesitate; with a swift, fluid motion, the cloaked figure pocketed the Brass Ledger Key and swept out after the fleeing doctor, determined not to let him vanish into the subterranean dark.\n\nLeft momentarily alone in the Mahogany Study, Vane stood rigid by the desk, listening to the distant slam of the cellar door echoing up through the floorboards. A moment later, the main door creaked open, and Mina stepped cautiously across the threshold. Having grown uneasy in the mist-filled quiet of the Glass Conservatory, the young ward had walked through the corridor to check on the council, only to find the room in disarray and the chief inspector staring grimly at the empty doorway.\n\n\"Inspector Vane?\" Mina asked softly, her eyes darting from the scattered toxicology papers to the overturned chair near the hearth. Vane turned toward her, forcing his features back into a mask of practiced calm, though his pulse still hammered in his temples. \"Stay here, Miss Mina,\" he instructed gently, gesturing toward the settee. \"The matter is nearly concluded, though I fear the truth lies somewhere beneath our feet.\"",
+  "usage": {
+    "prompt_tokens": 5576,
+    "completion_tokens": 1698,
+    "total_tokens": 7274,
+    "cached_prompt_tokens": 1152,
+    "reasoning_tokens": 1112,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 7948.009,
+    "cost_estimate": {
+      "input_cost_usd": 0.000619,
+      "cached_input_cost_usd": 1.6e-05,
+      "output_cost_usd": 0.000475,
+      "total_cost_usd": 0.001111,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_thorne",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_cellar"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_thorne_key_handoff",
+        "reason": "Thorne bolts through the side service door and descends the stairs toward the Wine Cellar."
+      },
+      {
+        "entity_id": "char_giles",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_cellar",
+          "mood": "determined"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_thorne_key_handoff",
+        "reason": "The veiled locksmith pockets the key and sweeps out after the fleeing doctor into the cellar."
+      },
+      {
+        "entity_id": "char_vane",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "calm"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_thorne_key_handoff",
+        "reason": "Vane forces his features back into a mask of practiced calm."
+      },
+      {
+        "entity_id": "char_mina",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_study",
+          "mood": "nervous"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": null,
+        "reason": "Uneasy in the mist-filled conservatory, Mina walks to the Mahogany Study and finds the room in disarray."
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_giles",
+        "target_id": "item_ledger_key",
+        "relation_type": "possesses",
+        "state": {
+          "status": "concealed"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_thorne_key_handoff",
+        "reason": null
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_thorne_key_handoff",
+        "timeline_id": "main",
+        "step": 3,
+        "predicate": "item_transfer",
+        "summary": "Cornered, Thorne thrusts the Brass Ledger Key into the veiled locksmith's hand and begs him to hide it in the cellar, then flees through the service door with the locksmith in pursuit.",
+        "participants": {
+          "char_thorne": "giver",
+          "char_giles": "recipient",
+          "char_vane": "observer",
+          "item_ledger_key": "object"
+        },
+        "witnesses": [
+          "char_thorne",
+          "char_giles",
+          "char_vane"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_study",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

@@ -1,0 +1,136 @@
+{
+  "cache_key": "8a0a75437d5905a4cc6bb8091b669412ba82dbcd7ea292c51d5d696e2ef7405e",
+  "model": "rule-based-non-llm",
+  "created_at": "2026-11-19T21:03:14.416621+00:00",
+  "prompt_sha256": "44b0f6d74533c074bb7a2ea217c56e015bd579515c75cf6e5d02092de68e5be0",
+  "scene_text_sha256": "5b1904f6f9ef6fc4b5ca694d4ccd5b6f3b31b61d0a5733c07ee57c8dbcb09690",
+  "scene_text": "Before Thorne could utter another word in his own defense, the side door swung open once more. Giles stepped into the Mahogany Study, his dark cloak discarded, holding the Brass Ledger Key aloft between two fingers so that it caught the warm glow of the oil lamps. He turned directly to Cora, his expression grave and resolute, and informed her without hesitation of Thorne's theft of the key and his desperate attempt to conceal it in the cellar.\n\nCora's composure snapped into righteous indignation. She took two sharp steps toward the cornered physician, her eyes blazing with fury at his audacity. \"Kako se usuđuješ da obmanjuješ porodični savet dok držimo dokaze u rukama!\" Her voice rang through the wood-paneled room, leaving no doubt that his fabricated alibi had shattered beyond repair.\n\nTrapped between Cora's wrath, Vane's silent, accusing stare, and Giles's undeniable proof, Thorne backed away until his spine met the edge of the bookshelves. With a sudden, practiced motion, he reached into his coat pocket and drew out a small, unmarked glass phial filled with a pale, shimmering liquid. Before Giles or Vane could lunge forward to stop him, Thorne uncorked the vial with his teeth and swallowed the memory-erasing draught in a single, desperate gulp.\n\nAlmost instantly, the panic drained from Thorne's face, replaced by a blank, unfocused stare. He blinked slowly at the oil lamps, his shoulders slumping as the sedative swept through his mind, wiping away every trace of his recollection of the ten-years-ago hospital inquest. When Vane caught him by the arm to steady him, Thorne looked up at the chief inspector with genuine, hollow confusion, utterly unable to remember why he was standing in the study at all.",
+  "usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 1.675,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_giles",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_study",
+          "mood": "panicked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_18",
+        "reason": null
+      },
+      {
+        "entity_id": "char_cora",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_18",
+        "reason": null
+      },
+      {
+        "entity_id": "char_thorne",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "panicked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_18",
+        "reason": null
+      },
+      {
+        "entity_id": "char_vane",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "panicked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_18",
+        "reason": null
+      }
+    ],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_rule_18",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "confrontation",
+        "summary": "Before Thorne could utter another word in his own defense, the side door swung open once more.",
+        "participants": {
+          "char_cora": "participant",
+          "char_giles": "participant"
+        },
+        "witnesses": [
+          "char_cora",
+          "char_giles",
+          "char_thorne",
+          "char_vane"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

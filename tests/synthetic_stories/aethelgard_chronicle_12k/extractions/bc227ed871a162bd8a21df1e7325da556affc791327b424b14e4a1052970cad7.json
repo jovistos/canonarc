@@ -1,0 +1,134 @@
+{
+  "cache_key": "bc227ed871a162bd8a21df1e7325da556affc791327b424b14e4a1052970cad7",
+  "model": "qwen/qwen3.8-27b",
+  "created_at": "2026-11-19T21:19:38.565624+00:00",
+  "prompt_sha256": "7ed472b8129b643c63621174bb06c9a4e8099bf9ec2205d3a6c432684ef8a9d3",
+  "scene_text_sha256": "cdaa817d769fd731a4f9055dd4257423e258759659103b43ea5ea101e6e11cb7",
+  "scene_text": "The Inner Courtyard lay shrouded in a pre-dawn mist that clung to the torchlit cobblestones like a shroud of secrets. Marcus, the old general, strode through the archway with the measured confidence of a man who had seen a hundred false alarms, yet his jaw was set with grim purpose. Behind him, Julian, the young treasurer, clutched a ledger to his chest as if it were a shield against the chill. The watchmen, roused from their barracks by the clang of the alarm bell, assembled in ragged lines, their breath pluming in the cold air.\n\n'Norther raiders,' Marcus barked, his voice carrying the weight of command. 'Sighted beyond the Frostridge. We muster now.' The lie tasted bitter on his tongue, but he had been ordered to sell it, and the old general sold it well. His voice echoed off the stone walls, and the watchmen responded with nods and muttered oaths, their hands tightening on spear shafts. Julian flinched at the word 'raiders,' his knuckles white around the ledger. He had been the one to verify the forged dispatch, the one who had pressed the seal of the treasury into the wax. Now, standing in the Inner Courtyard, he felt the weight of that seal like a stone around his neck. He remembered the Step 5 briefing, the maps spread across the council table, the urgent whispers of a threat from the north. It had all seemed so real.\n\nThe sentries moved with practiced efficiency, but there was a tension in the air, a whisper of unease that had nothing to do with the cold. Marcus watched them, his eyes narrowing. He had seen men march to real battles with less fear in their eyes. Something was wrong, but he could not name it. 'Julian,' he said, low enough that only the young treasurer could hear, 'keep your counsel close and your eyes open. This courtyard feels like a trap.'\n\nJulian nodded, his throat dry. He glanced up at the citadel's dark windows, where the Iron Chancellor's shadow might have watched. He wondered if Elena knew the truth, or if she too had been deceived. The thought offered no comfort. As the watch began to move, boots striking the cobblestones in unison, the Inner Courtyard emptied, leaving only the hiss of torches and the lingering scent of oil and fear. Marcus lingered a moment, his gaze sweeping the shadows, before following. He did not see the hooded figure slip from the postern gate, but he felt the prickle of eyes on his back. Julian's gaze lingered on the eastern spire, where the observatory dome glowed faintly with arcane light. He thought of Kaelen, and a shiver that had nothing to do with the cold ran down his spine.",
+  "usage": {
+    "prompt_tokens": 7027,
+    "completion_tokens": 519,
+    "total_tokens": 7546,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 14510.806,
+    "cost_estimate": {
+      "input_cost_usd": 0.000984,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.000145,
+      "total_cost_usd": 0.001129,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_courtyard",
+          "mood": "determined"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step10_muster",
+        "reason": null
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_courtyard",
+          "mood": "nervous"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step10_muster",
+        "reason": null
+      },
+      {
+        "entity_id": "char_lyra",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_courtyard"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step10_muster",
+        "reason": null
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_marcus",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "register": "ti",
+          "tone": "stern",
+          "trust": -0.2
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_step10_muster",
+        "reason": "Marcus warns Julian to keep his counsel close and eyes open, indicating suspicion and a shift to informal, commanding register."
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_step10_muster",
+        "timeline_id": "main",
+        "step": 10,
+        "predicate": "briefing",
+        "summary": "Marcus and Julian muster the watchmen in the Inner Courtyard under the false pretext of a northern raid, while Julian clutches a ledger and Marcus senses a trap.",
+        "participants": {
+          "char_marcus": "actor",
+          "char_julian": "participant"
+        },
+        "witnesses": [
+          "char_marcus",
+          "char_julian"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_courtyard",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 6.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

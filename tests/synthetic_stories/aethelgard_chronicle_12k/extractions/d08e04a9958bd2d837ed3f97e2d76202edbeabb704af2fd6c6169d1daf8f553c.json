@@ -1,0 +1,131 @@
+{
+  "cache_key": "d08e04a9958bd2d837ed3f97e2d76202edbeabb704af2fd6c6169d1daf8f553c",
+  "model": "qwen/qwen3.8-27b",
+  "created_at": "2026-11-19T21:21:29.824971+00:00",
+  "prompt_sha256": "a614f24b0676376426ac9f5e7ead93b5287f636d8f57cc4d4836b1ac3148d59b",
+  "scene_text_sha256": "36495ab0f859cc363e75e75c6fc5a5bf4e514e8f9c7d79f06bec6fc721c7ccd0",
+  "scene_text": "The Council Chamber closed around Julian like a fist. Elena at the head of the table, Marcus still standing with anger in his shoulders, Lyra by the archive stair, Kaelen descended from the observatory with starlight still trapped in his sleeves, and Isolde posted at the inner doors—five peers, five angles, no unguarded exit. The young treasurer's nervousness had burned away into something brittle. He looked from the Obsidian Signet to the ledgers, then to the faces that had once deferred to his sums. 'You have made a conspiracy of shadows,' he whispered, 'but shadows cannot testify.'\n\nBefore anyone could cross the floor, Julian drew a slim alchemical vial from his sleeve—amber glass, waxed stopper, a memory-erasing draught prepared for exactly such a corner. Elena saw the motion and called his name; Marcus lunged, too late. Julian thumbed the stopper free and drank the whole measure in one bitter swallow. The Council Chamber erupted, chairs scraping, guards surging forward, but the draught worked with cruel speed. Julian's eyes went wide, then empty, then wide again with a different terror. He staggered against the table, blinking at the Obsidian Signet as if he had never seen it.\n\nThe ten-years-ago winter siege pact—its secret clauses, its bribes, its buried dead—had been scoured from him in a single breath. He looked at Elena, then at Marcus, and asked in a small, bewildered voice why the Council Chamber was so cold, and why everyone was staring at him as though he had risen from a grave. Marcus's fury faltered; Elena's calm turned to stone. Lyra stepped close and caught Julian's wrist, feeling for a pulse and finding only a frightened boy where the treasurer had been. The conspiracy had lost its witness, but the Signet remained, black and patient on the table, and the five peers understood that the final lie had cost Julian everything he no longer knew. Outside, the courtyard bells began to ring the dawn, and in the Council Chamber no one moved to answer them.",
+  "usage": {
+    "prompt_tokens": 7133,
+    "completion_tokens": 606,
+    "total_tokens": 7739,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 15567.123,
+    "cost_estimate": {
+      "input_cost_usd": 0.000999,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.00017,
+      "total_cost_usd": 0.001168,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "shocked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step18_revelation",
+        "reason": "Julian drinks a memory-erasing draught, losing his memory of the conspiracy and becoming bewildered and terrified."
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "shocked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step18_revelation",
+        "reason": "Elena's calm turns to stone as she witnesses Julian's memory wipe and the loss of the conspiracy's witness."
+      },
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "shocked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step18_revelation",
+        "reason": "Marcus's fury falters as he sees Julian's memory erased and his accusation rendered moot."
+      }
+    ],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_step18_revelation",
+        "timeline_id": "main",
+        "step": 18,
+        "predicate": "revelation",
+        "summary": "Julian drinks a memory-erasing draught in the Council Chamber, wiping his memory of the conspiracy and the winter siege pact, leaving him bewildered and the conspiracy without its key witness.",
+        "participants": {
+          "char_julian": "actor",
+          "char_elena": "witness",
+          "char_marcus": "witness",
+          "char_lyra": "witness",
+          "char_kaelen": "witness",
+          "char_isolde": "witness"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_marcus",
+          "char_lyra",
+          "char_kaelen",
+          "char_isolde"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 9.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [
+      {
+        "episode_id": "ep_step11_flashback",
+        "entity_id": "char_julian",
+        "epistemic": "forgotten",
+        "believed_summary": null
+      }
+    ],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

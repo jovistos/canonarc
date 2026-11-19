@@ -1,0 +1,134 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_giles",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_study"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [
+        {
+          "alias": "the veiled locksmith",
+          "entity_id": "char_giles",
+          "kind": "disguise",
+          "known_to": [
+            "char_vane",
+            "char_thorne",
+            "char_cora"
+          ],
+          "persona_name": "Locksmith",
+          "valid_from_step": 0,
+          "valid_to_step": null
+        }
+      ],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_thorne_draught_exposure",
+      "reason": "Discarded his dark cloak and entered the Mahogany Study in his own person before Cora."
+    },
+    {
+      "entity_id": "char_thorne",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_study",
+        "mood": "calm"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_thorne_draught_exposure",
+      "reason": "Cornered in the study against the bookshelves, then his panic drained after swallowing the memory-erasing draught."
+    },
+    {
+      "entity_id": "char_cora",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "furious"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_thorne_draught_exposure",
+      "reason": "Composure snapped into righteous indignation at Thorne's audacity."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_cora",
+      "target_id": "char_thorne",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "furious",
+        "trust": -0.9
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_thorne_draught_exposure",
+      "reason": "Cora rounds on Thorne in informal Serbian, raging at his deception of the family council."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_thorne_draught_exposure",
+      "timeline_id": "main",
+      "step": 6,
+      "predicate": "revelation",
+      "summary": "Giles entered the Mahogany Study with the Brass Ledger Key held aloft and exposed Thorne's theft to Cora; Cora furiously confronted the trapped physician, who swallowed a memory-erasing draught and was left blank and confused, his recollection of the ten-years-ago inquest wiped away.",
+      "participants": {
+        "char_giles": "actor",
+        "char_cora": "actor",
+        "char_thorne": "target",
+        "char_vane": "observer",
+        "item_ledger_key": "instrument"
+      },
+      "witnesses": [
+        "char_giles",
+        "char_cora",
+        "char_thorne",
+        "char_vane",
+        "char_mina"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_study",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 9.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_thorne_key_handoff",
+      "entity_id": "char_cora",
+      "epistemic": "told",
+      "believed_summary": null
+    },
+    {
+      "episode_id": "ep_epidemic_flashback",
+      "entity_id": "char_thorne",
+      "epistemic": "forgotten",
+      "believed_summary": null
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

@@ -1,0 +1,87 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step13_briefing",
+      "reason": null
+    },
+    {
+      "entity_id": "char_isolde",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step13_briefing",
+      "reason": null
+    },
+    {
+      "entity_id": "char_kaelen",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step13_briefing",
+      "reason": null
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_step13_briefing",
+      "timeline_id": "main",
+      "step": 13,
+      "predicate": "briefing",
+      "summary": "Elena, Isolde, and Kaelen descend from the Starlight Observatory to the Council Chamber, where Kaelen reveals that the stellar alignment points to the room itself, prompting Elena to await the arrival of the traitor.",
+      "participants": {
+        "char_elena": "actor",
+        "char_isolde": "witness",
+        "char_kaelen": "actor"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_isolde",
+        "char_kaelen"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 6.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

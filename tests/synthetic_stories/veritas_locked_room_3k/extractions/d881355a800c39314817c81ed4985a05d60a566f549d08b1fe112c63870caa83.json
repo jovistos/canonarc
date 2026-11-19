@@ -1,0 +1,155 @@
+{
+  "cache_key": "d881355a800c39314817c81ed4985a05d60a566f549d08b1fe112c63870caa83",
+  "model": "rule-based-non-llm",
+  "created_at": "2026-11-19T21:03:14.308695+00:00",
+  "prompt_sha256": "ef66a5079395dc932f1ab3c65e7a39606b75bdd0b381a76b2cec790b8dc1f19a",
+  "scene_text_sha256": "0ffedd0ef80909a7d280a3726363a04be6f4e4d9898bb6b922a1eb9411275e9e",
+  "scene_text": "Deep beneath the house, the Wine Cellar smelled of damp mortar, sour oak casks, and stagnant water. Thorne crouched behind a rack of dusty Bordeaux bottles, his chest heaving as he listened to footsteps descending the brick stairs. When the veiled locksmith rounded the corner with a raised lantern, Thorne pressed himself against the cold wall. Slowly, the locksmith reached up and drew back the black mourning netting, revealing the sharp, determined features of Giles. Thorne gasped, his eyes wide with shock at the unmasking. Giles stepped closer, his voice echoing off the low brick arches. \"Predaj mi sve lažne recepte odmah, Torne, ili ćeš do zore biti u okružnom zatvoru!\"\n\nUpstairs, the Mahogany Study had grown even colder as night settled fully over the estate. Cora returned from the Portrait Gallery, her silk skirts whispering across the floorboards as she rejoined Vane and Mina. Before she could inquire about the missing doctor, the side service door burst open and Thorne stumbled back into the room. His coat was streaked with cobwebs and cellar dust, and his spectacles sat crookedly on his nose.\n\n\"Thank heavens I made it back,\" Thorne panted, clutching at the doorframe for support. Looking straight at Cora and Vane, he launched into a frantic, improvised lie, claiming he had heard northern raiders trying to force the cellar grate and had gone down alone to drive them off into the storm.\n\nCora did not flinch, nor did she offer him a shred of sympathy. She merely raised one finely arched eyebrow, her gaze traveling deliberately from the cobwebs on his shoulders to his trembling, ink-stained hands. \"Oh, what a wonderfully convenient tale of heroic vigilance, dear doctor,\" she murmured, her tone dripping with aristocratic disdain.\n\n\"Oh, what a wonderfully convenient tale of heroic vigilance, dear doctor.\"",
+  "usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 1.694,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_giles",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "determined"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_17",
+        "reason": null
+      },
+      {
+        "entity_id": "char_thorne",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "shocked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_17",
+        "reason": null
+      },
+      {
+        "entity_id": "char_cora",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_gallery",
+          "mood": "panicked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_17",
+        "reason": null
+      },
+      {
+        "entity_id": "char_mina",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_gallery"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_17",
+        "reason": null
+      },
+      {
+        "entity_id": "char_vane",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_gallery",
+          "mood": "panicked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_17",
+        "reason": null
+      }
+    ],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_rule_17",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "item_transfer",
+        "summary": "Deep beneath the house, the Wine Cellar smelled of damp mortar, sour oak casks, and stagnant water.",
+        "participants": {
+          "char_cora": "participant",
+          "char_giles": "participant"
+        },
+        "witnesses": [
+          "char_cora",
+          "char_giles",
+          "Giles",
+          "char_mina",
+          "char_thorne",
+          "char_vane"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

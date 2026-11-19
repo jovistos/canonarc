@@ -1,0 +1,37 @@
+{
+  "entities": [],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_rule_19",
+      "timeline_id": "main",
+      "step": 0,
+      "predicate": "scene_event",
+      "summary": "The dawn over Aethelgard bled through the eastern spires in ribbons of violet and tarnished gold as Elena, Isolde, and Kaelen descended from the Starlight Obser",
+      "participants": {
+        "char_elena": "participant",
+        "char_isolde": "participant"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_isolde",
+        "char_kaelen"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": null,
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

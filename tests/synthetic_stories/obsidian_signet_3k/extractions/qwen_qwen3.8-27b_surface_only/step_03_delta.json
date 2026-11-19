@@ -1,0 +1,101 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_vault",
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step3_item_transfer",
+      "reason": null
+    },
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_vault"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step3_item_transfer",
+      "reason": null
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step3_item_transfer",
+      "reason": null
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_lyra",
+      "target_id": "item_signet",
+      "relation_type": "possesses",
+      "state": {
+        "status": "concealed"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_step3_item_transfer",
+      "reason": null
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_step3_item_transfer",
+      "timeline_id": "main",
+      "step": 3,
+      "predicate": "item_transfer",
+      "summary": "Julian forces the Obsidian Signet into Lyra's hand and flees into the Archive Vault, with Lyra chasing after him.",
+      "participants": {
+        "char_julian": "actor",
+        "char_lyra": "recipient",
+        "item_signet": "instrument"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_julian",
+        "char_lyra"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

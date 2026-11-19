@@ -1,0 +1,70 @@
+{
+  "cache_key": "019b246d58a9835b30fa45cb4c519a1733af3218ce311317dd4fbfebe5d7cfbe",
+  "model": "rule-based-non-llm",
+  "created_at": "2026-11-19T21:02:24.031119+00:00",
+  "prompt_sha256": "4e42df10642ea2b66086c7dba1aabef201f69c47d7bf8fa63c9d974582754896",
+  "scene_text_sha256": "92107dcc9ba5254481d48b2503d62d2adf190042179855e3d106c30455c8ae27",
+  "scene_text": "Elena advanced until Julian had nowhere left to retreat but the table’s edge. “Empty your pockets,” she said. “Now.” Her fury had gone cold and procedural, which made it worse. Julian fumbled at his coat, his breath ragged, and for one suspended moment the chamber held only the tick of rain against the balcony doors and the soft crackle of candlewicks. Then, with a convulsive movement, he tore something from his inner pocket and pressed it into the gloved hand of the hooded courier. The Obsidian Signet flashed darkly between them, a black star swallowed by leather.\n\n“Take this cursed ring and hide it deep inside the stone vault before the guards arrive!” Julian stammered, his voice breaking on the last word. Before Elena could seize him, he bolted. He wrenched open the narrow service door behind the tapestry and plunged down the winding passage toward the Archive Vault, his footsteps clattering into the stone throat of the palazzo. The hooded courier closed her fingers around the signet and followed without hesitation, her cloak snapping behind her as she chased him down into the flooded dark.\n\nElena stood alone at the table, her hands flat upon the ledgers, her breath coming hard. The balcony doors rattled under a gust, and beyond them Marcus remained a dim shape in the rain, one hand on the balustrade, staring out at the lagoon as if the whole conspiracy were a thing that could be weathered like a storm. The candles guttered. On the table, the confidential reports lay open, their seals broken, their columns of figures meaningless now that the black seal itself had vanished into the vault.\n\nDown below, the passage narrowed and the air turned cold and mineral. Water lapped at the stone steps. The hooded courier heard Julian ahead of her, stumbling, cursing, then the scrape of the vault door. She gathered her cloak and descended after him, the Obsidian Signet a hard weight in her glove, and the dark closed over them both like a lid.",
+  "usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 1.778,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_rule_9",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "item_transfer",
+        "summary": "Elena advanced until Julian had nowhere left to retreat but the table’s edge.",
+        "participants": {
+          "char_elena": "participant",
+          "char_julian": "participant"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "Lyra",
+          "char_marcus"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

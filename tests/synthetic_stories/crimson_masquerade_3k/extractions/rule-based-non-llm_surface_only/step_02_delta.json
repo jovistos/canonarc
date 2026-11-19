@@ -1,0 +1,87 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_rule_8",
+      "reason": null
+    },
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "furious"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_rule_8",
+      "reason": null
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_rule_8",
+      "reason": null
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_rule_8",
+      "timeline_id": "main",
+      "step": 0,
+      "predicate": "scene_event",
+      "summary": "Marcus grew restless as the ledgers dragged on.",
+      "participants": {
+        "char_elena": "participant",
+        "char_julian": "participant"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_julian",
+        "char_lyra",
+        "char_marcus"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": null,
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

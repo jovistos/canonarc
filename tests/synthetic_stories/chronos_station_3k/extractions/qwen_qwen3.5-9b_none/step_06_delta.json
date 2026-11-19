@@ -1,0 +1,93 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council",
+        "mood": "shocked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [
+        {
+          "alias": "the young treasurer",
+          "entity_id": "char_julian",
+          "kind": "disguise",
+          "known_to": [
+            "char_elena",
+            "char_marcus",
+            "char_lyra"
+          ],
+          "persona_name": "Julian",
+          "valid_from_step": 0,
+          "valid_to_step": null
+        }
+      ],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_council_inspection_01",
+      "reason": null
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_marcus",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "commanding",
+        "trust": -0.9
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_council_inspection_01",
+      "reason": null
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_council_revelation_04",
+      "timeline_id": "main",
+      "step": 6,
+      "predicate": "revelation",
+      "summary": "Lyra reveals Julian's theft and flight to the Council Chamber; Julian consumes a memory-erasing draught, wiping his memory of the pact signing.",
+      "participants": {
+        "char_lyra": "actor",
+        "char_julian": "target",
+        "char_elena": "witness",
+        "char_marcus": "witness"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_marcus",
+        "char_lyra"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": 0,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 9.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_flashback_signing_pact",
+      "entity_id": "char_julian",
+      "epistemic": "forgotten",
+      "believed_summary": null
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

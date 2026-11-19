@@ -1,0 +1,129 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_giles",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_cellar",
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [
+        {
+          "alias": "the veiled locksmith",
+          "entity_id": "char_giles",
+          "kind": "disguise",
+          "known_to": [
+            "char_vane",
+            "char_thorne"
+          ],
+          "persona_name": "Locksmith",
+          "valid_from_step": 0,
+          "valid_to_step": null
+        }
+      ],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step5_revelation",
+      "reason": null
+    },
+    {
+      "entity_id": "char_thorne",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_study",
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step5_revelation",
+      "reason": null
+    },
+    {
+      "entity_id": "char_cora",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_study",
+        "mood": "indignant"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step5_revelation",
+      "reason": null
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_giles",
+      "target_id": "char_thorne",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "commanding",
+        "trust": -0.9
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_step5_revelation",
+      "reason": null
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_step5_revelation",
+      "timeline_id": "main",
+      "step": 5,
+      "predicate": "revelation",
+      "summary": "Giles unmasks his locksmith disguise in the Wine Cellar to confront Thorne, demanding the false recipes; Thorne flees to the Mahogany Study and lies to Cora and Vane about raiders.",
+      "participants": {
+        "char_giles": "actor",
+        "char_thorne": "target"
+      },
+      "witnesses": [
+        "char_giles",
+        "char_thorne"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_cellar",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_step3_item_transfer",
+      "entity_id": "char_cora",
+      "epistemic": "deceived",
+      "believed_summary": "Thorne claims he went to the cellar alone to drive off northern raiders trying to force the grate."
+    },
+    {
+      "episode_id": "ep_step3_item_transfer",
+      "entity_id": "char_vane",
+      "epistemic": "deceived",
+      "believed_summary": "Thorne claims he went to the cellar alone to drive off northern raiders trying to force the grate."
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

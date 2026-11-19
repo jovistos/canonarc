@@ -1,0 +1,119 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_observatory"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_006",
+      "reason": null
+    },
+    {
+      "entity_id": "char_isolde",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_observatory"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_006",
+      "reason": null
+    },
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_vault"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": null,
+      "reason": null
+    },
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_vault"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": null,
+      "reason": null
+    },
+    {
+      "entity_id": "char_kaelen",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "fearful"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": null,
+      "reason": "Kaelen's watchfulness cracks into fear or guilt upon seeing the rearranged stars."
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_007",
+      "timeline_id": "main",
+      "step": 7,
+      "predicate": "revelation",
+      "summary": "Elena and Isolde enter the Starlight Observatory to consult Kaelen regarding the rearranged stars and the Brass Cipher Cylinder.",
+      "participants": {
+        "char_elena": "actor",
+        "char_isolde": "actor",
+        "char_kaelen": "target"
+      },
+      "witnesses": [
+        "char_kaelen"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_observatory",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 6.5,
+      "metadata": {
+        "context": "Investigation into celestial anomalies"
+      },
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

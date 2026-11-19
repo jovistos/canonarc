@@ -1,0 +1,56 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "watchful"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": null,
+      "reason": "Lyra remains watchful and silent at the edge of the light."
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_council_inspection_01",
+      "timeline_id": "main",
+      "step": 0,
+      "predicate": "briefing",
+      "summary": "Elena briefs Marcus on confidential reports while Lyra (the hooded courier) delivers sealed depeches from the northern border for military evaluation.",
+      "participants": {
+        "char_elena": "actor",
+        "char_marcus": "target",
+        "item_signet": "instrument"
+      },
+      "witnesses": [
+        "char_julian",
+        "char_lyra"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 6.5,
+      "metadata": {
+        "action_type": "document_delivery_and_review"
+      },
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

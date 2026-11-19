@@ -1,0 +1,1255 @@
+{
+  "story_slug": "aethelgard_chronicle_12k",
+  "title": "The Aethelgard Chronicle (18-Chunk Multi-Chapter 12K Marathon)",
+  "story_model": "deepseek-flash",
+  "extraction_model": "qwen/qwen3.8-27b",
+  "guidance_mode": "none",
+  "run_cache_key": "17b01a0d745ce7ee8cd5dbaf2f29d58e1d976351ecccdfc16a98a4d79b61e12e",
+  "checks_passed": 151,
+  "checks_total": 209,
+  "step_delta_checks_passed": 8,
+  "step_delta_checks_total": 11,
+  "step_delta_pass_rate": 0.7273,
+  "cumulative_state_checks_passed": 143,
+  "cumulative_state_checks_total": 198,
+  "cumulative_state_pass_rate": 0.7222,
+  "failures": [
+    "[aethelgard_chronicle_12k Step 3] Entity 'char_elena' mood: expected 'furious', got 'calm'",
+    "[aethelgard_chronicle_12k Step 4] Entity 'char_elena' mood: expected 'furious', got 'calm'",
+    "[aethelgard_chronicle_12k Step 5] char_marcus POV should recall deceived summary, got None",
+    "[aethelgard_chronicle_12k Step 7] Entity 'char_kaelen' mood: expected 'watchful', got 'nervous'",
+    "[aethelgard_chronicle_12k Step 7] Expected low-salience Chapter 1 episodes available for consolidation",
+    "[aethelgard_chronicle_12k Step 8] Entity 'char_kaelen' mood: expected 'nervous', got 'relieved'",
+    "[aethelgard_chronicle_12k Step 9] Entity 'char_lyra' mood: expected 'determined', got 'nervous'",
+    "[aethelgard_chronicle_12k Step 9] Entity 'char_kaelen' mood: expected 'nervous', got 'relieved'",
+    "[aethelgard_chronicle_12k Step 10] Room 'loc_vault': expected {'char_lyra'}, got set()",
+    "[aethelgard_chronicle_12k Step 10] Room 'loc_courtyard': expected {'char_julian', 'char_marcus'}, got {'char_julian', 'char_lyra', 'char_marcus'}",
+    "[aethelgard_chronicle_12k Step 10] Entity 'char_marcus' mood: expected 'restless', got 'determined'",
+    "[aethelgard_chronicle_12k Step 10] Entity 'char_lyra' mood: expected 'determined', got 'nervous'",
+    "[aethelgard_chronicle_12k Step 10] Entity 'char_julian' mood: expected 'shocked', got 'nervous'",
+    "[aethelgard_chronicle_12k Step 10] Entity 'char_kaelen' mood: expected 'nervous', got 'relieved'",
+    "[aethelgard_chronicle_12k Step 11] Room 'loc_vault': expected {'char_lyra'}, got set()",
+    "[aethelgard_chronicle_12k Step 11] Room 'loc_courtyard': expected {'char_julian', 'char_marcus'}, got {'char_julian', 'char_lyra', 'char_marcus'}",
+    "[aethelgard_chronicle_12k Step 11] Entity 'char_marcus' mood: expected 'restless', got 'determined'",
+    "[aethelgard_chronicle_12k Step 11] Entity 'char_lyra' mood: expected 'determined', got 'nervous'",
+    "[aethelgard_chronicle_12k Step 11] Entity 'char_julian' mood: expected 'shocked', got 'nervous'",
+    "[aethelgard_chronicle_12k Step 11] Entity 'char_kaelen' mood: expected 'nervous', got 'relieved'",
+    "[aethelgard_chronicle_12k Step 12] Room 'loc_vault': expected {'char_lyra'}, got set()",
+    "[aethelgard_chronicle_12k Step 12] Room 'loc_courtyard': expected {'char_julian', 'char_marcus'}, got {'char_julian', 'char_lyra', 'char_marcus'}",
+    "[aethelgard_chronicle_12k Step 12] Entity 'char_elena' mood: expected 'furious', got 'determined'",
+    "[aethelgard_chronicle_12k Step 12] Entity 'char_marcus' mood: expected 'restless', got 'determined'",
+    "[aethelgard_chronicle_12k Step 12] Entity 'char_lyra' mood: expected 'determined', got 'nervous'",
+    "[aethelgard_chronicle_12k Step 12] Entity 'char_julian' mood: expected 'shocked', got 'nervous'",
+    "[aethelgard_chronicle_12k Step 12] Entity 'char_kaelen' mood: expected 'nervous', got 'relieved'",
+    "[aethelgard_chronicle_12k Step 13] Room 'loc_vault': expected {'char_lyra'}, got set()",
+    "[aethelgard_chronicle_12k Step 13] Room 'loc_courtyard': expected {'char_julian', 'char_marcus'}, got {'char_julian', 'char_lyra', 'char_marcus'}",
+    "[aethelgard_chronicle_12k Step 13] Entity 'char_elena' mood: expected 'furious', got 'determined'",
+    "[aethelgard_chronicle_12k Step 13] Entity 'char_marcus' mood: expected 'restless', got 'determined'",
+    "[aethelgard_chronicle_12k Step 13] Entity 'char_lyra' mood: expected 'determined', got 'nervous'",
+    "[aethelgard_chronicle_12k Step 13] Entity 'char_julian' mood: expected 'shocked', got 'nervous'",
+    "[aethelgard_chronicle_12k Step 13] Entity 'char_kaelen' mood: expected 'nervous', got 'relieved'",
+    "[aethelgard_chronicle_12k Step 14] Room 'loc_vault': expected {'char_lyra'}, got set()",
+    "[aethelgard_chronicle_12k Step 14] Room 'loc_courtyard': expected set(), got {'char_lyra'}",
+    "[aethelgard_chronicle_12k Step 14] Entity 'char_elena' mood: expected 'furious', got 'determined'",
+    "[aethelgard_chronicle_12k Step 14] Entity 'char_marcus' mood: expected 'restless', got 'watchful'",
+    "[aethelgard_chronicle_12k Step 14] Entity 'char_lyra' mood: expected 'determined', got 'nervous'",
+    "[aethelgard_chronicle_12k Step 14] Entity 'char_julian' mood: expected 'shocked', got 'nervous'",
+    "[aethelgard_chronicle_12k Step 14] Entity 'char_kaelen' mood: expected 'nervous', got 'relieved'",
+    "[aethelgard_chronicle_12k Step 15] Room 'loc_vault': expected {'char_lyra'}, got set()",
+    "[aethelgard_chronicle_12k Step 15] Room 'loc_courtyard': expected set(), got {'char_lyra'}",
+    "[aethelgard_chronicle_12k Step 15] Entity 'char_elena' mood: expected 'furious', got 'calm'",
+    "[aethelgard_chronicle_12k Step 15] Entity 'char_marcus' mood: expected 'restless', got 'watchful'",
+    "[aethelgard_chronicle_12k Step 15] Entity 'char_lyra' mood: expected 'determined', got 'nervous'",
+    "[aethelgard_chronicle_12k Step 15] Entity 'char_kaelen' mood: expected 'nervous', got 'relieved'",
+    "[aethelgard_chronicle_12k Step 16] Entity 'char_elena' mood: expected 'furious', got 'determined'",
+    "[aethelgard_chronicle_12k Step 16] Entity 'char_marcus' mood: expected 'restless', got 'watchful'",
+    "[aethelgard_chronicle_12k Step 16] Entity 'char_lyra' mood: expected 'determined', got 'nervous'",
+    "[aethelgard_chronicle_12k Step 16] Entity 'char_kaelen' mood: expected 'nervous', got 'relieved'",
+    "[aethelgard_chronicle_12k Step 17] Entity 'char_elena' mood: expected 'furious', got 'determined'",
+    "[aethelgard_chronicle_12k Step 17] Entity 'char_marcus' mood: expected 'indignant', got 'furious'",
+    "[aethelgard_chronicle_12k Step 17] Entity 'char_kaelen' mood: expected 'nervous', got 'relieved'",
+    "[aethelgard_chronicle_12k Step 18] Entity 'char_elena' mood: expected 'furious', got 'shocked'",
+    "[aethelgard_chronicle_12k Step 18] Entity 'char_marcus' mood: expected 'indignant', got 'shocked'",
+    "[aethelgard_chronicle_12k Step 18] Entity 'char_kaelen' mood: expected 'nervous', got 'relieved'",
+    "[aethelgard_chronicle_12k Step 18] char_marcus should see ground-truth summary after epistemic='told'"
+  ],
+  "strict_pass_rate": 0.7225,
+  "overall_quality_score": 0.7585,
+  "benchmark_metrics": {
+    "model_id": "qwen/qwen3.8-27b",
+    "guidance_mode": "none",
+    "overall_quality_score": 0.7585,
+    "category_scores": {
+      "epistemic_score": 0.7314,
+      "spatial_state_score": 0.7933,
+      "pov_retrieval_score": 0.5904,
+      "edge_flashback_score": 0.8179,
+      "schema_hygiene_score": 1.0
+    },
+    "epistemic_and_witness_metrics": {
+      "witness_precision": 0.9756,
+      "witness_recall": 0.9524,
+      "witness_f1": 0.9639,
+      "epistemic_leak_count": 1,
+      "epistemic_leak_rate": 0.0238,
+      "silent_witness_recall": 0.9091,
+      "inform_delta_precision": 0.0,
+      "inform_delta_recall": 0.0,
+      "inform_delta_f1": 0.0,
+      "deception_summary_accuracy": 0.0,
+      "disguise_accuracy": 1.0
+    },
+    "spatial_and_state_metrics": {
+      "location_delta_precision": 0.9412,
+      "location_delta_recall": 1.0,
+      "location_delta_f1": 0.9697,
+      "room_occupancy_jaccard": 0.8963,
+      "room_occupancy_exact_rate": 0.6667,
+      "mood_exact_accuracy": 0.6019,
+      "mood_soft_accuracy": 0.6111,
+      "mood_delta_f1": 0.5625,
+      "flashback_guard_passed": true
+    },
+    "edge_and_causal_metrics": {
+      "edge_delta_precision": 0.6667,
+      "edge_delta_recall": 0.8571,
+      "edge_delta_f1": 0.75,
+      "edge_register_accuracy": 0.75,
+      "causal_link_accuracy": 0.7143
+    },
+    "schema_and_id_hygiene": {
+      "first_pass_valid_rate": 1.0,
+      "total_retries": 0,
+      "total_validation_errors": 0,
+      "raw_id_total": 210,
+      "canonical_id_count": 210,
+      "canonical_id_rate": 1.0,
+      "normalized_surface_id_count": 0,
+      "normalized_surface_id_rate": 0.0,
+      "hallucinated_id_count": 0,
+      "hallucinated_id_rate": 0.0,
+      "hallucinated_ids": []
+    },
+    "downstream_pov_retrieval": {
+      "pov_entity_jaccard": 1.0,
+      "pov_edge_jaccard": 0.8754,
+      "pov_episode_recall": 0.9679,
+      "pov_secret_leak_count": 30
+    },
+    "steps": [
+      {
+        "step": 1,
+        "room_occupancy_jaccard": 1.0,
+        "room_occupancy_exact": true,
+        "mood_exact_rate": 1.0,
+        "mood_soft_rate": 1.0,
+        "location_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "mood_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "edge_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "witness": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "epistemic_leak_count": 0,
+          "silent_witness_matched": 2,
+          "silent_witness_expected": 2
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 9,
+          "canonical_id_count": 9,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 1.0,
+          "pov_episode_recall": 1.0,
+          "pov_secret_leaks": 0
+        },
+        "mood_counts": {
+          "exact_matches": 6,
+          "soft_matches": 6,
+          "total_characters": 6
+        }
+      },
+      {
+        "step": 2,
+        "room_occupancy_jaccard": 1.0,
+        "room_occupancy_exact": true,
+        "mood_exact_rate": 1.0,
+        "mood_soft_rate": 1.0,
+        "location_delta": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0
+        },
+        "mood_delta": {
+          "tp": 3,
+          "fp": 0,
+          "fn": 0
+        },
+        "edge_delta": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0
+        },
+        "witness": {
+          "tp": 3,
+          "fp": 0,
+          "fn": 0,
+          "epistemic_leak_count": 0,
+          "silent_witness_matched": 1,
+          "silent_witness_expected": 1
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 12,
+          "canonical_id_count": 12,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 1.0,
+          "pov_episode_recall": 1.0,
+          "pov_secret_leaks": 0
+        },
+        "mood_counts": {
+          "exact_matches": 6,
+          "soft_matches": 6,
+          "total_characters": 6
+        }
+      },
+      {
+        "step": 3,
+        "room_occupancy_jaccard": 1.0,
+        "room_occupancy_exact": true,
+        "mood_exact_rate": 0.8333,
+        "mood_soft_rate": 0.8333,
+        "location_delta": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0
+        },
+        "mood_delta": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "edge_delta": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0
+        },
+        "witness": {
+          "tp": 3,
+          "fp": 0,
+          "fn": 0,
+          "epistemic_leak_count": 0,
+          "silent_witness_matched": 2,
+          "silent_witness_expected": 2
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 14,
+          "canonical_id_count": 14,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 1.0,
+          "pov_episode_recall": 1.0,
+          "pov_secret_leaks": 0
+        },
+        "mood_counts": {
+          "exact_matches": 5,
+          "soft_matches": 5,
+          "total_characters": 6
+        }
+      },
+      {
+        "step": 4,
+        "room_occupancy_jaccard": 1.0,
+        "room_occupancy_exact": true,
+        "mood_exact_rate": 0.8333,
+        "mood_soft_rate": 0.8333,
+        "location_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "mood_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "edge_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "witness": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "epistemic_leak_count": 0,
+          "silent_witness_matched": 1,
+          "silent_witness_expected": 1
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 6,
+          "canonical_id_count": 6,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 1.0,
+          "pov_episode_recall": 1.0,
+          "pov_secret_leaks": 0
+        },
+        "mood_counts": {
+          "exact_matches": 5,
+          "soft_matches": 5,
+          "total_characters": 6
+        }
+      },
+      {
+        "step": 5,
+        "room_occupancy_jaccard": 1.0,
+        "room_occupancy_exact": true,
+        "mood_exact_rate": 1.0,
+        "mood_soft_rate": 1.0,
+        "location_delta": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0
+        },
+        "mood_delta": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0
+        },
+        "edge_delta": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0
+        },
+        "witness": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "epistemic_leak_count": 0,
+          "silent_witness_matched": 0,
+          "silent_witness_expected": 0
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 1
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 14,
+          "canonical_id_count": 14,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 1.0,
+          "pov_episode_recall": 0.9167,
+          "pov_secret_leaks": 1
+        },
+        "mood_counts": {
+          "exact_matches": 6,
+          "soft_matches": 6,
+          "total_characters": 6
+        }
+      },
+      {
+        "step": 6,
+        "room_occupancy_jaccard": 1.0,
+        "room_occupancy_exact": true,
+        "mood_exact_rate": 1.0,
+        "mood_soft_rate": 1.0,
+        "location_delta": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0
+        },
+        "mood_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "edge_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "witness": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "epistemic_leak_count": 0,
+          "silent_witness_matched": 2,
+          "silent_witness_expected": 2
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 13,
+          "canonical_id_count": 13,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 1.0,
+          "pov_episode_recall": 1.0,
+          "pov_secret_leaks": 1
+        },
+        "mood_counts": {
+          "exact_matches": 6,
+          "soft_matches": 6,
+          "total_characters": 6
+        }
+      },
+      {
+        "step": 7,
+        "room_occupancy_jaccard": 1.0,
+        "room_occupancy_exact": true,
+        "mood_exact_rate": 0.8333,
+        "mood_soft_rate": 0.8333,
+        "location_delta": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0
+        },
+        "mood_delta": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "edge_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "witness": {
+          "tp": 3,
+          "fp": 0,
+          "fn": 0,
+          "epistemic_leak_count": 0,
+          "silent_witness_matched": 1,
+          "silent_witness_expected": 1
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 12,
+          "canonical_id_count": 12,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 1.0,
+          "pov_episode_recall": 1.0,
+          "pov_secret_leaks": 1
+        },
+        "mood_counts": {
+          "exact_matches": 5,
+          "soft_matches": 5,
+          "total_characters": 6
+        }
+      },
+      {
+        "step": 8,
+        "room_occupancy_jaccard": 1.0,
+        "room_occupancy_exact": true,
+        "mood_exact_rate": 0.8333,
+        "mood_soft_rate": 0.8333,
+        "location_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "mood_delta": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 1
+        },
+        "edge_delta": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 1
+        },
+        "witness": {
+          "tp": 3,
+          "fp": 0,
+          "fn": 0,
+          "epistemic_leak_count": 0,
+          "silent_witness_matched": 2,
+          "silent_witness_expected": 2
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 10,
+          "canonical_id_count": 10,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 0.8601,
+          "pov_episode_recall": 1.0,
+          "pov_secret_leaks": 1
+        },
+        "mood_counts": {
+          "exact_matches": 5,
+          "soft_matches": 5,
+          "total_characters": 6
+        }
+      },
+      {
+        "step": 9,
+        "room_occupancy_jaccard": 1.0,
+        "room_occupancy_exact": true,
+        "mood_exact_rate": 0.6667,
+        "mood_soft_rate": 0.6667,
+        "location_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "mood_delta": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "edge_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "witness": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "epistemic_leak_count": 0,
+          "silent_witness_matched": 0,
+          "silent_witness_expected": 0
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 7,
+          "canonical_id_count": 7,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 1.0,
+          "pov_episode_recall": 1.0,
+          "pov_secret_leaks": 2
+        },
+        "mood_counts": {
+          "exact_matches": 4,
+          "soft_matches": 4,
+          "total_characters": 6
+        }
+      },
+      {
+        "step": 10,
+        "room_occupancy_jaccard": 0.7333,
+        "room_occupancy_exact": false,
+        "mood_exact_rate": 0.3333,
+        "mood_soft_rate": 0.3333,
+        "location_delta": {
+          "tp": 2,
+          "fp": 1,
+          "fn": 0
+        },
+        "mood_delta": {
+          "tp": 0,
+          "fp": 2,
+          "fn": 0
+        },
+        "edge_delta": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "witness": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "epistemic_leak_count": 0,
+          "silent_witness_matched": 1,
+          "silent_witness_expected": 1
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 13,
+          "canonical_id_count": 13,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 0.8907,
+          "pov_episode_recall": 1.0,
+          "pov_secret_leaks": 2
+        },
+        "mood_counts": {
+          "exact_matches": 2,
+          "soft_matches": 2,
+          "total_characters": 6
+        }
+      },
+      {
+        "step": 11,
+        "room_occupancy_jaccard": 0.7333,
+        "room_occupancy_exact": false,
+        "mood_exact_rate": 0.3333,
+        "mood_soft_rate": 0.3333,
+        "location_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "mood_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "edge_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "witness": {
+          "tp": 2,
+          "fp": 1,
+          "fn": 0,
+          "epistemic_leak_count": 1,
+          "silent_witness_matched": 1,
+          "silent_witness_expected": 1
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 8,
+          "canonical_id_count": 8,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 1.0,
+          "pov_episode_recall": 1.0,
+          "pov_secret_leaks": 3
+        },
+        "mood_counts": {
+          "exact_matches": 2,
+          "soft_matches": 2,
+          "total_characters": 6
+        }
+      },
+      {
+        "step": 12,
+        "room_occupancy_jaccard": 0.7333,
+        "room_occupancy_exact": false,
+        "mood_exact_rate": 0.1667,
+        "mood_soft_rate": 0.1667,
+        "location_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "mood_delta": {
+          "tp": 1,
+          "fp": 1,
+          "fn": 0
+        },
+        "edge_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "witness": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "epistemic_leak_count": 0,
+          "silent_witness_matched": 0,
+          "silent_witness_expected": 0
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 8,
+          "canonical_id_count": 8,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 0.8907,
+          "pov_episode_recall": 0.9583,
+          "pov_secret_leaks": 3
+        },
+        "mood_counts": {
+          "exact_matches": 1,
+          "soft_matches": 1,
+          "total_characters": 6
+        }
+      },
+      {
+        "step": 13,
+        "room_occupancy_jaccard": 0.7333,
+        "room_occupancy_exact": false,
+        "mood_exact_rate": 0.1667,
+        "mood_soft_rate": 0.1667,
+        "location_delta": {
+          "tp": 3,
+          "fp": 0,
+          "fn": 0
+        },
+        "mood_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "edge_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "witness": {
+          "tp": 3,
+          "fp": 0,
+          "fn": 0,
+          "epistemic_leak_count": 0,
+          "silent_witness_matched": 2,
+          "silent_witness_expected": 2
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 13,
+          "canonical_id_count": 13,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 1.0,
+          "pov_episode_recall": 0.9667,
+          "pov_secret_leaks": 3
+        },
+        "mood_counts": {
+          "exact_matches": 1,
+          "soft_matches": 1,
+          "total_characters": 6
+        }
+      },
+      {
+        "step": 14,
+        "room_occupancy_jaccard": 0.6,
+        "room_occupancy_exact": false,
+        "mood_exact_rate": 0.1667,
+        "mood_soft_rate": 0.1667,
+        "location_delta": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0
+        },
+        "mood_delta": {
+          "tp": 0,
+          "fp": 2,
+          "fn": 0
+        },
+        "edge_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "witness": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 1,
+          "epistemic_leak_count": 0,
+          "silent_witness_matched": 3,
+          "silent_witness_expected": 4
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 13,
+          "canonical_id_count": 13,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 0.8907,
+          "pov_episode_recall": 0.9389,
+          "pov_secret_leaks": 3
+        },
+        "mood_counts": {
+          "exact_matches": 1,
+          "soft_matches": 1,
+          "total_characters": 6
+        }
+      },
+      {
+        "step": 15,
+        "room_occupancy_jaccard": 0.6,
+        "room_occupancy_exact": false,
+        "mood_exact_rate": 0.3333,
+        "mood_soft_rate": 0.3333,
+        "location_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "mood_delta": {
+          "tp": 1,
+          "fp": 1,
+          "fn": 0
+        },
+        "edge_delta": {
+          "tp": 1,
+          "fp": 1,
+          "fn": 0
+        },
+        "witness": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 1,
+          "epistemic_leak_count": 0,
+          "silent_witness_matched": 2,
+          "silent_witness_expected": 3
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 15,
+          "canonical_id_count": 15,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 0.5762,
+          "pov_episode_recall": 0.9206,
+          "pov_secret_leaks": 3
+        },
+        "mood_counts": {
+          "exact_matches": 2,
+          "soft_matches": 2,
+          "total_characters": 6
+        }
+      },
+      {
+        "step": 16,
+        "room_occupancy_jaccard": 1.0,
+        "room_occupancy_exact": true,
+        "mood_exact_rate": 0.3333,
+        "mood_soft_rate": 0.3333,
+        "location_delta": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0
+        },
+        "mood_delta": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "edge_delta": {
+          "tp": 0,
+          "fp": 1,
+          "fn": 0
+        },
+        "witness": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "epistemic_leak_count": 0,
+          "silent_witness_matched": 0,
+          "silent_witness_expected": 0
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 11,
+          "canonical_id_count": 11,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 0.5375,
+          "pov_episode_recall": 0.9067,
+          "pov_secret_leaks": 3
+        },
+        "mood_counts": {
+          "exact_matches": 2,
+          "soft_matches": 2,
+          "total_characters": 6
+        }
+      },
+      {
+        "step": 17,
+        "room_occupancy_jaccard": 1.0,
+        "room_occupancy_exact": true,
+        "mood_exact_rate": 0.5,
+        "mood_soft_rate": 0.6667,
+        "location_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "mood_delta": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0
+        },
+        "edge_delta": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0
+        },
+        "witness": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "epistemic_leak_count": 0,
+          "silent_witness_matched": 0,
+          "silent_witness_expected": 0
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 16,
+          "canonical_id_count": 16,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 0.544,
+          "pov_episode_recall": 0.9067,
+          "pov_secret_leaks": 2
+        },
+        "mood_counts": {
+          "exact_matches": 3,
+          "soft_matches": 4,
+          "total_characters": 6
+        }
+      },
+      {
+        "step": 18,
+        "room_occupancy_jaccard": 1.0,
+        "room_occupancy_exact": true,
+        "mood_exact_rate": 0.5,
+        "mood_soft_rate": 0.5,
+        "location_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "mood_delta": {
+          "tp": 1,
+          "fp": 2,
+          "fn": 0
+        },
+        "edge_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "witness": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "epistemic_leak_count": 0,
+          "silent_witness_matched": 0,
+          "silent_witness_expected": 0
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 16,
+          "canonical_id_count": 16,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 0.5668,
+          "pov_episode_recall": 0.9067,
+          "pov_secret_leaks": 2
+        },
+        "mood_counts": {
+          "exact_matches": 3,
+          "soft_matches": 3,
+          "total_characters": 6
+        }
+      }
+    ]
+  },
+  "story_prose_stats": {
+    "total_chunks": 18,
+    "total_words": 6648,
+    "total_estimated_story_tokens": 9077,
+    "chunk_estimated_tokens": [
+      428,
+      466,
+      460,
+      454,
+      467,
+      432,
+      518,
+      477,
+      511,
+      628,
+      589,
+      636,
+      526,
+      479,
+      490,
+      518,
+      524,
+      474
+    ],
+    "chunk_word_counts": [
+      315,
+      344,
+      340,
+      338,
+      341,
+      320,
+      371,
+      341,
+      374,
+      462,
+      432,
+      461,
+      390,
+      351,
+      355,
+      382,
+      384,
+      347
+    ]
+  },
+  "story_generation_api_usage": {
+    "prompt_tokens": 7625,
+    "completion_tokens": 24599,
+    "total_tokens": 32224,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 15057,
+    "api_calls": 6,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 136688.681,
+    "cost_estimate": {
+      "input_cost_usd": 0.001068,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.006888,
+      "total_cost_usd": 0.007955,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "llm_extraction_historical_api_usage": {
+    "prompt_tokens": 121503,
+    "completion_tokens": 8117,
+    "total_tokens": 129620,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 18,
+    "cache_hits": 0,
+    "cache_misses": 18,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 237506.236,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.0,
+        "input_cached": 0.0,
+        "output": 0.0
+      }
+    }
+  },
+  "llm_extraction_current_run_billable_usage": {
+    "prompt_tokens": 121503,
+    "completion_tokens": 8117,
+    "total_tokens": 129620,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 18,
+    "cache_hits": 0,
+    "cache_misses": 18,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 237506.236,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.0,
+        "input_cached": 0.0,
+        "output": 0.0
+      }
+    }
+  },
+  "combined_total_story_plus_extraction_usage": {
+    "prompt_tokens": 129128,
+    "completion_tokens": 32716,
+    "total_tokens": 161844,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 15057,
+    "api_calls": 24,
+    "cache_hits": 0,
+    "cache_misses": 18,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 374194.917,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.0,
+        "input_cached": 0.0,
+        "output": 0.0
+      }
+    }
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "cache_key": "44856579f72bdb3f9a97933210ae8f818c59859848e6cb0151aea171abf8a6d5",
+  "model": "qwen/qwen3.8-27b",
+  "created_at": "2026-11-19T21:15:37.834281+00:00",
+  "prompt_sha256": "de41c51a946d1a75eb063ad0ecd7d9aa1151e1f0c0cd96d279e73e982f08dbc5",
+  "scene_text_sha256": "de2fb089765e0fd5b95f35be5aa4c40e2184d24a0960cd2043dc378210946127",
+  "scene_text": "Ten years ago, the Council Chamber had worn the same velvet and the same gilded shadows, but Elena had stood within it as a different woman. Snow had sealed Venice in silence that winter, and the lagoon had gone the color of pewter under a sky that never quite broke into morning. The canals had frozen at the edges, and servants carried braziers from room to room as if heat itself were a rumor. The city’s factions had gathered around this very table to sign the historic pact, their breath fogging the air, their gloves dark with melted sleet. Elena had been young then, and naive_trusting, believing that a signature witnessed by candlelight was a chain strong enough to bind ambitious men.\n\nJulian had stood at her shoulder through those bitter weeks. He had been the young treasurer even then, quick with figures, soft-spoken, always the first to fetch a ledger or warm a seal. She had trusted him implicitly. When the northern envoys delayed, when the grain accounts failed to balance, when the pact itself seemed ready to tear apart in their hands, it had been Julian who calmed her with his careful arithmetic and his assurances that every column could be made to reconcile. He never once looked away from her, and she had taken that steadiness as devotion. She remembered the way he had smiled then, and how she had mistaken his nervousness for diligence.\n\nThe memory came back now with the smell of cold wax and wet wool. Elena had signed the pact beneath the great chandelier while snow whispered against the windows, and Julian had pressed the seals into place one by one. She had believed the ceremony marked an end to suspicion. Instead it had planted the seed of everything now rotting in the vault below. The winter crisis had taught her to trust, and that trust had been the most expensive lesson of her life.\n\nStanding alone in the Council Chamber, Elena felt the old cold return. The candles seemed to burn lower, the velvet darker, and for a moment she was again the woman who had believed a pact could be kept by parchment alone. Then the rain rattled the balcony doors, and the present pressed back in—furious, patient, and waiting.",
+  "usage": {
+    "prompt_tokens": 6083,
+    "completion_tokens": 347,
+    "total_tokens": 6430,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 11321.559,
+    "cost_estimate": {
+      "input_cost_usd": 0.000852,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 9.7e-05,
+      "total_cost_usd": 0.000949,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step4_flashback",
+        "reason": "Elena reflects on her past naivety and the betrayal, returning to her current state of fury and patience."
+      }
+    ],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_step4_flashback",
+        "timeline_id": "main",
+        "step": 4,
+        "predicate": "flashback",
+        "summary": "Elena recalls a memory from ten years ago where she and Julian signed a historic pact in the Council Chamber during a winter crisis, trusting his assurances and diligence.",
+        "participants": {
+          "char_elena": "actor",
+          "char_julian": "participant"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian"
+        ],
+        "known_by": {
+          "char_elena": "direct",
+          "char_julian": "direct"
+        },
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": "10_years_ago",
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": true,
+    "story_time": "10_years_ago",
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

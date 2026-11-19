@@ -1,0 +1,1712 @@
+{
+  "story_slug": "obsidian_signet_3k",
+  "story_title": "The Obsidian Signet Conspiracy (Extended 3K Edition)",
+  "guidance_mode": "surface_only",
+  "models": [
+    {
+      "model_id": "deepseek-flash",
+      "skipped_cached_run": true,
+      "run_cache_key": "63bf93652aa0b550c2b055041227432e71238557d76b5560f47f665b4306bf72",
+      "strict_pass_rate": 0.84,
+      "step_delta_pass_rate": 0.875,
+      "cumulative_state_pass_rate": 0.8333,
+      "overall_quality_score": 0.8855,
+      "metrics": {
+        "model_id": "deepseek-flash",
+        "guidance_mode": "surface_only",
+        "overall_quality_score": 0.8855,
+        "category_scores": {
+          "epistemic_score": 0.8929,
+          "spatial_state_score": 0.8516,
+          "pov_retrieval_score": 0.9138,
+          "edge_flashback_score": 0.825,
+          "schema_hygiene_score": 0.9821
+        },
+        "epistemic_and_witness_metrics": {
+          "witness_precision": 1.0,
+          "witness_recall": 1.0,
+          "witness_f1": 1.0,
+          "epistemic_leak_count": 0,
+          "epistemic_leak_rate": 0.0,
+          "silent_witness_recall": 1.0,
+          "inform_delta_precision": 0.5,
+          "inform_delta_recall": 0.6667,
+          "inform_delta_f1": 0.5714,
+          "deception_summary_accuracy": 0.0,
+          "disguise_accuracy": 1.0
+        },
+        "spatial_and_state_metrics": {
+          "location_delta_precision": 0.8571,
+          "location_delta_recall": 1.0,
+          "location_delta_f1": 0.9231,
+          "room_occupancy_jaccard": 1.0,
+          "room_occupancy_exact_rate": 1.0,
+          "mood_exact_accuracy": 0.7083,
+          "mood_soft_accuracy": 0.7083,
+          "mood_delta_f1": 0.625,
+          "flashback_guard_passed": true
+        },
+        "edge_and_causal_metrics": {
+          "edge_delta_precision": 0.6667,
+          "edge_delta_recall": 1.0,
+          "edge_delta_f1": 0.8,
+          "edge_register_accuracy": 1.0,
+          "causal_link_accuracy": 0.625
+        },
+        "schema_and_id_hygiene": {
+          "first_pass_valid_rate": 1.0,
+          "total_retries": 0,
+          "total_validation_errors": 0,
+          "raw_id_total": 84,
+          "canonical_id_count": 81,
+          "canonical_id_rate": 0.9643,
+          "normalized_surface_id_count": 0,
+          "normalized_surface_id_rate": 0.0,
+          "hallucinated_id_count": 3,
+          "hallucinated_id_rate": 0.0357,
+          "hallucinated_ids": [
+            "loc_chamber_council"
+          ]
+        },
+        "downstream_pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 0.8057,
+          "pov_episode_recall": 0.9792,
+          "pov_secret_leak_count": 1
+        },
+        "steps": [
+          {
+            "step": 1,
+            "room_occupancy_jaccard": 1.0,
+            "room_occupancy_exact": true,
+            "mood_exact_rate": 0.75,
+            "mood_soft_rate": 0.75,
+            "location_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "mood_delta": {
+              "tp": 0,
+              "fp": 1,
+              "fn": 0
+            },
+            "edge_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "witness": {
+              "tp": 4,
+              "fp": 0,
+              "fn": 0,
+              "epistemic_leak_count": 0,
+              "silent_witness_matched": 2,
+              "silent_witness_expected": 2
+            },
+            "inform": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 9,
+              "canonical_id_count": 9,
+              "normalized_surface_id_count": 0,
+              "hallucinated_id_count": 0,
+              "hallucinated_ids": []
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 1.0,
+              "pov_episode_recall": 1.0,
+              "pov_secret_leaks": 0
+            },
+            "mood_counts": {
+              "exact_matches": 3,
+              "soft_matches": 3,
+              "total_characters": 4
+            }
+          },
+          {
+            "step": 2,
+            "room_occupancy_jaccard": 1.0,
+            "room_occupancy_exact": true,
+            "mood_exact_rate": 1.0,
+            "mood_soft_rate": 1.0,
+            "location_delta": {
+              "tp": 1,
+              "fp": 0,
+              "fn": 0
+            },
+            "mood_delta": {
+              "tp": 3,
+              "fp": 0,
+              "fn": 0
+            },
+            "edge_delta": {
+              "tp": 1,
+              "fp": 0,
+              "fn": 0
+            },
+            "witness": {
+              "tp": 3,
+              "fp": 0,
+              "fn": 0,
+              "epistemic_leak_count": 0,
+              "silent_witness_matched": 1,
+              "silent_witness_expected": 1
+            },
+            "inform": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 13,
+              "canonical_id_count": 12,
+              "normalized_surface_id_count": 0,
+              "hallucinated_id_count": 1,
+              "hallucinated_ids": [
+                "loc_chamber_council"
+              ]
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 1.0,
+              "pov_episode_recall": 1.0,
+              "pov_secret_leaks": 0
+            },
+            "mood_counts": {
+              "exact_matches": 4,
+              "soft_matches": 4,
+              "total_characters": 4
+            }
+          },
+          {
+            "step": 3,
+            "room_occupancy_jaccard": 1.0,
+            "room_occupancy_exact": true,
+            "mood_exact_rate": 0.5,
+            "mood_soft_rate": 0.5,
+            "location_delta": {
+              "tp": 2,
+              "fp": 0,
+              "fn": 0
+            },
+            "mood_delta": {
+              "tp": 0,
+              "fp": 2,
+              "fn": 0
+            },
+            "edge_delta": {
+              "tp": 1,
+              "fp": 1,
+              "fn": 0
+            },
+            "witness": {
+              "tp": 3,
+              "fp": 0,
+              "fn": 0,
+              "epistemic_leak_count": 0,
+              "silent_witness_matched": 2,
+              "silent_witness_expected": 2
+            },
+            "inform": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 18,
+              "canonical_id_count": 18,
+              "normalized_surface_id_count": 0,
+              "hallucinated_id_count": 0,
+              "hallucinated_ids": []
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 0.6333,
+              "pov_episode_recall": 1.0,
+              "pov_secret_leaks": 0
+            },
+            "mood_counts": {
+              "exact_matches": 2,
+              "soft_matches": 2,
+              "total_characters": 4
+            }
+          },
+          {
+            "step": 4,
+            "room_occupancy_jaccard": 1.0,
+            "room_occupancy_exact": true,
+            "mood_exact_rate": 0.5,
+            "mood_soft_rate": 0.5,
+            "location_delta": {
+              "tp": 0,
+              "fp": 1,
+              "fn": 0
+            },
+            "mood_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "edge_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "witness": {
+              "tp": 2,
+              "fp": 0,
+              "fn": 0,
+              "epistemic_leak_count": 0,
+              "silent_witness_matched": 1,
+              "silent_witness_expected": 1
+            },
+            "inform": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 7,
+              "canonical_id_count": 5,
+              "normalized_surface_id_count": 0,
+              "hallucinated_id_count": 2,
+              "hallucinated_ids": [
+                "loc_chamber_council"
+              ]
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 0.7232,
+              "pov_episode_recall": 1.0,
+              "pov_secret_leaks": 0
+            },
+            "mood_counts": {
+              "exact_matches": 2,
+              "soft_matches": 2,
+              "total_characters": 4
+            }
+          },
+          {
+            "step": 5,
+            "room_occupancy_jaccard": 1.0,
+            "room_occupancy_exact": true,
+            "mood_exact_rate": 0.5,
+            "mood_soft_rate": 0.5,
+            "location_delta": {
+              "tp": 2,
+              "fp": 0,
+              "fn": 0
+            },
+            "mood_delta": {
+              "tp": 1,
+              "fp": 2,
+              "fn": 1
+            },
+            "edge_delta": {
+              "tp": 1,
+              "fp": 1,
+              "fn": 0
+            },
+            "witness": {
+              "tp": 2,
+              "fp": 0,
+              "fn": 0,
+              "epistemic_leak_count": 0,
+              "silent_witness_matched": 0,
+              "silent_witness_expected": 0
+            },
+            "inform": {
+              "tp": 0,
+              "fp": 2,
+              "fn": 1
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 18,
+              "canonical_id_count": 18,
+              "normalized_surface_id_count": 0,
+              "hallucinated_id_count": 0,
+              "hallucinated_ids": []
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 0.8045,
+              "pov_episode_recall": 0.875,
+              "pov_secret_leaks": 1
+            },
+            "mood_counts": {
+              "exact_matches": 2,
+              "soft_matches": 2,
+              "total_characters": 4
+            }
+          },
+          {
+            "step": 6,
+            "room_occupancy_jaccard": 1.0,
+            "room_occupancy_exact": true,
+            "mood_exact_rate": 1.0,
+            "mood_soft_rate": 1.0,
+            "location_delta": {
+              "tp": 1,
+              "fp": 0,
+              "fn": 0
+            },
+            "mood_delta": {
+              "tp": 1,
+              "fp": 0,
+              "fn": 0
+            },
+            "edge_delta": {
+              "tp": 1,
+              "fp": 0,
+              "fn": 0
+            },
+            "witness": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "epistemic_leak_count": 0,
+              "silent_witness_matched": 0,
+              "silent_witness_expected": 0
+            },
+            "inform": {
+              "tp": 2,
+              "fp": 0,
+              "fn": 0
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 19,
+              "canonical_id_count": 19,
+              "normalized_surface_id_count": 0,
+              "hallucinated_id_count": 0,
+              "hallucinated_ids": []
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 0.6731,
+              "pov_episode_recall": 1.0,
+              "pov_secret_leaks": 0
+            },
+            "mood_counts": {
+              "exact_matches": 4,
+              "soft_matches": 4,
+              "total_characters": 4
+            }
+          }
+        ]
+      },
+      "extraction_usage": {
+        "prompt_tokens": 33439,
+        "completion_tokens": 9618,
+        "total_tokens": 43057,
+        "cached_prompt_tokens": 6912,
+        "reasoning_tokens": 6917,
+        "api_calls": 6,
+        "cache_hits": 6,
+        "cache_misses": 0,
+        "retry_count": 0,
+        "validation_errors": 0,
+        "latency_ms": 50546.395,
+        "cost_estimate": {
+          "input_cost_usd": 0.003714,
+          "cached_input_cost_usd": 9.7e-05,
+          "output_cost_usd": 0.002693,
+          "total_cost_usd": 0.006504,
+          "rates_per_1m_usd": {
+            "input_uncached": 0.14,
+            "input_cached": 0.014,
+            "output": 0.28
+          }
+        }
+      }
+    },
+    {
+      "model_id": "qwen/qwen3.8-27b",
+      "skipped_cached_run": false,
+      "run_cache_key": "9f682af623aa0d247d641cfdffb4fc45bf3b1bda9711daa7c90ea74d563d874f",
+      "strict_pass_rate": 0.92,
+      "step_delta_pass_rate": 0.75,
+      "cumulative_state_pass_rate": 0.9524,
+      "overall_quality_score": 0.8241,
+      "metrics": {
+        "model_id": "qwen/qwen3.8-27b",
+        "guidance_mode": "surface_only",
+        "overall_quality_score": 0.8241,
+        "category_scores": {
+          "epistemic_score": 0.7683,
+          "spatial_state_score": 0.9655,
+          "pov_retrieval_score": 0.6675,
+          "edge_flashback_score": 0.8,
+          "schema_hygiene_score": 0.987
+        },
+        "epistemic_and_witness_metrics": {
+          "witness_precision": 0.875,
+          "witness_recall": 1.0,
+          "witness_f1": 0.9333,
+          "epistemic_leak_count": 2,
+          "epistemic_leak_rate": 0.3333,
+          "silent_witness_recall": 1.0,
+          "inform_delta_precision": 1.0,
+          "inform_delta_recall": 0.3333,
+          "inform_delta_f1": 0.5,
+          "deception_summary_accuracy": 0.0,
+          "disguise_accuracy": 1.0
+        },
+        "spatial_and_state_metrics": {
+          "location_delta_precision": 1.0,
+          "location_delta_recall": 1.0,
+          "location_delta_f1": 1.0,
+          "room_occupancy_jaccard": 1.0,
+          "room_occupancy_exact_rate": 1.0,
+          "mood_exact_accuracy": 0.9167,
+          "mood_soft_accuracy": 0.9167,
+          "mood_delta_f1": 0.9091,
+          "flashback_guard_passed": true
+        },
+        "edge_and_causal_metrics": {
+          "edge_delta_precision": 0.75,
+          "edge_delta_recall": 0.75,
+          "edge_delta_f1": 0.75,
+          "edge_register_accuracy": 0.6667,
+          "causal_link_accuracy": 0.625
+        },
+        "schema_and_id_hygiene": {
+          "first_pass_valid_rate": 1.0,
+          "total_retries": 0,
+          "total_validation_errors": 0,
+          "raw_id_total": 77,
+          "canonical_id_count": 75,
+          "canonical_id_rate": 0.974,
+          "normalized_surface_id_count": 0,
+          "normalized_surface_id_rate": 0.0,
+          "hallucinated_id_count": 2,
+          "hallucinated_id_rate": 0.026,
+          "hallucinated_ids": [
+            "loc_council_chamber"
+          ]
+        },
+        "downstream_pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 0.9374,
+          "pov_episode_recall": 0.9583,
+          "pov_secret_leak_count": 4
+        },
+        "steps": [
+          {
+            "step": 1,
+            "room_occupancy_jaccard": 1.0,
+            "room_occupancy_exact": true,
+            "mood_exact_rate": 1.0,
+            "mood_soft_rate": 1.0,
+            "location_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "mood_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "edge_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "witness": {
+              "tp": 4,
+              "fp": 0,
+              "fn": 0,
+              "epistemic_leak_count": 0,
+              "silent_witness_matched": 2,
+              "silent_witness_expected": 2
+            },
+            "inform": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 9,
+              "canonical_id_count": 9,
+              "normalized_surface_id_count": 0,
+              "hallucinated_id_count": 0,
+              "hallucinated_ids": []
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 1.0,
+              "pov_episode_recall": 1.0,
+              "pov_secret_leaks": 0
+            },
+            "mood_counts": {
+              "exact_matches": 4,
+              "soft_matches": 4,
+              "total_characters": 4
+            }
+          },
+          {
+            "step": 2,
+            "room_occupancy_jaccard": 1.0,
+            "room_occupancy_exact": true,
+            "mood_exact_rate": 1.0,
+            "mood_soft_rate": 1.0,
+            "location_delta": {
+              "tp": 1,
+              "fp": 0,
+              "fn": 0
+            },
+            "mood_delta": {
+              "tp": 2,
+              "fp": 0,
+              "fn": 0
+            },
+            "edge_delta": {
+              "tp": 1,
+              "fp": 0,
+              "fn": 0
+            },
+            "witness": {
+              "tp": 3,
+              "fp": 0,
+              "fn": 0,
+              "epistemic_leak_count": 0,
+              "silent_witness_matched": 1,
+              "silent_witness_expected": 1
+            },
+            "inform": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 12,
+              "canonical_id_count": 11,
+              "normalized_surface_id_count": 0,
+              "hallucinated_id_count": 1,
+              "hallucinated_ids": [
+                "loc_council_chamber"
+              ]
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 1.0,
+              "pov_episode_recall": 1.0,
+              "pov_secret_leaks": 0
+            },
+            "mood_counts": {
+              "exact_matches": 4,
+              "soft_matches": 4,
+              "total_characters": 4
+            }
+          },
+          {
+            "step": 3,
+            "room_occupancy_jaccard": 1.0,
+            "room_occupancy_exact": true,
+            "mood_exact_rate": 0.75,
+            "mood_soft_rate": 0.75,
+            "location_delta": {
+              "tp": 2,
+              "fp": 0,
+              "fn": 0
+            },
+            "mood_delta": {
+              "tp": 0,
+              "fp": 1,
+              "fn": 0
+            },
+            "edge_delta": {
+              "tp": 1,
+              "fp": 0,
+              "fn": 0
+            },
+            "witness": {
+              "tp": 3,
+              "fp": 0,
+              "fn": 0,
+              "epistemic_leak_count": 0,
+              "silent_witness_matched": 2,
+              "silent_witness_expected": 2
+            },
+            "inform": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 14,
+              "canonical_id_count": 14,
+              "normalized_surface_id_count": 0,
+              "hallucinated_id_count": 0,
+              "hallucinated_ids": []
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 1.0,
+              "pov_episode_recall": 1.0,
+              "pov_secret_leaks": 0
+            },
+            "mood_counts": {
+              "exact_matches": 3,
+              "soft_matches": 3,
+              "total_characters": 4
+            }
+          },
+          {
+            "step": 4,
+            "room_occupancy_jaccard": 1.0,
+            "room_occupancy_exact": true,
+            "mood_exact_rate": 0.75,
+            "mood_soft_rate": 0.75,
+            "location_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "mood_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "edge_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "witness": {
+              "tp": 2,
+              "fp": 0,
+              "fn": 0,
+              "epistemic_leak_count": 0,
+              "silent_witness_matched": 1,
+              "silent_witness_expected": 1
+            },
+            "inform": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 6,
+              "canonical_id_count": 5,
+              "normalized_surface_id_count": 0,
+              "hallucinated_id_count": 1,
+              "hallucinated_ids": [
+                "loc_council_chamber"
+              ]
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 1.0,
+              "pov_episode_recall": 1.0,
+              "pov_secret_leaks": 0
+            },
+            "mood_counts": {
+              "exact_matches": 3,
+              "soft_matches": 3,
+              "total_characters": 4
+            }
+          },
+          {
+            "step": 5,
+            "room_occupancy_jaccard": 1.0,
+            "room_occupancy_exact": true,
+            "mood_exact_rate": 1.0,
+            "mood_soft_rate": 1.0,
+            "location_delta": {
+              "tp": 2,
+              "fp": 0,
+              "fn": 0
+            },
+            "mood_delta": {
+              "tp": 2,
+              "fp": 0,
+              "fn": 0
+            },
+            "edge_delta": {
+              "tp": 0,
+              "fp": 1,
+              "fn": 1
+            },
+            "witness": {
+              "tp": 2,
+              "fp": 2,
+              "fn": 0,
+              "epistemic_leak_count": 2,
+              "silent_witness_matched": 0,
+              "silent_witness_expected": 0
+            },
+            "inform": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 17,
+              "canonical_id_count": 17,
+              "normalized_surface_id_count": 0,
+              "hallucinated_id_count": 0,
+              "hallucinated_ids": []
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 0.8917,
+              "pov_episode_recall": 0.875,
+              "pov_secret_leaks": 2
+            },
+            "mood_counts": {
+              "exact_matches": 4,
+              "soft_matches": 4,
+              "total_characters": 4
+            }
+          },
+          {
+            "step": 6,
+            "room_occupancy_jaccard": 1.0,
+            "room_occupancy_exact": true,
+            "mood_exact_rate": 1.0,
+            "mood_soft_rate": 1.0,
+            "location_delta": {
+              "tp": 1,
+              "fp": 0,
+              "fn": 0
+            },
+            "mood_delta": {
+              "tp": 1,
+              "fp": 0,
+              "fn": 0
+            },
+            "edge_delta": {
+              "tp": 1,
+              "fp": 0,
+              "fn": 0
+            },
+            "witness": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "epistemic_leak_count": 0,
+              "silent_witness_matched": 0,
+              "silent_witness_expected": 0
+            },
+            "inform": {
+              "tp": 1,
+              "fp": 0,
+              "fn": 1
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 19,
+              "canonical_id_count": 19,
+              "normalized_surface_id_count": 0,
+              "hallucinated_id_count": 0,
+              "hallucinated_ids": []
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 0.733,
+              "pov_episode_recall": 0.875,
+              "pov_secret_leaks": 2
+            },
+            "mood_counts": {
+              "exact_matches": 4,
+              "soft_matches": 4,
+              "total_characters": 4
+            }
+          }
+        ]
+      },
+      "extraction_usage": {
+        "prompt_tokens": 35230,
+        "completion_tokens": 3057,
+        "total_tokens": 38287,
+        "cached_prompt_tokens": 0,
+        "reasoning_tokens": 0,
+        "api_calls": 6,
+        "cache_hits": 0,
+        "cache_misses": 6,
+        "retry_count": 0,
+        "validation_errors": 0,
+        "latency_ms": 76094.871,
+        "cost_estimate": {
+          "input_cost_usd": 0.0,
+          "cached_input_cost_usd": 0.0,
+          "output_cost_usd": 0.0,
+          "total_cost_usd": 0.0,
+          "rates_per_1m_usd": {
+            "input_uncached": 0.0,
+            "input_cached": 0.0,
+            "output": 0.0
+          }
+        }
+      }
+    },
+    {
+      "model_id": "qwen/qwen3.5-9b",
+      "skipped_cached_run": true,
+      "run_cache_key": "023484a86560e7d987ca03ccd631df5827593b64075dc178d24a0763a09f1178",
+      "strict_pass_rate": 0.78,
+      "step_delta_pass_rate": 0.625,
+      "cumulative_state_pass_rate": 0.8095,
+      "overall_quality_score": 0.6974,
+      "metrics": {
+        "model_id": "qwen/qwen3.5-9b",
+        "guidance_mode": "surface_only",
+        "overall_quality_score": 0.6974,
+        "category_scores": {
+          "epistemic_score": 0.6708,
+          "spatial_state_score": 0.6984,
+          "pov_retrieval_score": 0.76,
+          "edge_flashback_score": 0.5,
+          "schema_hygiene_score": 0.9451
+        },
+        "epistemic_and_witness_metrics": {
+          "witness_precision": 0.9,
+          "witness_recall": 0.6429,
+          "witness_f1": 0.75,
+          "epistemic_leak_count": 1,
+          "epistemic_leak_rate": 0.1667,
+          "silent_witness_recall": 0.8333,
+          "inform_delta_precision": 0.5,
+          "inform_delta_recall": 0.3333,
+          "inform_delta_f1": 0.4,
+          "deception_summary_accuracy": 1.0,
+          "disguise_accuracy": 0.6667
+        },
+        "spatial_and_state_metrics": {
+          "location_delta_precision": 0.3333,
+          "location_delta_recall": 0.6667,
+          "location_delta_f1": 0.4444,
+          "room_occupancy_jaccard": 0.8981,
+          "room_occupancy_exact_rate": 0.6667,
+          "mood_exact_accuracy": 0.7917,
+          "mood_soft_accuracy": 0.7917,
+          "mood_delta_f1": 0.5,
+          "flashback_guard_passed": true
+        },
+        "edge_and_causal_metrics": {
+          "edge_delta_precision": 0.3333,
+          "edge_delta_recall": 0.5,
+          "edge_delta_f1": 0.4,
+          "edge_register_accuracy": 0.6667,
+          "causal_link_accuracy": 0.0
+        },
+        "schema_and_id_hygiene": {
+          "first_pass_valid_rate": 1.0,
+          "total_retries": 0,
+          "total_validation_errors": 0,
+          "raw_id_total": 82,
+          "canonical_id_count": 73,
+          "canonical_id_rate": 0.8902,
+          "normalized_surface_id_count": 0,
+          "normalized_surface_id_rate": 0.0,
+          "hallucinated_id_count": 9,
+          "hallucinated_id_rate": 0.1098,
+          "hallucinated_ids": [
+            "loc_council_chamber",
+            "loc_archive_vault"
+          ]
+        },
+        "downstream_pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 0.9837,
+          "pov_episode_recall": 1.0,
+          "pov_secret_leak_count": 3
+        },
+        "steps": [
+          {
+            "step": 1,
+            "room_occupancy_jaccard": 1.0,
+            "room_occupancy_exact": true,
+            "mood_exact_rate": 0.75,
+            "mood_soft_rate": 0.75,
+            "location_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "mood_delta": {
+              "tp": 0,
+              "fp": 1,
+              "fn": 0
+            },
+            "edge_delta": {
+              "tp": 0,
+              "fp": 1,
+              "fn": 0
+            },
+            "witness": {
+              "tp": 3,
+              "fp": 0,
+              "fn": 1,
+              "epistemic_leak_count": 0,
+              "silent_witness_matched": 2,
+              "silent_witness_expected": 2
+            },
+            "inform": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 13,
+              "canonical_id_count": 13,
+              "normalized_surface_id_count": 0,
+              "hallucinated_id_count": 0,
+              "hallucinated_ids": []
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 1.0,
+              "pov_episode_recall": 1.0,
+              "pov_secret_leaks": 0
+            },
+            "mood_counts": {
+              "exact_matches": 3,
+              "soft_matches": 3,
+              "total_characters": 4
+            }
+          },
+          {
+            "step": 2,
+            "room_occupancy_jaccard": 1.0,
+            "room_occupancy_exact": true,
+            "mood_exact_rate": 1.0,
+            "mood_soft_rate": 1.0,
+            "location_delta": {
+              "tp": 1,
+              "fp": 0,
+              "fn": 0
+            },
+            "mood_delta": {
+              "tp": 2,
+              "fp": 0,
+              "fn": 0
+            },
+            "edge_delta": {
+              "tp": 1,
+              "fp": 0,
+              "fn": 0
+            },
+            "witness": {
+              "tp": 1,
+              "fp": 0,
+              "fn": 2,
+              "epistemic_leak_count": 0,
+              "silent_witness_matched": 1,
+              "silent_witness_expected": 1
+            },
+            "inform": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 10,
+              "canonical_id_count": 9,
+              "normalized_surface_id_count": 0,
+              "hallucinated_id_count": 1,
+              "hallucinated_ids": [
+                "loc_council_chamber"
+              ]
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 1.0,
+              "pov_episode_recall": 1.0,
+              "pov_secret_leaks": 0
+            },
+            "mood_counts": {
+              "exact_matches": 4,
+              "soft_matches": 4,
+              "total_characters": 4
+            }
+          },
+          {
+            "step": 3,
+            "room_occupancy_jaccard": 1.0,
+            "room_occupancy_exact": true,
+            "mood_exact_rate": 1.0,
+            "mood_soft_rate": 1.0,
+            "location_delta": {
+              "tp": 2,
+              "fp": 0,
+              "fn": 0
+            },
+            "mood_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "edge_delta": {
+              "tp": 0,
+              "fp": 1,
+              "fn": 1
+            },
+            "witness": {
+              "tp": 1,
+              "fp": 0,
+              "fn": 2,
+              "epistemic_leak_count": 0,
+              "silent_witness_matched": 1,
+              "silent_witness_expected": 2
+            },
+            "inform": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 10,
+              "canonical_id_count": 10,
+              "normalized_surface_id_count": 0,
+              "hallucinated_id_count": 0,
+              "hallucinated_ids": []
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 1.0,
+              "pov_episode_recall": 1.0,
+              "pov_secret_leaks": 0
+            },
+            "mood_counts": {
+              "exact_matches": 4,
+              "soft_matches": 4,
+              "total_characters": 4
+            }
+          },
+          {
+            "step": 4,
+            "room_occupancy_jaccard": 1.0,
+            "room_occupancy_exact": true,
+            "mood_exact_rate": 1.0,
+            "mood_soft_rate": 1.0,
+            "location_delta": {
+              "tp": 0,
+              "fp": 3,
+              "fn": 0
+            },
+            "mood_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "edge_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "witness": {
+              "tp": 2,
+              "fp": 0,
+              "fn": 0,
+              "epistemic_leak_count": 0,
+              "silent_witness_matched": 1,
+              "silent_witness_expected": 1
+            },
+            "inform": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 10,
+              "canonical_id_count": 7,
+              "normalized_surface_id_count": 0,
+              "hallucinated_id_count": 3,
+              "hallucinated_ids": [
+                "loc_archive_vault"
+              ]
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 1.0,
+              "pov_episode_recall": 1.0,
+              "pov_secret_leaks": 0
+            },
+            "mood_counts": {
+              "exact_matches": 4,
+              "soft_matches": 4,
+              "total_characters": 4
+            }
+          },
+          {
+            "step": 5,
+            "room_occupancy_jaccard": 0.7222,
+            "room_occupancy_exact": false,
+            "mood_exact_rate": 0.5,
+            "mood_soft_rate": 0.5,
+            "location_delta": {
+              "tp": 1,
+              "fp": 1,
+              "fn": 1
+            },
+            "mood_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 2
+            },
+            "edge_delta": {
+              "tp": 1,
+              "fp": 1,
+              "fn": 0
+            },
+            "witness": {
+              "tp": 2,
+              "fp": 1,
+              "fn": 0,
+              "epistemic_leak_count": 1,
+              "silent_witness_matched": 0,
+              "silent_witness_expected": 0
+            },
+            "inform": {
+              "tp": 1,
+              "fp": 0,
+              "fn": 0
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 18,
+              "canonical_id_count": 18,
+              "normalized_surface_id_count": 0,
+              "hallucinated_id_count": 0,
+              "hallucinated_ids": []
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 1.0,
+              "pov_episode_recall": 1.0,
+              "pov_secret_leaks": 1
+            },
+            "mood_counts": {
+              "exact_matches": 2,
+              "soft_matches": 2,
+              "total_characters": 4
+            }
+          },
+          {
+            "step": 6,
+            "room_occupancy_jaccard": 0.6667,
+            "room_occupancy_exact": false,
+            "mood_exact_rate": 0.5,
+            "mood_soft_rate": 0.5,
+            "location_delta": {
+              "tp": 0,
+              "fp": 4,
+              "fn": 1
+            },
+            "mood_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "edge_delta": {
+              "tp": 0,
+              "fp": 1,
+              "fn": 1
+            },
+            "witness": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "epistemic_leak_count": 0,
+              "silent_witness_matched": 0,
+              "silent_witness_expected": 0
+            },
+            "inform": {
+              "tp": 0,
+              "fp": 1,
+              "fn": 2
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 21,
+              "canonical_id_count": 16,
+              "normalized_surface_id_count": 0,
+              "hallucinated_id_count": 5,
+              "hallucinated_ids": [
+                "loc_archive_vault"
+              ]
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 0.9023,
+              "pov_episode_recall": 1.0,
+              "pov_secret_leaks": 2
+            },
+            "mood_counts": {
+              "exact_matches": 2,
+              "soft_matches": 2,
+              "total_characters": 4
+            }
+          }
+        ]
+      },
+      "extraction_usage": {
+        "prompt_tokens": 34923,
+        "completion_tokens": 3387,
+        "total_tokens": 38310,
+        "cached_prompt_tokens": 0,
+        "reasoning_tokens": 0,
+        "api_calls": 6,
+        "cache_hits": 6,
+        "cache_misses": 0,
+        "retry_count": 0,
+        "validation_errors": 0,
+        "latency_ms": 53213.58,
+        "cost_estimate": {
+          "input_cost_usd": 0.0,
+          "cached_input_cost_usd": 0.0,
+          "output_cost_usd": 0.0,
+          "total_cost_usd": 0.0,
+          "rates_per_1m_usd": {
+            "input_uncached": 0.0,
+            "input_cached": 0.0,
+            "output": 0.0
+          }
+        }
+      }
+    },
+    {
+      "model_id": "rule-based-non-llm",
+      "skipped_cached_run": true,
+      "run_cache_key": "8a673958f71c461aa8d07cdb1e121344ae04da73078242d3fc15d4cd3107510b",
+      "strict_pass_rate": 0.56,
+      "step_delta_pass_rate": 0.5,
+      "cumulative_state_pass_rate": 0.5714,
+      "overall_quality_score": 0.543,
+      "metrics": {
+        "model_id": "rule-based-non-llm",
+        "guidance_mode": "surface_only",
+        "overall_quality_score": 0.543,
+        "category_scores": {
+          "epistemic_score": 0.5411,
+          "spatial_state_score": 0.4382,
+          "pov_retrieval_score": 0.5929,
+          "edge_flashback_score": 0.35,
+          "schema_hygiene_score": 1.0
+        },
+        "epistemic_and_witness_metrics": {
+          "witness_precision": 0.8235,
+          "witness_recall": 1.0,
+          "witness_f1": 0.9032,
+          "epistemic_leak_count": 3,
+          "epistemic_leak_rate": 0.5,
+          "silent_witness_recall": 1.0,
+          "inform_delta_precision": 1.0,
+          "inform_delta_recall": 0.0,
+          "inform_delta_f1": 0.0,
+          "deception_summary_accuracy": 0.0,
+          "disguise_accuracy": 0.6667
+        },
+        "spatial_and_state_metrics": {
+          "location_delta_precision": 1.0,
+          "location_delta_recall": 0.0,
+          "location_delta_f1": 0.0,
+          "room_occupancy_jaccard": 0.5556,
+          "room_occupancy_exact_rate": 0.3333,
+          "mood_exact_accuracy": 0.6667,
+          "mood_soft_accuracy": 0.7083,
+          "mood_delta_f1": 0.4444,
+          "flashback_guard_passed": true
+        },
+        "edge_and_causal_metrics": {
+          "edge_delta_precision": 1.0,
+          "edge_delta_recall": 0.0,
+          "edge_delta_f1": 0.0,
+          "edge_register_accuracy": 0.0,
+          "causal_link_accuracy": 0.25
+        },
+        "schema_and_id_hygiene": {
+          "first_pass_valid_rate": 1.0,
+          "total_retries": 0,
+          "total_validation_errors": 0,
+          "raw_id_total": 38,
+          "canonical_id_count": 35,
+          "canonical_id_rate": 0.9211,
+          "normalized_surface_id_count": 3,
+          "normalized_surface_id_rate": 0.0789,
+          "hallucinated_id_count": 0,
+          "hallucinated_id_rate": 0.0,
+          "hallucinated_ids": []
+        },
+        "downstream_pov_retrieval": {
+          "pov_entity_jaccard": 0.9762,
+          "pov_edge_jaccard": 0.6667,
+          "pov_episode_recall": 1.0,
+          "pov_secret_leak_count": 8
+        },
+        "steps": [
+          {
+            "step": 1,
+            "room_occupancy_jaccard": 1.0,
+            "room_occupancy_exact": true,
+            "mood_exact_rate": 1.0,
+            "mood_soft_rate": 1.0,
+            "location_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "mood_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "edge_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "witness": {
+              "tp": 4,
+              "fp": 0,
+              "fn": 0,
+              "epistemic_leak_count": 0,
+              "silent_witness_matched": 2,
+              "silent_witness_expected": 2
+            },
+            "inform": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 6,
+              "canonical_id_count": 5,
+              "normalized_surface_id_count": 1,
+              "hallucinated_id_count": 0,
+              "hallucinated_ids": []
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 1.0,
+              "pov_episode_recall": 1.0,
+              "pov_secret_leaks": 0
+            },
+            "mood_counts": {
+              "exact_matches": 4,
+              "soft_matches": 4,
+              "total_characters": 4
+            }
+          },
+          {
+            "step": 2,
+            "room_occupancy_jaccard": 0.5833,
+            "room_occupancy_exact": false,
+            "mood_exact_rate": 0.75,
+            "mood_soft_rate": 0.75,
+            "location_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "mood_delta": {
+              "tp": 1,
+              "fp": 0,
+              "fn": 1
+            },
+            "edge_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "witness": {
+              "tp": 3,
+              "fp": 1,
+              "fn": 0,
+              "epistemic_leak_count": 1,
+              "silent_witness_matched": 1,
+              "silent_witness_expected": 1
+            },
+            "inform": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 7,
+              "canonical_id_count": 6,
+              "normalized_surface_id_count": 1,
+              "hallucinated_id_count": 0,
+              "hallucinated_ids": []
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 0.6905,
+              "pov_episode_recall": 1.0,
+              "pov_secret_leaks": 1
+            },
+            "mood_counts": {
+              "exact_matches": 3,
+              "soft_matches": 3,
+              "total_characters": 4
+            }
+          },
+          {
+            "step": 3,
+            "room_occupancy_jaccard": 0.0833,
+            "room_occupancy_exact": false,
+            "mood_exact_rate": 0.75,
+            "mood_soft_rate": 0.75,
+            "location_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 2
+            },
+            "mood_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "edge_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "witness": {
+              "tp": 3,
+              "fp": 0,
+              "fn": 0,
+              "epistemic_leak_count": 0,
+              "silent_witness_matched": 2,
+              "silent_witness_expected": 2
+            },
+            "inform": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 5,
+              "canonical_id_count": 4,
+              "normalized_surface_id_count": 1,
+              "hallucinated_id_count": 0,
+              "hallucinated_ids": []
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 0.8571,
+              "pov_edge_jaccard": 0.4226,
+              "pov_episode_recall": 1.0,
+              "pov_secret_leaks": 1
+            },
+            "mood_counts": {
+              "exact_matches": 3,
+              "soft_matches": 3,
+              "total_characters": 4
+            }
+          },
+          {
+            "step": 4,
+            "room_occupancy_jaccard": 0.0833,
+            "room_occupancy_exact": false,
+            "mood_exact_rate": 0.75,
+            "mood_soft_rate": 0.75,
+            "location_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "mood_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "edge_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "witness": {
+              "tp": 2,
+              "fp": 0,
+              "fn": 0,
+              "epistemic_leak_count": 0,
+              "silent_witness_matched": 1,
+              "silent_witness_expected": 1
+            },
+            "inform": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 4,
+              "canonical_id_count": 4,
+              "normalized_surface_id_count": 0,
+              "hallucinated_id_count": 0,
+              "hallucinated_ids": []
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 0.7232,
+              "pov_episode_recall": 1.0,
+              "pov_secret_leaks": 1
+            },
+            "mood_counts": {
+              "exact_matches": 3,
+              "soft_matches": 3,
+              "total_characters": 4
+            }
+          },
+          {
+            "step": 5,
+            "room_occupancy_jaccard": 0.5833,
+            "room_occupancy_exact": false,
+            "mood_exact_rate": 0.25,
+            "mood_soft_rate": 0.25,
+            "location_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 2
+            },
+            "mood_delta": {
+              "tp": 0,
+              "fp": 2,
+              "fn": 2
+            },
+            "edge_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "witness": {
+              "tp": 2,
+              "fp": 2,
+              "fn": 0,
+              "epistemic_leak_count": 2,
+              "silent_witness_matched": 0,
+              "silent_witness_expected": 0
+            },
+            "inform": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 8,
+              "canonical_id_count": 8,
+              "normalized_surface_id_count": 0,
+              "hallucinated_id_count": 0,
+              "hallucinated_ids": []
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 0.6091,
+              "pov_episode_recall": 1.0,
+              "pov_secret_leaks": 2
+            },
+            "mood_counts": {
+              "exact_matches": 1,
+              "soft_matches": 1,
+              "total_characters": 4
+            }
+          },
+          {
+            "step": 6,
+            "room_occupancy_jaccard": 1.0,
+            "room_occupancy_exact": true,
+            "mood_exact_rate": 0.5,
+            "mood_soft_rate": 0.75,
+            "location_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "mood_delta": {
+              "tp": 1,
+              "fp": 0,
+              "fn": 0
+            },
+            "edge_delta": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "witness": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "epistemic_leak_count": 0,
+              "silent_witness_matched": 0,
+              "silent_witness_expected": 0
+            },
+            "inform": {
+              "tp": 0,
+              "fp": 0,
+              "fn": 2
+            },
+            "flashback_flag_correct": true,
+            "id_hygiene": {
+              "raw_id_total": 8,
+              "canonical_id_count": 8,
+              "normalized_surface_id_count": 0,
+              "hallucinated_id_count": 0,
+              "hallucinated_ids": []
+            },
+            "pov_retrieval": {
+              "pov_entity_jaccard": 1.0,
+              "pov_edge_jaccard": 0.5549,
+              "pov_episode_recall": 1.0,
+              "pov_secret_leaks": 3
+            },
+            "mood_counts": {
+              "exact_matches": 2,
+              "soft_matches": 3,
+              "total_characters": 4
+            }
+          }
+        ]
+      },
+      "extraction_usage": {
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "total_tokens": 0,
+        "cached_prompt_tokens": 0,
+        "reasoning_tokens": 0,
+        "api_calls": 6,
+        "cache_hits": 6,
+        "cache_misses": 0,
+        "retry_count": 0,
+        "validation_errors": 0,
+        "latency_ms": 10.819,
+        "cost_estimate": {
+          "input_cost_usd": 0.0,
+          "cached_input_cost_usd": 0.0,
+          "output_cost_usd": 0.0,
+          "total_cost_usd": 0.0,
+          "rates_per_1m_usd": {
+            "input_uncached": 0.0,
+            "input_cached": 0.0,
+            "output": 0.0
+          }
+        }
+      }
+    }
+  ]
+}

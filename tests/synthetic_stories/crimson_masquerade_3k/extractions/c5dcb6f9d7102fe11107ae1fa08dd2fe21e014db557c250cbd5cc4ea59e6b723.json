@@ -1,0 +1,70 @@
+{
+  "cache_key": "c5dcb6f9d7102fe11107ae1fa08dd2fe21e014db557c250cbd5cc4ea59e6b723",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T19:42:36.681597+00:00",
+  "prompt_sha256": "5af2af81d00ca5a0471dfd8731e7804fdf43ff5ef8e5ba191f7c8e6327d1eb05",
+  "scene_text_sha256": "fb6b3ba72ebd4ccadd961ae7f257a89caaea738b8dd5ca8cf725b4e9080aa985",
+  "scene_text": "The Council Chamber hung above the Grand Canal like a jewel box suspended over black water, its velvet drapes breathing with the damp draft that slipped through the leaded windows. Candles in gilt sconces threw long, nervous shadows across the mosaic floor, and the air smelled of wax, salt, and old parchment. Below, a gondola knocked softly against the water-steps, and the sound traveled up through the stone like a secret. Elena, calm as a blade laid flat upon silk, stood at the head of the table while Marcus, the old general, leaned over the ledgers with the confidence of a man who had never once doubted the map in his own hand. Julian, the young treasurer, hovered at the table’s edge, his fingers twitching whenever the guards outside shifted their halberds. Near the doorway, the hooded courier waited in perfect stillness, a sealed satchel held against her breast, her face hidden beneath a rain-dark hood.\n\nElena turned a page and let the silence do its work. “Molim vas da pažljivo pregledate ove poverljive izveštaje pre nego što kraljevska straža zatvori kapije,” she said, addressing Marcus with the crisp courtesy of a command wrapped in diplomacy. The old general grunted, squinting at the columns of figures, and the courier stepped forward at last. She bowed low, the hem of her cloak brushing the marble, and spoke in a voice carefully flattened by the hood. “Ponizno vam donosim zapečaćene depeše sa severne granice koje zahtevaju vašu hitnu vojnu procenu.” The seals caught the candlelight, red wax stamped with a northern wolf. The courier’s stillness was more unnerving than any whisper.\n\nMarcus took the depeches but did not break them immediately; he weighed them, as if distrust were a form of prudence. Julian’s gaze darted from the satchel to Elena’s hands and back again. “Yes, indeed,” he murmured, a brief filler reply that fell into the room and vanished like a pebble into deep water. Elena did not look at him. The hooded courier glided back into the shadow beside the door, and the inspection continued, each rustle of parchment sharpening the tension until the chamber felt as taut as a drawn wire.",
+  "usage": {
+    "prompt_tokens": 5378,
+    "completion_tokens": 1582,
+    "total_tokens": 6960,
+    "cached_prompt_tokens": 4736,
+    "reasoning_tokens": 1414,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 7861.662,
+    "cost_estimate": {
+      "input_cost_usd": 9e-05,
+      "cached_input_cost_usd": 6.6e-05,
+      "output_cost_usd": 0.000443,
+      "total_cost_usd": 0.000599,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_1",
+        "timeline_id": "main",
+        "step": 1,
+        "predicate": "item_transfer",
+        "summary": "Lyra delivered sealed depeches from the northern border to Marcus in the Council Chamber.",
+        "participants": {
+          "char_lyra": "courier",
+          "char_marcus": "recipient"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "char_marcus",
+          "char_lyra"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 5.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

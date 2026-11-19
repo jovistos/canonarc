@@ -1,0 +1,102 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_courtyard",
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step10_muster",
+      "reason": null
+    },
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_courtyard",
+        "mood": "nervous"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step10_muster",
+      "reason": null
+    },
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_courtyard"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step10_muster",
+      "reason": null
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_marcus",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "stern",
+        "trust": -0.2
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_step10_muster",
+      "reason": "Marcus warns Julian to keep his counsel close and eyes open, indicating suspicion and a shift to informal, commanding register."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_step10_muster",
+      "timeline_id": "main",
+      "step": 10,
+      "predicate": "briefing",
+      "summary": "Marcus and Julian muster the watchmen in the Inner Courtyard under the false pretext of a northern raid, while Julian clutches a ledger and Marcus senses a trap.",
+      "participants": {
+        "char_marcus": "actor",
+        "char_julian": "participant"
+      },
+      "witnesses": [
+        "char_marcus",
+        "char_julian"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_courtyard",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 6.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

@@ -1,0 +1,111 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_vault"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_signet_transfer",
+      "reason": "Fled down the passage into the Archive Vault after handing off the signet"
+    },
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_vault"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_signet_transfer",
+      "reason": "Chased Julian into the Archive Vault after taking the signet"
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "calm"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_signet_transfer",
+      "reason": "Her fury cools into a colder, controlled calm as she gathers the broken seals"
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_lyra",
+      "target_id": "item_signet",
+      "relation_type": "possesses",
+      "state": {
+        "status": "concealed"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_signet_transfer",
+      "reason": "Julian pressed the Obsidian Signet into the courier's gloved hand"
+    },
+    {
+      "source_id": "char_julian",
+      "target_id": "item_signet",
+      "relation_type": "possesses",
+      "state": {},
+      "merge": true,
+      "remove": true,
+      "caused_by_episode_id": "ep_signet_transfer",
+      "reason": "Julian surrendered the signet to the courier"
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_signet_transfer",
+      "timeline_id": "main",
+      "step": 3,
+      "predicate": "item_transfer",
+      "summary": "Julian presses the Obsidian Signet into the hooded courier's hand, begging them to hide it in the Archive Vault, then bolts down the passage; the courier chases after him into the vault.",
+      "participants": {
+        "char_julian": "actor",
+        "char_lyra": "recipient",
+        "item_signet": "instrument",
+        "char_elena": "observer"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_julian",
+        "char_lyra"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

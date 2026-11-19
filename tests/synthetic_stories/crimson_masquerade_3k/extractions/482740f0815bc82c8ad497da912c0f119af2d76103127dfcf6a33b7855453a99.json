@@ -1,0 +1,134 @@
+{
+  "cache_key": "482740f0815bc82c8ad497da912c0f119af2d76103127dfcf6a33b7855453a99",
+  "model": "qwen/qwen3.8-27b",
+  "created_at": "2026-11-19T21:15:14.667701+00:00",
+  "prompt_sha256": "3e1ef6a627f21b4bebb9c95b5191d070c3bc53a97430488088a3bcb17cda9f35",
+  "scene_text_sha256": "97b7eae9f2851481439ee6e3a06759e8043f5235ead625843e7453b1e28ba850",
+  "scene_text": "Marcus grew restless as the ledgers dragged on. The velvet walls seemed to press closer, the candle smoke thicker, the sealed depeches heavier in his hand, and at last he muttered something about needing air. He crossed the chamber, hauled open the tall glass doors, and stepped out onto the Windy Balcony, where rain swept the marble loggia in silver sheets and the lagoon churned beyond the balustrade. The heavy doors swung shut behind him, cutting the council chamber down to a hush. Through the rain-streaked glass, his broad back looked like a wall between the room and the storm.\n\nThe instant his boots faded beyond the glass, Elena’s calm cracked. She rounded on Julian, her eyes bright with a fury she had been holding behind her teeth. The young treasurer shrank back against the table, palms lifting as if he could ward off the accusation with empty hands. “Prestani sa tim bednim lažima, izdajniče, jer znam da si sinoć ukrao crni pečat iz komore!” she hissed, each syllable precise enough to draw blood. Julian’s face went the color of old candle wax; his mouth opened, closed, opened again, but no denial came.\n\nIn the shadows by the door, the hooded courier did not move. She stood with her gloved hands folded, her hood low, witnessing everything. The rain beat against the balcony doors behind Elena, and the chamber seemed suddenly divided into two worlds: the windy gray light where Marcus stood alone, and the close, dangerous candle-glow where the accusation hung between Elena and the panicked treasurer. Julian’s breathing quickened. He glanced toward the passage that led down to the Archive Vault, and Elena saw the glance and understood it.\n\n“Do not,” she said, her voice lower now, more terrible for its quiet. But Julian was already calculating, his nervousness sharpening into something like desperation. The hooded courier watched from the dark, patient as a shadow, and the Obsidian Signet’s absence lay in the room like a missing heartbeat. Outside, Marcus’s silhouette moved against the rain, still unaware, while inside the Masquerade’s first mask began to slip.",
+  "usage": {
+    "prompt_tokens": 5903,
+    "completion_tokens": 477,
+    "total_tokens": 6380,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 12319.699,
+    "cost_estimate": {
+      "input_cost_usd": 0.000826,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.000134,
+      "total_cost_usd": 0.00096,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_balcony",
+          "mood": "restless"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step2_confrontation",
+        "reason": null
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step2_confrontation",
+        "reason": null
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "panicked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step2_confrontation",
+        "reason": null
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_elena",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "register": "ti",
+          "tone": "furious",
+          "trust": -0.9
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_step2_confrontation",
+        "reason": null
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_step2_confrontation",
+        "timeline_id": "main",
+        "step": 2,
+        "predicate": "confrontation",
+        "summary": "Elena confronts Julian, accusing him of stealing the Obsidian Signet, while Lyra witnesses from the shadows and Marcus exits to the balcony.",
+        "participants": {
+          "char_elena": "accuser",
+          "char_julian": "accused"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "char_lyra"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.5,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_kaelen",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "nervous"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_cipher_transfer",
+      "reason": null
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_elena",
+      "target_id": "item_cipher_cylinder",
+      "relation_type": "possesses",
+      "state": {
+        "status": "concealed"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_cipher_transfer",
+      "reason": null
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_cipher_transfer",
+      "timeline_id": "main",
+      "step": 8,
+      "predicate": "item_transfer",
+      "summary": "Kaelen reluctantly hands the Brass Cipher Cylinder to Elena in the Starlight Observatory after revealing its predictive rings point to a conspiracy; he also reveals the garrison ledger signed by Julian is hidden in the Archive Vault.",
+      "participants": {
+        "char_kaelen": "giver",
+        "char_elena": "recipient",
+        "item_cipher_cylinder": "instrument"
+      },
+      "witnesses": [
+        "char_kaelen",
+        "char_elena",
+        "char_isolde"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_observatory",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

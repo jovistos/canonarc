@@ -5,33 +5,34 @@
   "extraction_model": "deepseek-flash",
   "guidance_mode": "none",
   "run_cache_key": "60a857a976619707cd7ad5c8508ba75b3c31058877ad755f32cb7b82164f0602",
-  "checks_passed": 37,
+  "checks_passed": 42,
   "checks_total": 50,
+  "step_delta_checks_passed": 6,
+  "step_delta_checks_total": 8,
+  "step_delta_pass_rate": 0.75,
+  "cumulative_state_checks_passed": 36,
+  "cumulative_state_checks_total": 42,
+  "cumulative_state_pass_rate": 0.8571,
   "failures": [
     "[obsidian_signet_3k Step 1] Entity 'char_elena' mood: expected 'calm', got 'watchful'",
-    "[obsidian_signet_3k Step 2] Entity 'char_marcus' mood: expected 'restless', got 'confident'",
     "[obsidian_signet_3k Step 3] Entity 'char_elena' mood: expected 'furious', got 'determined'",
-    "[obsidian_signet_3k Step 3] Entity 'char_marcus' mood: expected 'restless', got 'confident'",
     "[obsidian_signet_3k Step 3] Entity 'char_lyra' mood: expected 'watchful', got 'panicked'",
     "[obsidian_signet_3k Step 4] Entity 'char_elena' mood: expected 'furious', got 'determined'",
-    "[obsidian_signet_3k Step 4] Entity 'char_marcus' mood: expected 'restless', got 'confident'",
     "[obsidian_signet_3k Step 4] Entity 'char_lyra' mood: expected 'watchful', got 'panicked'",
-    "[obsidian_signet_3k Step 4] Flashback must not overwrite Elena's present 'furious' mood",
     "[obsidian_signet_3k Step 5] Entity 'char_marcus' mood: expected 'restless', got 'watchful'",
-    "[obsidian_signet_3k Step 5] Marcus POV should recall deceived summary, got None",
-    "[obsidian_signet_3k Step 6] Entity 'char_julian' mood: expected 'shocked', got 'calm'",
-    "[obsidian_signet_3k Step 6] Marcus should see ground-truth summary after epistemic='told'"
+    "[obsidian_signet_3k Step 5] char_marcus POV should recall deceived summary, got None",
+    "[obsidian_signet_3k Step 6] char_marcus should see ground-truth summary after epistemic='told'"
   ],
-  "strict_pass_rate": 0.74,
-  "overall_quality_score": 0.8479,
+  "strict_pass_rate": 0.84,
+  "overall_quality_score": 0.8777,
   "benchmark_metrics": {
     "model_id": "deepseek-flash",
     "guidance_mode": "none",
-    "overall_quality_score": 0.8479,
+    "overall_quality_score": 0.8777,
     "category_scores": {
       "epistemic_score": 0.85,
-      "spatial_state_score": 0.8396,
-      "pov_retrieval_score": 0.8275,
+      "spatial_state_score": 0.8946,
+      "pov_retrieval_score": 0.9075,
       "edge_flashback_score": 0.7833,
       "schema_hygiene_score": 1.0
     },
@@ -54,9 +55,9 @@
       "location_delta_f1": 1.0,
       "room_occupancy_jaccard": 1.0,
       "room_occupancy_exact_rate": 1.0,
-      "mood_exact_accuracy": 0.5833,
-      "mood_soft_accuracy": 0.5833,
-      "mood_delta_f1": 0.625,
+      "mood_exact_accuracy": 0.75,
+      "mood_soft_accuracy": 0.75,
+      "mood_delta_f1": 0.7143,
       "flashback_guard_passed": true
     },
     "edge_and_causal_metrics": {
@@ -83,7 +84,7 @@
       "pov_entity_jaccard": 1.0,
       "pov_edge_jaccard": 0.7452,
       "pov_episode_recall": 0.9583,
-      "pov_secret_leak_count": 2
+      "pov_secret_leak_count": 1
     },
     "steps": [
       {
@@ -133,14 +134,19 @@
           "pov_edge_jaccard": 1.0,
           "pov_episode_recall": 1.0,
           "pov_secret_leaks": 0
+        },
+        "mood_counts": {
+          "exact_matches": 3,
+          "soft_matches": 3,
+          "total_characters": 4
         }
       },
       {
         "step": 2,
         "room_occupancy_jaccard": 1.0,
         "room_occupancy_exact": true,
-        "mood_exact_rate": 0.75,
-        "mood_soft_rate": 0.75,
+        "mood_exact_rate": 1.0,
+        "mood_soft_rate": 1.0,
         "location_delta": {
           "tp": 1,
           "fp": 0,
@@ -149,7 +155,7 @@
         "mood_delta": {
           "tp": 2,
           "fp": 0,
-          "fn": 1
+          "fn": 0
         },
         "edge_delta": {
           "tp": 1,
@@ -182,14 +188,19 @@
           "pov_edge_jaccard": 1.0,
           "pov_episode_recall": 1.0,
           "pov_secret_leaks": 0
+        },
+        "mood_counts": {
+          "exact_matches": 4,
+          "soft_matches": 4,
+          "total_characters": 4
         }
       },
       {
         "step": 3,
         "room_occupancy_jaccard": 1.0,
         "room_occupancy_exact": true,
-        "mood_exact_rate": 0.25,
-        "mood_soft_rate": 0.25,
+        "mood_exact_rate": 0.5,
+        "mood_soft_rate": 0.5,
         "location_delta": {
           "tp": 2,
           "fp": 0,
@@ -231,14 +242,19 @@
           "pov_edge_jaccard": 0.45,
           "pov_episode_recall": 1.0,
           "pov_secret_leaks": 0
+        },
+        "mood_counts": {
+          "exact_matches": 2,
+          "soft_matches": 2,
+          "total_characters": 4
         }
       },
       {
         "step": 4,
         "room_occupancy_jaccard": 1.0,
         "room_occupancy_exact": true,
-        "mood_exact_rate": 0.25,
-        "mood_soft_rate": 0.25,
+        "mood_exact_rate": 0.5,
+        "mood_soft_rate": 0.5,
         "location_delta": {
           "tp": 0,
           "fp": 0,
@@ -280,6 +296,11 @@
           "pov_edge_jaccard": 0.7232,
           "pov_episode_recall": 1.0,
           "pov_secret_leaks": 0
+        },
+        "mood_counts": {
+          "exact_matches": 2,
+          "soft_matches": 2,
+          "total_characters": 4
         }
       },
       {
@@ -329,14 +350,19 @@
           "pov_edge_jaccard": 0.7068,
           "pov_episode_recall": 0.875,
           "pov_secret_leaks": 1
+        },
+        "mood_counts": {
+          "exact_matches": 3,
+          "soft_matches": 3,
+          "total_characters": 4
         }
       },
       {
         "step": 6,
         "room_occupancy_jaccard": 1.0,
         "room_occupancy_exact": true,
-        "mood_exact_rate": 0.75,
-        "mood_soft_rate": 0.75,
+        "mood_exact_rate": 1.0,
+        "mood_soft_rate": 1.0,
         "location_delta": {
           "tp": 1,
           "fp": 0,
@@ -344,7 +370,7 @@
         },
         "mood_delta": {
           "tp": 1,
-          "fp": 1,
+          "fp": 0,
           "fn": 0
         },
         "edge_delta": {
@@ -377,7 +403,12 @@
           "pov_entity_jaccard": 1.0,
           "pov_edge_jaccard": 0.5913,
           "pov_episode_recall": 0.875,
-          "pov_secret_leaks": 1
+          "pov_secret_leaks": 0
+        },
+        "mood_counts": {
+          "exact_matches": 4,
+          "soft_matches": 4,
+          "total_characters": 4
         }
       }
     ]

@@ -1,0 +1,114 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step6_confrontation",
+      "reason": "Lyra exits the Archive Vault and enters the Council Chamber."
+    },
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council",
+        "mood": "indignant"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step6_confrontation",
+      "reason": "Marcus returns from the balcony to the Council Chamber and becomes indignant upon seeing the Signet and Julian's lie."
+    },
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council",
+        "mood": "confused"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step6_confrontation",
+      "reason": "Julian remains in the Council Chamber and his mood shifts from terror to confusion after drinking the memory-wiping phial."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_marcus",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "furious",
+        "trust": -0.9
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_step6_confrontation",
+      "reason": "Marcus roars at Julian in Serbian, dropping formal register to informal 'ti' (usuđuješ) in a furious accusation."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_step6_confrontation",
+      "timeline_id": "main",
+      "step": 6,
+      "predicate": "confrontation",
+      "summary": "Lyra enters the Council Chamber with the Obsidian Signet, revealing Julian's theft. Marcus confronts Julian furiously, who then drinks a memory-wiping phial, losing his recollection of the past ten years.",
+      "participants": {
+        "char_lyra": "actor",
+        "char_julian": "target",
+        "char_marcus": "witness",
+        "char_elena": "witness",
+        "item_signet": "instrument"
+      },
+      "witnesses": [
+        "char_lyra",
+        "char_julian",
+        "char_marcus",
+        "char_elena"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 9.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_step4_flashback",
+      "entity_id": "char_julian",
+      "epistemic": "forgotten",
+      "believed_summary": null
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

@@ -1,0 +1,53 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "furious"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_4",
+      "reason": null
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_4",
+      "timeline_id": "main",
+      "step": 0,
+      "predicate": "flashback",
+      "summary": "Ten years ago, Elena signed the historic pact in the Council Chamber, trusting Julian the young treasurer, a trust that later proved costly.",
+      "participants": {
+        "char_elena": "signer",
+        "char_julian": "treasurer"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_julian"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 6.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": true,
+  "story_time": "10_years_ago",
+  "chapter_id": null,
+  "scene_id": null
+}

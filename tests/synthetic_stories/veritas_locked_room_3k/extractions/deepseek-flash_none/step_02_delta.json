@@ -1,0 +1,87 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_cora",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_gallery",
+        "mood": "indignant"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_toxicology_briefing",
+      "reason": "Cora abandons the study in aristocratic impatience and retreats to the Portrait Gallery before the confrontation begins."
+    },
+    {
+      "entity_id": "char_vane",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "furious"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_vane_confrontation_thorne",
+      "reason": "Once Cora leaves, Vane's calm veneer drops into cold fury as he corners Thorne."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_vane",
+      "target_id": "char_thorne",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "furious",
+        "trust": -0.8
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_vane_confrontation_thorne",
+      "reason": "Vane drops formal address and accuses Thorne of stealing the brass key the previous night."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_vane_confrontation_thorne",
+      "timeline_id": "main",
+      "step": 2,
+      "predicate": "confrontation",
+      "summary": "After Cora swept out of the study, Inspector Vane cornered Thorne, dropping all formality to accuse him of stealing the brass ledger key the night before; Thorne's alibi collapsed while the veiled locksmith watched motionless.",
+      "participants": {
+        "char_vane": "accuser",
+        "char_thorne": "accused",
+        "char_giles": "onlooker"
+      },
+      "witnesses": [
+        "char_vane",
+        "char_thorne",
+        "char_giles"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_study",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

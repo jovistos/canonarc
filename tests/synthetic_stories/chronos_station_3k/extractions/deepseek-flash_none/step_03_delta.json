@@ -1,0 +1,116 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_vault"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_julian_passes_signet_courier",
+      "reason": "Fled through the rear passage into the Archive Vault"
+    },
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_vault",
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_julian_passes_signet_courier",
+      "reason": "Chased Julian into the Archive Vault with the signet"
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "watchful"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_julian_passes_signet_courier",
+      "reason": "Rage cooled into cold calculation as the chase began"
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_lyra",
+      "target_id": "item_signet",
+      "relation_type": "possesses",
+      "state": {
+        "status": "concealed"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_julian_passes_signet_courier",
+      "reason": "Julian pressed the Obsidian Signet into the courier's gloved hand"
+    },
+    {
+      "source_id": "char_elena",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "commanding",
+        "trust": -0.85
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_julian_passes_signet_courier",
+      "reason": "Elena dropped into a dangerous register and ordered Julian to empty his pockets"
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_julian_passes_signet_courier",
+      "timeline_id": "main",
+      "step": 3,
+      "predicate": "item_transfer",
+      "summary": "Cornered by Elena's demand to empty his pockets, Julian pressed the Obsidian Signet into the hooded courier's hand and fled into the Archive Vault, the courier chasing after him.",
+      "participants": {
+        "char_julian": "actor",
+        "char_lyra": "recipient",
+        "item_signet": "instrument",
+        "char_elena": "accuser"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_julian",
+        "char_lyra"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

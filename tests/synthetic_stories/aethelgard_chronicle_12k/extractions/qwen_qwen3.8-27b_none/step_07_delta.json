@@ -1,0 +1,87 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_observatory"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step7_briefing",
+      "reason": null
+    },
+    {
+      "entity_id": "char_isolde",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_observatory"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step7_briefing",
+      "reason": null
+    },
+    {
+      "entity_id": "char_kaelen",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "nervous"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step7_briefing",
+      "reason": null
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_step7_briefing",
+      "timeline_id": "main",
+      "step": 7,
+      "predicate": "briefing",
+      "summary": "Elena and Isolde ascend to the Starlight Observatory to brief Kaelen on the tribunal audit and the discrepancy in the ledgers. Kaelen reveals that the stars have been unnaturally rearranged and suspects the Brass Cipher Cylinder is involved.",
+      "participants": {
+        "char_elena": "actor",
+        "char_isolde": "participant",
+        "char_kaelen": "target"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_isolde",
+        "char_kaelen"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_observatory",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

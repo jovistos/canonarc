@@ -1,0 +1,99 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_giles",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_study"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": null,
+      "reason": null
+    },
+    {
+      "entity_id": "char_cora",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "indignant"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": null,
+      "reason": null
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_cora",
+      "target_id": "char_thorne",
+      "relation_type": "trust",
+      "state": {
+        "level": 0
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_step6_thorne_amnesia_draught",
+      "reason": null
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_step6_thorne_amnesia_draught",
+      "timeline_id": "main",
+      "step": 6,
+      "predicate": "revelation",
+      "summary": "Giles entered the study with the Brass Ledger Key, exposing Thorne's theft; Cora reacted with fury, and Thorne, cornered, drank a memory-erasing draught, losing his recollection of the hospital inquest and recent events.",
+      "participants": {
+        "char_giles": "actor",
+        "char_cora": "accuser",
+        "char_thorne": "target",
+        "char_vane": "witness",
+        "item_brass_ledger_key": "instrument"
+      },
+      "witnesses": [
+        "char_cora",
+        "char_vane",
+        "char_giles"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_study",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_step3_key_transfer_flight",
+      "entity_id": "char_cora",
+      "epistemic": "told",
+      "believed_summary": null
+    },
+    {
+      "episode_id": "ep_step3_key_transfer_flight",
+      "entity_id": "char_thorne",
+      "epistemic": "forgotten",
+      "believed_summary": null
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

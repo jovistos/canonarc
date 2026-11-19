@@ -1,0 +1,105 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_cora",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_gallery",
+        "mood": "restless"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step1_opening_briefing",
+      "reason": "Cora leaves the Mahogany Study for the Portrait Gallery, restless after the briefing."
+    },
+    {
+      "entity_id": "char_vane",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "furious"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step2_secret_confrontation",
+      "reason": "Vane's calm veneer vanishes as he confronts Thorne."
+    },
+    {
+      "entity_id": "char_thorne",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step2_secret_confrontation",
+      "reason": "Thorne is trapped by Vane's accusation and the toxicology report."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_vane",
+      "target_id": "char_thorne",
+      "relation_type": "accusation",
+      "state": {
+        "emotion": "furious",
+        "accusation": "theft_of_brass_ledger_key"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_step2_secret_confrontation",
+      "reason": "Vane directly accuses Thorne of stealing the brass ledger key."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_step2_secret_confrontation",
+      "timeline_id": "main",
+      "step": 2,
+      "predicate": "confrontation",
+      "summary": "After Cora leaves for the Portrait Gallery, Vane furiously confronts Thorne in the Mahogany Study, accusing him of stealing the brass ledger key; Thorne panics as his alibi collapses.",
+      "participants": {
+        "char_vane": "actor",
+        "char_thorne": "target",
+        "char_giles": "observer"
+      },
+      "witnesses": [
+        "char_giles"
+      ],
+      "known_by": {
+        "char_giles": "direct"
+      },
+      "believed_summaries": {},
+      "location_id": "loc_study",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.0,
+      "metadata": {
+        "accusation": "theft_of_brass_ledger_key",
+        "cora_present": false
+      },
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

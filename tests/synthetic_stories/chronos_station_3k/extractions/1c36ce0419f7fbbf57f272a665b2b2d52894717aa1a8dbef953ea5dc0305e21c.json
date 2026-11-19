@@ -1,0 +1,131 @@
+{
+  "cache_key": "1c36ce0419f7fbbf57f272a665b2b2d52894717aa1a8dbef953ea5dc0305e21c",
+  "model": "qwen/qwen3.5-9b",
+  "created_at": "2026-11-19T19:57:50.853751+00:00",
+  "prompt_sha256": "126c88c3c71a7bb9527a327b77a6b98344e033209c197e3bdc7022e7273376c2",
+  "scene_text_sha256": "06863f41a72914b4a1255110708ce4c33e2b8a6dd083b8b009456ed751f2c2c9",
+  "scene_text": "Marcus read the final page, set it down, and rose with a restless scrape of his chair against the deck plating. The Council Chamber had grown stifling, its recycled air thick with the smell of old paper, warm electronics, and unspoken accusations. He crossed to the shielded observation doors, pushed them open, and stepped out onto the Windy Balcony. The gantry above the docking ring caught the full roar of the station's outer weather, a buffeting rush that snatched at his uniform and made the safety rails hum. The heavy doors swung shut behind him, sealing the chamber's interior from the balcony's wind-torn dusk.\n\nInside, the silence lasted exactly as long as it took for the latch to click home. Then Elena turned. The calm she had worn all evening peeled away like a mask removed too quickly, revealing fury beneath it, cold and focused. Julian flinched before she even spoke. His datapad slipped in his grip, and he caught it against the table edge with both hands, knuckles pale. The hooded courier did not move from the shadows, but the cloak's hem trembled once, as if the watcher had drawn a sharp breath.\n\nElena advanced on Julian, her boots striking the deck in measured beats. \"Prestani sa tim bednim lažima, izdajniče, jer znam da si sinoć ukrao crni pečat iz komore!\" The words cracked across the Council Chamber. Julian's face went from nervous to panicked, his mouth opening and closing around a denial that would not form. He took a step back, then another, until the table edge pressed against his spine. The holographic ledgers flickered around him, indifferent witnesses to his ruin.\n\nElena did not relent. She stood close enough that Julian could see the anger held rigid behind her eyes. \"Do not insult me with silence,\" she said, though the Croatian words had already done their work. \"You were seen. You were logged. And you will answer.\" Julian's gaze darted toward the closed balcony doors, then toward the shadowed courier, then back to Elena. He looked like a man calculating the distance to a locked exit. The hooded courier remained perfectly still, a dark shape at the edge of the lamplight, watching everything and revealing nothing.",
+  "usage": {
+    "prompt_tokens": 5898,
+    "completion_tokens": 542,
+    "total_tokens": 6440,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 8391.469,
+    "cost_estimate": {
+      "input_cost_usd": 0.000826,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.000152,
+      "total_cost_usd": 0.000977,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_balcony"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_council_inspection_01",
+        "reason": "Exited Council Chamber to Windy Balcony."
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_council_inspection_01",
+        "reason": "Emotion shifted from calm to furious upon confronting Julian."
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "panicked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_council_inspection_01",
+        "reason": "Emotion shifted from nervous to panicked due to accusation."
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_elena",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "register": "ti",
+          "tone": "furious",
+          "trust": -0.95
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_council_inspection_01",
+        "reason": null
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_council_confrontation_02",
+        "timeline_id": "main",
+        "step": 2,
+        "predicate": "confrontation",
+        "summary": "Elena confronts Julian in the Council Chamber, accusing him of stealing the Obsidian Signet and revealing his treachery.",
+        "participants": {
+          "char_elena": "actor",
+          "char_julian": "target"
+        },
+        "witnesses": [
+          "char_lyra"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": 0,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.5,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

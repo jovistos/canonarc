@@ -1,0 +1,54 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_vault",
+        "mood": "nervous"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step9_revelation",
+      "reason": null
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_step9_revelation",
+      "timeline_id": "main",
+      "step": 9,
+      "predicate": "revelation",
+      "summary": "Lyra discovers the garrison ledger in the Archive Vault, revealing Julian's embezzlement and private army funded by diverted grain and armor, stamped with the Obsidian Signet.",
+      "participants": {
+        "char_lyra": "discoverer",
+        "item_signet": "evidence",
+        "char_julian": "subject"
+      },
+      "witnesses": [
+        "char_lyra"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_vault",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

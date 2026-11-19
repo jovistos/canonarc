@@ -1,0 +1,171 @@
+{
+  "cache_key": "003907f7fd90ffcc264b4c6489ccacf60b02ec00344b0b846d2df9c06e2df6d6",
+  "model": "qwen/qwen3.5-9b",
+  "created_at": "2026-11-19T20:01:42.299312+00:00",
+  "prompt_sha256": "cc5891ef95aa2999358be4c2537effc7f292744a8986e7b6178a07e2f965d969",
+  "scene_text_sha256": "4e7f0ef0107a360aadc305c67864cd86f66571a4d7863f0ef21c318c07a9065b",
+  "scene_text": "Down in the Archive Vault, the air smelled of dust, iron, and old wax. Lyra, the hooded courier, stood before Julian beneath the low stone ribs of the ceiling. For a moment she was only a silhouette and a voice; then she threw back her hood and mask, and the lantern light struck her face. Julian recoiled, shock blanching him pale. The courier was Lyra—watchful no longer, but determined, her eyes bright with anger and resolve. She stepped forward, and the sealed documents in his satchel seemed to shrink beneath her gaze. \"Predaj mi sve lažne povelje odmah, Julijane, ili ćeš do zore biti u kraljevskoj tamnici!\" she commanded, each word striking the vault like a hammer.\n\nJulian's mouth opened, closed, opened again. His fingers tightened around the leather strap of the ledger, but Lyra's stillness was more threatening than any drawn blade. The false charters, the copied seals, the careful web of lies he had spun—all of it trembled in the space between them. He glanced toward the stair, calculating, cornered.\n\nMoments later, Marcus stepped back into the Council Chamber from the Windy Balcony, his cloak carrying the winter bite of the parapet. At almost the same instant, Julian came up the stairs into the Council Chamber, breathless and too composed. Marcus frowned at him. Julian straightened his cuffs and said, with practiced earnestness, that northern raiders had broken into the annex and stolen the Obsidian Signet while he defended the ledger. The lie settled over the room like oil on water. Elena, still furious inside, felt her fingers curl against the arm of her chair. Lyra remained down in the vault, a hidden blade waiting in the dark.\n\nElena let the silence stretch until Julian's confidence began to fray at the edges. Then she smiled, thin and cutting. \"Oh, what a wonderfully convenient tale of heroic vigilance, dear cousin.\" Marcus looked between them, uncertain, while Julian's gaze flicked toward the stair as if he could already hear the vault breathing beneath the floor.",
+  "usage": {
+    "prompt_tokens": 6313,
+    "completion_tokens": 602,
+    "total_tokens": 6915,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 9622.636,
+    "cost_estimate": {
+      "input_cost_usd": 0.000884,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.000169,
+      "total_cost_usd": 0.001052,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_lyra",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_vault"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [
+          {
+            "alias": "the hooded courier",
+            "entity_id": "char_lyra",
+            "kind": "disguise",
+            "known_to": [
+              "char_elena"
+            ],
+            "persona_name": "Courier",
+            "valid_from_step": 0,
+            "valid_to_step": null
+          }
+        ],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": null,
+        "reason": null
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_council"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": null,
+        "reason": null
+      },
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_council"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": null,
+        "reason": null
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": null,
+        "reason": null
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_lyra",
+        "target_id": "item_signet",
+        "relation_type": "possesses",
+        "state": {
+          "status": "concealed"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_003",
+        "reason": null
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_005",
+        "timeline_id": "main",
+        "step": 5,
+        "predicate": "revelation",
+        "summary": "Lyra unmasked her identity as the hooded courier to Julian in the Archive Vault, demanding the false charters and exposing his deception.",
+        "participants": {
+          "char_lyra": "actor",
+          "char_julian": "target"
+        },
+        "witnesses": [
+          "char_lyra",
+          "char_julian"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_vault",
+        "story_time": 0,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.5,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [
+      {
+        "episode_id": "ep_003",
+        "entity_id": "char_marcus",
+        "epistemic": "told",
+        "believed_summary": null
+      },
+      {
+        "episode_id": "ep_003",
+        "entity_id": "char_elena",
+        "epistemic": "told",
+        "believed_summary": null
+      }
+    ],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

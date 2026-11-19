@@ -1,0 +1,135 @@
+{
+  "cache_key": "c3f242277597ce7e7b1e48c91c0bd87fbe45e3601f1f1fc9a50244c729386384",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T19:42:41.221134+00:00",
+  "prompt_sha256": "31160c82e765cee0224f86f459c402a7b595a883cdda591b36dcb8b847c44b28",
+  "scene_text_sha256": "97b7eae9f2851481439ee6e3a06759e8043f5235ead625843e7453b1e28ba850",
+  "scene_text": "Marcus grew restless as the ledgers dragged on. The velvet walls seemed to press closer, the candle smoke thicker, the sealed depeches heavier in his hand, and at last he muttered something about needing air. He crossed the chamber, hauled open the tall glass doors, and stepped out onto the Windy Balcony, where rain swept the marble loggia in silver sheets and the lagoon churned beyond the balustrade. The heavy doors swung shut behind him, cutting the council chamber down to a hush. Through the rain-streaked glass, his broad back looked like a wall between the room and the storm.\n\nThe instant his boots faded beyond the glass, Elena’s calm cracked. She rounded on Julian, her eyes bright with a fury she had been holding behind her teeth. The young treasurer shrank back against the table, palms lifting as if he could ward off the accusation with empty hands. “Prestani sa tim bednim lažima, izdajniče, jer znam da si sinoć ukrao crni pečat iz komore!” she hissed, each syllable precise enough to draw blood. Julian’s face went the color of old candle wax; his mouth opened, closed, opened again, but no denial came.\n\nIn the shadows by the door, the hooded courier did not move. She stood with her gloved hands folded, her hood low, witnessing everything. The rain beat against the balcony doors behind Elena, and the chamber seemed suddenly divided into two worlds: the windy gray light where Marcus stood alone, and the close, dangerous candle-glow where the accusation hung between Elena and the panicked treasurer. Julian’s breathing quickened. He glanced toward the passage that led down to the Archive Vault, and Elena saw the glance and understood it.\n\n“Do not,” she said, her voice lower now, more terrible for its quiet. But Julian was already calculating, his nervousness sharpening into something like desperation. The hooded courier watched from the dark, patient as a shadow, and the Obsidian Signet’s absence lay in the room like a missing heartbeat. Outside, Marcus’s silhouette moved against the rain, still unaware, while inside the Masquerade’s first mask began to slip.",
+  "usage": {
+    "prompt_tokens": 5512,
+    "completion_tokens": 772,
+    "total_tokens": 6284,
+    "cached_prompt_tokens": 1280,
+    "reasoning_tokens": 387,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 4462.644,
+    "cost_estimate": {
+      "input_cost_usd": 0.000592,
+      "cached_input_cost_usd": 1.8e-05,
+      "output_cost_usd": 0.000216,
+      "total_cost_usd": 0.000827,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_balcony",
+          "mood": "restless"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_2",
+        "reason": "Grew restless during the ledgers and stepped out onto the Windy Balcony for air."
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_2",
+        "reason": "Her calm cracked once Marcus left; she rounded on Julian in fury."
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "panicked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_2",
+        "reason": "Accused of the theft, his face went ashen and his nervousness sharpened into desperation."
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_elena",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "register": "ti",
+          "tone": "furious",
+          "trust": -0.8
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_2",
+        "reason": "Elena dropped all formality and accused Julian directly in the informal register as a thief and traitor."
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_2",
+        "timeline_id": "main",
+        "step": 2,
+        "predicate": "confrontation",
+        "summary": "Once Marcus left for the balcony, Elena rounded on Julian and accused him in fury of stealing the Obsidian Signet from the chamber the night before; Julian offered no denial and glanced toward the Archive Vault.",
+        "participants": {
+          "char_elena": "accuser",
+          "char_julian": "accused",
+          "item_signet": "subject"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "char_lyra"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

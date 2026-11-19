@@ -1,0 +1,112 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_vane",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "bitter, disillusioned",
+        "reflection": "re-examining a decade-old winter inquest",
+        "past_self": "younger, idealistic investigator"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step4_past_flashback",
+      "reason": "Memory of trusting Thorne during the epidemic inquest now tastes like ash."
+    },
+    {
+      "entity_id": "char_thorne",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "past_persona_10y": "tireless, quiet night-shift physician with fogged spectacles",
+        "suspicion": "possibly administered something fatal to the wardens"
+      },
+      "private_state": {
+        "certified_cause_of_death": "rapid pneumonia (three wardens, one week)"
+      },
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step4_past_flashback",
+      "reason": "Flashback establishes Thorne's role and the falsified certificates."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_vane",
+      "target_id": "char_thorne",
+      "relation_type": "trust",
+      "state": {
+        "trust_level": "implicit",
+        "era": "10_years_ago",
+        "note": "Vane defended Thorne before the hospital board"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_step4_past_flashback",
+      "reason": "Historical trust established during the epidemic inquest."
+    },
+    {
+      "source_id": "char_vane",
+      "target_id": "char_thorne",
+      "relation_type": "stance",
+      "state": {
+        "suspicion": "high",
+        "trust": "collapsed",
+        "note": "The unassuming manner now reads as a decade-long concealment"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_step4_past_flashback",
+      "reason": "Present-day reframing of the past trust into suspicion."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_step4_past_flashback",
+      "timeline_id": "main",
+      "step": 4,
+      "predicate": "revelation",
+      "summary": "During a merciless winter epidemic ten years ago, a younger, idealistic Vane investigated the sudden deaths of three wardens at the east-side charity hospital; Thorne, the only physician who stayed on night shift, signed the death certificates as rapid pneumonia, and Vane trusted and publicly defended him without a moment's doubt.",
+      "participants": {
+        "char_vane": "investigator",
+        "char_thorne": "physician_suspected",
+        "wardens_three": "victims"
+      },
+      "witnesses": [
+        "char_vane"
+      ],
+      "known_by": {
+        "char_vane": "direct",
+        "char_thorne": "direct"
+      },
+      "believed_summaries": {
+        "char_vane": "The three wardens died of rapid pneumonia, as certified by the devoted Dr. Thorne."
+      },
+      "location_id": null,
+      "story_time": "10_years_ago",
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {
+        "setting": "east-side charity hospital, cramped drafty office",
+        "era_detail": "grey slush, coal smoke, fever, tallow candles, carbolic acid",
+        "present_frame": "Vane reinterprets the memory in the Mahogany Study after the toxicology report"
+      },
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": true,
+  "story_time": "10_years_ago",
+  "chapter_id": null,
+  "scene_id": null
+}

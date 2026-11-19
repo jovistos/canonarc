@@ -1,0 +1,99 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "shocked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step18_revelation",
+      "reason": "Julian drinks a memory-erasing draught, losing his memory of the conspiracy and becoming bewildered and terrified."
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "shocked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step18_revelation",
+      "reason": "Elena's calm turns to stone as she witnesses Julian's memory wipe and the loss of the conspiracy's witness."
+    },
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "shocked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step18_revelation",
+      "reason": "Marcus's fury falters as he sees Julian's memory erased and his accusation rendered moot."
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_step18_revelation",
+      "timeline_id": "main",
+      "step": 18,
+      "predicate": "revelation",
+      "summary": "Julian drinks a memory-erasing draught in the Council Chamber, wiping his memory of the conspiracy and the winter siege pact, leaving him bewildered and the conspiracy without its key witness.",
+      "participants": {
+        "char_julian": "actor",
+        "char_elena": "witness",
+        "char_marcus": "witness",
+        "char_lyra": "witness",
+        "char_kaelen": "witness",
+        "char_isolde": "witness"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_marcus",
+        "char_lyra",
+        "char_kaelen",
+        "char_isolde"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 9.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_step11_flashback",
+      "entity_id": "char_julian",
+      "epistemic": "forgotten",
+      "believed_summary": null
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

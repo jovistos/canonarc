@@ -1,0 +1,103 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_balcony",
+        "mood": "restless"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": null,
+      "reason": "Grew impatient with the stifling chamber and stepped out onto the Windy Balcony."
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "furious"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_confrontation_signet",
+      "reason": "Her calm broke and she turned furiously on Julian."
+    },
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_confrontation_signet",
+      "reason": "Cornered by Elena's accusation and unable to deny it."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_elena",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "furious",
+        "trust": -0.8
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_confrontation_signet",
+      "reason": "Elena drops formality and accuses Julian of stealing the signet."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_confrontation_signet",
+      "timeline_id": "main",
+      "step": 1,
+      "predicate": "confrontation",
+      "summary": "Elena furiously accuses Julian of stealing the Obsidian Signet the night before, demanding he confess where it is.",
+      "participants": {
+        "char_elena": "accuser",
+        "char_julian": "accused",
+        "item_signet": "subject"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_julian",
+        "char_lyra"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

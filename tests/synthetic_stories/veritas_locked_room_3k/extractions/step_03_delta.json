@@ -1,0 +1,136 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_thorne",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_cellar",
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_study_key_transfer_03",
+      "reason": null
+    },
+    {
+      "entity_id": "char_giles",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_cellar",
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_study_key_transfer_03",
+      "reason": null
+    },
+    {
+      "entity_id": "char_vane",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "calm"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_study_key_transfer_03",
+      "reason": null
+    },
+    {
+      "entity_id": "char_mina",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_study",
+        "mood": "nervous"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_study_key_transfer_03",
+      "reason": null
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_giles",
+      "target_id": "item_ledger_key",
+      "relation_type": "possesses",
+      "state": {
+        "status": "concealed"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_study_key_transfer_03",
+      "reason": null
+    },
+    {
+      "source_id": "char_vane",
+      "target_id": "char_mina",
+      "relation_type": "stance",
+      "state": {
+        "register": "formal",
+        "tone": "calm",
+        "trust": 0.5
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_study_key_transfer_03",
+      "reason": null
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_study_key_transfer_03",
+      "timeline_id": "main",
+      "step": 0,
+      "predicate": "item_transfer",
+      "summary": "Thorne hands the Brass Ledger Key to Giles (the veiled locksmith) and flees to the cellar, with Giles following. Vane remains in the study as Mina enters.",
+      "participants": {
+        "char_thorne": "giver",
+        "char_giles": "receiver",
+        "item_ledger_key": "instrument",
+        "char_vane": "observer",
+        "char_mina": "entrant"
+      },
+      "witnesses": [
+        "char_thorne",
+        "char_giles",
+        "char_vane",
+        "char_mina"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_study",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

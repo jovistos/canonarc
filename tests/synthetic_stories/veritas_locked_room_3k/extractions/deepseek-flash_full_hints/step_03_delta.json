@@ -1,0 +1,110 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_thorne",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_cellar"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": null,
+      "reason": "Thorne bolted through the service door down to the Wine Cellar"
+    },
+    {
+      "entity_id": "char_giles",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_cellar"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": null,
+      "reason": "The veiled locksmith swept out after Thorne toward the cellar"
+    },
+    {
+      "entity_id": "char_mina",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_study"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": null,
+      "reason": "Mina left the Glass Conservatory and entered the Mahogany Study"
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_giles",
+      "target_id": "item_ledger_key",
+      "relation_type": "possesses",
+      "state": {
+        "item_id": "item_ledger_key"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_step2_secret_confrontation",
+      "reason": "Thorne thrust the Brass Ledger Key into the locksmith's hand and the figure pocketed it"
+    },
+    {
+      "source_id": "char_thorne",
+      "target_id": "item_ledger_key",
+      "relation_type": "possesses",
+      "state": {},
+      "merge": true,
+      "remove": true,
+      "caused_by_episode_id": "ep_step2_secret_confrontation",
+      "reason": "Thorne surrendered the key to the veiled locksmith"
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_step3_key_transfer_flight",
+      "timeline_id": "main",
+      "step": 3,
+      "predicate": "item_transfer",
+      "summary": "Thorne pressed the Brass Ledger Key into the veiled locksmith's hand, ordering it hidden in the cellar, then fled downstairs; the locksmith pursued, while Mina entered the study to find Vane alone.",
+      "participants": {
+        "char_thorne": "actor",
+        "char_giles": "recipient",
+        "item_ledger_key": "instrument",
+        "char_vane": "witness",
+        "char_mina": "observer"
+      },
+      "witnesses": [
+        "char_vane"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_study",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

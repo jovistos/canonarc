@@ -1,0 +1,87 @@
+{
+  "cache_key": "ef32fa5dfc25d514222c62290fe0ea5a5fcaf11148647a6a575eb6e8a1dcdcf3",
+  "model": "rule-based-non-llm",
+  "created_at": "2026-11-19T19:45:31.550329+00:00",
+  "prompt_sha256": "1f9ef062d374843334e2cd4b79a72e28f636c4d0a3fe8985cc1ea6813019447b",
+  "scene_text_sha256": "dae0c54ebffee758f97931050777baeb86d266f649185ae92572ed7fdfcc9174",
+  "scene_text": "Isolde did not raise her voice. She crossed the Council Chamber with the tribunal's measured tread, and when she set the Brass Cipher Cylinder on the table between them, the small object made a sound far heavier than its size. Its etched rings caught the brazier light—each groove crowded with numerals that seemed to crawl when viewed too long. Julian stared at it as though it had been pulled from his own chest. The cylinder's brass was dulled by handling, and a thread of red wax still clung to one seam, bright as a fresh wound against the old metal.\n\n\"The observatory vault yielded this,\" Isolde said. \"It bears treasury wax, Julian. Your wax.\"\n\nThe young treasurer's panic arrived in stages: a flush at the throat, a tremor in the hand he tried to hide beneath the folio, the quick, trapped flicker of his eyes toward Marcus. \"I—there are many cylinders in the treasury. Seals can be copied. You cannot simply—\"\n\n\"Then explain the copy,\" Elena said. She had not moved from the table's far end, but her calm was worse than any shout. \"Explain why a cipher keyed to the royal accounts was found beneath an astromancer's lens, wrapped in a cloth that smells of your ink.\"\n\nJulian's breath shortened. He looked at the Brass Cipher Cylinder again, and something in his face came apart—not guilt entire, but the terror of a man who had bargained with forces he had mistaken for mere politics. His fingers curled against the folio's edge until the leather creased. \"They said it was only a precaution,\" he whispered. \"A precaution against the Chancellor's excesses.\"\n\nMarcus's hand had gone very still on the table. Isolde leaned closer, her tribunal cloak brushing the maps. \"Who are 'they,' Treasurer?\" The Council Chamber held its breath around the question, and the dawn light through the shutters seemed to narrow to a single, accusatory beam. Julian opened his mouth, but no answer came—only the small, dry click of the Brass Cipher Cylinder as one of its rings turned by itself.",
+  "usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 1.916,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "panicked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_21",
+        "reason": null
+      }
+    ],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_rule_21",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "scene_event",
+        "summary": "Isolde did not raise her voice.",
+        "participants": {
+          "char_elena": "participant",
+          "char_isolde": "participant"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_isolde",
+          "char_julian",
+          "char_marcus"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

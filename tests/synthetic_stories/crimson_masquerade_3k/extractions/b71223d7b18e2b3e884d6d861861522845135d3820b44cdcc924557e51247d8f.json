@@ -1,0 +1,119 @@
+{
+  "cache_key": "b71223d7b18e2b3e884d6d861861522845135d3820b44cdcc924557e51247d8f",
+  "model": "rule-based-non-llm",
+  "created_at": "2026-11-19T21:02:23.936362+00:00",
+  "prompt_sha256": "e369b51ba863a52d0b223dd59a1f2185d9fc094da07ecedd9ec6057e1cd9dc67",
+  "scene_text_sha256": "97b7eae9f2851481439ee6e3a06759e8043f5235ead625843e7453b1e28ba850",
+  "scene_text": "Marcus grew restless as the ledgers dragged on. The velvet walls seemed to press closer, the candle smoke thicker, the sealed depeches heavier in his hand, and at last he muttered something about needing air. He crossed the chamber, hauled open the tall glass doors, and stepped out onto the Windy Balcony, where rain swept the marble loggia in silver sheets and the lagoon churned beyond the balustrade. The heavy doors swung shut behind him, cutting the council chamber down to a hush. Through the rain-streaked glass, his broad back looked like a wall between the room and the storm.\n\nThe instant his boots faded beyond the glass, Elena’s calm cracked. She rounded on Julian, her eyes bright with a fury she had been holding behind her teeth. The young treasurer shrank back against the table, palms lifting as if he could ward off the accusation with empty hands. “Prestani sa tim bednim lažima, izdajniče, jer znam da si sinoć ukrao crni pečat iz komore!” she hissed, each syllable precise enough to draw blood. Julian’s face went the color of old candle wax; his mouth opened, closed, opened again, but no denial came.\n\nIn the shadows by the door, the hooded courier did not move. She stood with her gloved hands folded, her hood low, witnessing everything. The rain beat against the balcony doors behind Elena, and the chamber seemed suddenly divided into two worlds: the windy gray light where Marcus stood alone, and the close, dangerous candle-glow where the accusation hung between Elena and the panicked treasurer. Julian’s breathing quickened. He glanced toward the passage that led down to the Archive Vault, and Elena saw the glance and understood it.\n\n“Do not,” she said, her voice lower now, more terrible for its quiet. But Julian was already calculating, his nervousness sharpening into something like desperation. The hooded courier watched from the dark, patient as a shadow, and the Obsidian Signet’s absence lay in the room like a missing heartbeat. Outside, Marcus’s silhouette moved against the rain, still unaware, while inside the Masquerade’s first mask began to slip.",
+  "usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 1.885,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "panicked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_8",
+        "reason": null
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_8",
+        "reason": null
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "panicked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_8",
+        "reason": null
+      }
+    ],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_rule_8",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "scene_event",
+        "summary": "Marcus grew restless as the ledgers dragged on.",
+        "participants": {
+          "char_elena": "participant",
+          "char_julian": "participant"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "Lyra",
+          "char_marcus"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

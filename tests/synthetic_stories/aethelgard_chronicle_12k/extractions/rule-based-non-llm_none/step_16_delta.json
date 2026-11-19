@@ -1,0 +1,36 @@
+{
+  "entities": [],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_rule_22",
+      "timeline_id": "main",
+      "step": 0,
+      "predicate": "scene_event",
+      "summary": "Dawn bled through the high lancet windows of the Council Chamber in thin, pewter ribbons, staining the frost on the glass before it could melt.",
+      "participants": {
+        "char_elena": "participant",
+        "char_lyra": "participant"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_lyra"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": null,
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

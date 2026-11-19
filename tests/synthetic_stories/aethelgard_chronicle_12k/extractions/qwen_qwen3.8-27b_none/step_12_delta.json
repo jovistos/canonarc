@@ -1,0 +1,70 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_isolde",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_observatory",
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step12_briefing",
+      "reason": null
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step12_briefing",
+      "reason": null
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_step12_briefing",
+      "timeline_id": "main",
+      "step": 12,
+      "predicate": "briefing",
+      "summary": "Elena convinces Isolde to delay the tribunal's verdict against Julian, revealing that he was framed and that the true traitor is still at large.",
+      "participants": {
+        "char_elena": "actor",
+        "char_isolde": "target"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_isolde"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_observatory",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

@@ -1,0 +1,71 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_vane",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_rule_14",
+      "reason": null
+    },
+    {
+      "entity_id": "char_thorne",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_rule_14",
+      "reason": null
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_rule_14",
+      "timeline_id": "main",
+      "step": 0,
+      "predicate": "scene_event",
+      "summary": "The silence that followed Vane's announcement stretched thin and brittle.",
+      "participants": {
+        "char_cora": "participant",
+        "char_giles": "participant"
+      },
+      "witnesses": [
+        "char_cora",
+        "char_giles",
+        "char_thorne",
+        "char_vane"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": null,
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

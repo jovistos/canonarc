@@ -1,0 +1,89 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_thorne",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "panicked",
+        "location_id": "loc_cellar"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_rule_15",
+      "reason": null
+    },
+    {
+      "entity_id": "char_giles",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_rule_15",
+      "reason": null
+    },
+    {
+      "entity_id": "char_vane",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "panicked",
+        "location_id": "loc_study"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_rule_15",
+      "reason": null
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_rule_15",
+      "timeline_id": "main",
+      "step": 0,
+      "predicate": "item_transfer",
+      "summary": "Cornered and desperate, Thorne reached deep into the inner pocket of his waistcoat, his fingers closing around cold, notched metal.",
+      "participants": {
+        "char_giles": "participant",
+        "char_mina": "participant"
+      },
+      "witnesses": [
+        "char_giles",
+        "char_mina",
+        "char_thorne",
+        "char_vane"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": null,
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

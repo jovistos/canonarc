@@ -1,0 +1,563 @@
+{
+  "story_slug": "veritas_locked_room_3k",
+  "title": "The Veritas Locked-Room Inquest (5-Character Detective Topology)",
+  "story_model": "gemini-4-hydrogen",
+  "extraction_model": "rule-based-non-llm",
+  "guidance_mode": "none",
+  "run_cache_key": "836c480c5431b484aa9c618567ec8f1c8f14fa2e1ac349066763cb060b79df80",
+  "checks_passed": 24,
+  "checks_total": 62,
+  "step_delta_checks_passed": 4,
+  "step_delta_checks_total": 8,
+  "step_delta_pass_rate": 0.5,
+  "cumulative_state_checks_passed": 20,
+  "cumulative_state_checks_total": 54,
+  "cumulative_state_pass_rate": 0.3704,
+  "failures": [
+    "[veritas_locked_room_3k Step 1] Entity 'char_cora' mood: expected 'confident', got 'panicked'",
+    "[veritas_locked_room_3k Step 1] Entity 'char_giles' mood: expected 'watchful', got 'panicked'",
+    "[veritas_locked_room_3k Step 1] Entity 'char_thorne' mood: expected 'nervous', got 'panicked'",
+    "[veritas_locked_room_3k Step 2] Room 'loc_study': expected {'char_giles', 'char_thorne', 'char_vane'}, got {'char_cora', 'char_giles', 'char_thorne', 'char_vane'}",
+    "[veritas_locked_room_3k Step 2] Room 'loc_gallery': expected {'char_cora'}, got set()",
+    "[veritas_locked_room_3k Step 2] Entity 'char_vane' mood: expected 'furious', got 'panicked'",
+    "[veritas_locked_room_3k Step 2] Entity 'char_cora' mood: expected 'restless', got 'panicked'",
+    "[veritas_locked_room_3k Step 2] Entity 'char_giles' mood: expected 'watchful', got 'panicked'",
+    "[veritas_locked_room_3k Step 2] Absent char_cora must not know ep_step2_secret_confrontation",
+    "[veritas_locked_room_3k Step 3] Room 'loc_study': expected {'char_vane', 'char_mina'}, got {'char_cora', 'char_giles', 'char_vane'}",
+    "[veritas_locked_room_3k Step 3] Room 'loc_cellar': expected {'char_giles', 'char_thorne'}, got {'char_thorne'}",
+    "[veritas_locked_room_3k Step 3] Room 'loc_gallery': expected {'char_cora'}, got set()",
+    "[veritas_locked_room_3k Step 3] Room 'loc_conservatory': expected set(), got {'char_mina'}",
+    "[veritas_locked_room_3k Step 3] Entity 'char_vane' mood: expected 'furious', got 'panicked'",
+    "[veritas_locked_room_3k Step 3] Entity 'char_cora' mood: expected 'restless', got 'panicked'",
+    "[veritas_locked_room_3k Step 3] Entity 'char_giles' mood: expected 'watchful', got 'determined'",
+    "[veritas_locked_room_3k Step 4] Room 'loc_study': expected {'char_vane', 'char_mina'}, got {'char_cora', 'char_giles', 'char_vane'}",
+    "[veritas_locked_room_3k Step 4] Room 'loc_cellar': expected {'char_giles', 'char_thorne'}, got {'char_thorne'}",
+    "[veritas_locked_room_3k Step 4] Room 'loc_gallery': expected {'char_cora'}, got set()",
+    "[veritas_locked_room_3k Step 4] Room 'loc_conservatory': expected set(), got {'char_mina'}",
+    "[veritas_locked_room_3k Step 4] Entity 'char_vane' mood: expected 'furious', got 'panicked'",
+    "[veritas_locked_room_3k Step 4] Entity 'char_cora' mood: expected 'restless', got 'panicked'",
+    "[veritas_locked_room_3k Step 4] Entity 'char_giles' mood: expected 'watchful', got 'determined'",
+    "[veritas_locked_room_3k Step 5] Room 'loc_study': expected {'char_cora', 'char_thorne', 'char_vane', 'char_mina'}, got {'char_giles'}",
+    "[veritas_locked_room_3k Step 5] Room 'loc_cellar': expected {'char_giles'}, got {'char_thorne'}",
+    "[veritas_locked_room_3k Step 5] Room 'loc_gallery': expected set(), got {'char_cora', 'char_vane', 'char_mina'}",
+    "[veritas_locked_room_3k Step 5] Entity 'char_vane' mood: expected 'furious', got 'panicked'",
+    "[veritas_locked_room_3k Step 5] Entity 'char_cora' mood: expected 'restless', got 'panicked'",
+    "[veritas_locked_room_3k Step 5] char_thorne should pierce char_giles's disguise after unmasking",
+    "[veritas_locked_room_3k Step 5] char_cora POV should recall deceived summary, got episode_id='ep_rule_2' timeline_id='main' step=2 predicate='scene_event' summary=\"The silence that followed Vane's announcement stretched thin and brittle.\" participants={'char_cora': 'participant', 'char_giles': 'participant'} witnesses=['char_cora', 'char_giles', 'char_thorne', 'char_vane'] known_by={'char_cora': 'direct', 'char_giles': 'direct', 'char_thorne': 'direct', 'char_vane': 'direct'} believed_summaries={} location_id=None story_time=None chapter_id=None scene_id=None consolidated_from=[] salience=7.0 metadata={} match_score=0.7982",
+    "[veritas_locked_room_3k Step 6] Room 'loc_study': expected {'char_vane', 'char_mina', 'char_cora', 'char_giles', 'char_thorne'}, got {'char_giles'}",
+    "[veritas_locked_room_3k Step 6] Room 'loc_cellar': expected set(), got {'char_thorne'}",
+    "[veritas_locked_room_3k Step 6] Room 'loc_gallery': expected set(), got {'char_cora', 'char_vane', 'char_mina'}",
+    "[veritas_locked_room_3k Step 6] Entity 'char_vane' mood: expected 'furious', got 'panicked'",
+    "[veritas_locked_room_3k Step 6] Entity 'char_cora' mood: expected 'indignant', got 'furious'",
+    "[veritas_locked_room_3k Step 6] Entity 'char_giles' mood: expected 'determined', got 'panicked'",
+    "[veritas_locked_room_3k Step 6] Entity 'char_thorne' mood: expected 'shocked', got 'panicked'",
+    "[veritas_locked_room_3k Step 6] char_thorne must not recall forgotten ep_step4_past_flashback"
+  ],
+  "strict_pass_rate": 0.3871,
+  "overall_quality_score": 0.5245,
+  "benchmark_metrics": {
+    "model_id": "rule-based-non-llm",
+    "guidance_mode": "none",
+    "overall_quality_score": 0.5245,
+    "category_scores": {
+      "epistemic_score": 0.5019,
+      "spatial_state_score": 0.4041,
+      "pov_retrieval_score": 0.5894,
+      "edge_flashback_score": 0.3667,
+      "schema_hygiene_score": 1.0
+    },
+    "epistemic_and_witness_metrics": {
+      "witness_precision": 0.7,
+      "witness_recall": 1.0,
+      "witness_f1": 0.8235,
+      "epistemic_leak_count": 6,
+      "epistemic_leak_rate": 0.5455,
+      "silent_witness_recall": 1.0,
+      "inform_delta_precision": 1.0,
+      "inform_delta_recall": 0.0,
+      "inform_delta_f1": 0.0,
+      "deception_summary_accuracy": 0.0,
+      "disguise_accuracy": 0.6667
+    },
+    "spatial_and_state_metrics": {
+      "location_delta_precision": 0.4,
+      "location_delta_recall": 0.2857,
+      "location_delta_f1": 0.3333,
+      "room_occupancy_jaccard": 0.4354,
+      "room_occupancy_exact_rate": 0.1667,
+      "mood_exact_accuracy": 0.4,
+      "mood_soft_accuracy": 0.4333,
+      "mood_delta_f1": 0.4,
+      "flashback_guard_passed": true
+    },
+    "edge_and_causal_metrics": {
+      "edge_delta_precision": 1.0,
+      "edge_delta_recall": 0.0,
+      "edge_delta_f1": 0.0,
+      "edge_register_accuracy": 0.0,
+      "causal_link_accuracy": 0.3333
+    },
+    "schema_and_id_hygiene": {
+      "first_pass_valid_rate": 1.0,
+      "total_retries": 0,
+      "total_validation_errors": 0,
+      "raw_id_total": 59,
+      "canonical_id_count": 59,
+      "canonical_id_rate": 1.0,
+      "normalized_surface_id_count": 0,
+      "normalized_surface_id_rate": 0.0,
+      "hallucinated_id_count": 0,
+      "hallucinated_id_rate": 0.0,
+      "hallucinated_ids": []
+    },
+    "downstream_pov_retrieval": {
+      "pov_entity_jaccard": 0.9648,
+      "pov_edge_jaccard": 0.6067,
+      "pov_episode_recall": 1.0,
+      "pov_secret_leak_count": 20
+    },
+    "steps": [
+      {
+        "step": 1,
+        "room_occupancy_jaccard": 1.0,
+        "room_occupancy_exact": true,
+        "mood_exact_rate": 0.4,
+        "mood_soft_rate": 0.4,
+        "location_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "mood_delta": {
+          "tp": 0,
+          "fp": 3,
+          "fn": 0
+        },
+        "edge_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "witness": {
+          "tp": 4,
+          "fp": 1,
+          "fn": 0,
+          "epistemic_leak_count": 1,
+          "silent_witness_matched": 2,
+          "silent_witness_expected": 2
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 10,
+          "canonical_id_count": 10,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 1.0,
+          "pov_episode_recall": 1.0,
+          "pov_secret_leaks": 1
+        },
+        "mood_counts": {
+          "exact_matches": 2,
+          "soft_matches": 2,
+          "total_characters": 5
+        }
+      },
+      {
+        "step": 2,
+        "room_occupancy_jaccard": 0.6875,
+        "room_occupancy_exact": false,
+        "mood_exact_rate": 0.4,
+        "mood_soft_rate": 0.4,
+        "location_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1
+        },
+        "mood_delta": {
+          "tp": 1,
+          "fp": 1,
+          "fn": 1
+        },
+        "edge_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1
+        },
+        "witness": {
+          "tp": 3,
+          "fp": 1,
+          "fn": 0,
+          "epistemic_leak_count": 1,
+          "silent_witness_matched": 1,
+          "silent_witness_expected": 1
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 8,
+          "canonical_id_count": 8,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 0.6267,
+          "pov_episode_recall": 1.0,
+          "pov_secret_leaks": 2
+        },
+        "mood_counts": {
+          "exact_matches": 2,
+          "soft_matches": 2,
+          "total_characters": 5
+        }
+      },
+      {
+        "step": 3,
+        "room_occupancy_jaccard": 0.1875,
+        "room_occupancy_exact": false,
+        "mood_exact_rate": 0.4,
+        "mood_soft_rate": 0.4,
+        "location_delta": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 2
+        },
+        "mood_delta": {
+          "tp": 0,
+          "fp": 2,
+          "fn": 0
+        },
+        "edge_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        "witness": {
+          "tp": 3,
+          "fp": 1,
+          "fn": 0,
+          "epistemic_leak_count": 1,
+          "silent_witness_matched": 2,
+          "silent_witness_expected": 2
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 11,
+          "canonical_id_count": 11,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 0.5143,
+          "pov_episode_recall": 1.0,
+          "pov_secret_leaks": 3
+        },
+        "mood_counts": {
+          "exact_matches": 2,
+          "soft_matches": 2,
+          "total_characters": 5
+        }
+      },
+      {
+        "step": 4,
+        "room_occupancy_jaccard": 0.1875,
+        "room_occupancy_exact": false,
+        "mood_exact_rate": 0.4,
+        "mood_soft_rate": 0.4,
+        "location_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "mood_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "edge_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "witness": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0,
+          "epistemic_leak_count": 0,
+          "silent_witness_matched": 1,
+          "silent_witness_expected": 1
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 4,
+          "canonical_id_count": 4,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 0.8333,
+          "pov_edge_jaccard": 0.5143,
+          "pov_episode_recall": 1.0,
+          "pov_secret_leaks": 3
+        },
+        "mood_counts": {
+          "exact_matches": 2,
+          "soft_matches": 2,
+          "total_characters": 5
+        }
+      },
+      {
+        "step": 5,
+        "room_occupancy_jaccard": 0.25,
+        "room_occupancy_exact": false,
+        "mood_exact_rate": 0.6,
+        "mood_soft_rate": 0.6,
+        "location_delta": {
+          "tp": 0,
+          "fp": 3,
+          "fn": 2
+        },
+        "mood_delta": {
+          "tp": 2,
+          "fp": 2,
+          "fn": 0
+        },
+        "edge_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1
+        },
+        "witness": {
+          "tp": 2,
+          "fp": 3,
+          "fn": 0,
+          "epistemic_leak_count": 3,
+          "silent_witness_matched": 0,
+          "silent_witness_expected": 0
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 15,
+          "canonical_id_count": 15,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 0.9556,
+          "pov_edge_jaccard": 0.5743,
+          "pov_episode_recall": 1.0,
+          "pov_secret_leaks": 5
+        },
+        "mood_counts": {
+          "exact_matches": 3,
+          "soft_matches": 3,
+          "total_characters": 5
+        }
+      },
+      {
+        "step": 6,
+        "room_occupancy_jaccard": 0.3,
+        "room_occupancy_exact": false,
+        "mood_exact_rate": 0.2,
+        "mood_soft_rate": 0.4,
+        "location_delta": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 0
+        },
+        "mood_delta": {
+          "tp": 1,
+          "fp": 3,
+          "fn": 0
+        },
+        "edge_delta": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1
+        },
+        "witness": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "epistemic_leak_count": 0,
+          "silent_witness_matched": 0,
+          "silent_witness_expected": 0
+        },
+        "inform": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 2
+        },
+        "flashback_flag_correct": true,
+        "id_hygiene": {
+          "raw_id_total": 11,
+          "canonical_id_count": 11,
+          "normalized_surface_id_count": 0,
+          "hallucinated_id_count": 0,
+          "hallucinated_ids": []
+        },
+        "pov_retrieval": {
+          "pov_entity_jaccard": 1.0,
+          "pov_edge_jaccard": 0.4109,
+          "pov_episode_recall": 1.0,
+          "pov_secret_leaks": 6
+        },
+        "mood_counts": {
+          "exact_matches": 1,
+          "soft_matches": 2,
+          "total_characters": 5
+        }
+      }
+    ]
+  },
+  "story_prose_stats": {
+    "total_chunks": 6,
+    "total_words": 1872,
+    "total_estimated_story_tokens": 2535,
+    "chunk_estimated_tokens": [
+      467,
+      443,
+      407,
+      410,
+      409,
+      399
+    ],
+    "chunk_word_counts": [
+      346,
+      325,
+      301,
+      306,
+      300,
+      294
+    ]
+  },
+  "story_generation_api_usage": {
+    "prompt_tokens": 1787,
+    "completion_tokens": 2819,
+    "total_tokens": 5673,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 25804.498,
+    "cost_estimate": {
+      "input_cost_usd": 0.000179,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.001128,
+      "total_cost_usd": 0.001306,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.1,
+        "input_cached": 0.025,
+        "output": 0.4
+      }
+    }
+  },
+  "llm_extraction_historical_api_usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 6,
+    "cache_hits": 0,
+    "cache_misses": 6,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 11.155,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.0,
+        "input_cached": 0.0,
+        "output": 0.0
+      }
+    }
+  },
+  "llm_extraction_current_run_billable_usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 6,
+    "cache_hits": 0,
+    "cache_misses": 6,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 11.155,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.0,
+        "input_cached": 0.0,
+        "output": 0.0
+      }
+    }
+  },
+  "combined_total_story_plus_extraction_usage": {
+    "prompt_tokens": 1787,
+    "completion_tokens": 2819,
+    "total_tokens": 5673,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 7,
+    "cache_hits": 0,
+    "cache_misses": 6,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 25815.653,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.0,
+        "input_cached": 0.0,
+        "output": 0.0
+      }
+    }
+  }
+}

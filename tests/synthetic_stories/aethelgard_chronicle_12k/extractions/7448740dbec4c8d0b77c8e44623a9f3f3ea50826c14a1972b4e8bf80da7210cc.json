@@ -1,0 +1,100 @@
+{
+  "cache_key": "7448740dbec4c8d0b77c8e44623a9f3f3ea50826c14a1972b4e8bf80da7210cc",
+  "model": "qwen/qwen3.8-27b",
+  "created_at": "2026-11-19T21:19:12.495641+00:00",
+  "prompt_sha256": "0618f88fa41edf676093987019d9b89a06fe2f4d7bf081e58bf6feb3546340c9",
+  "scene_text_sha256": "7e7a623c4306e8497b922f1a7250085ef3807a0c58aabfca3089de153a080cc1",
+  "scene_text": "Kaelen’s hand trembled as he crossed to the iron chest beneath the orrery. He knelt, worked the lock with a key from his neck-cord, and lifted out a cylinder no longer than a man’s forearm. Brass, yes—but darkened by age and etched with concentric rings of tiny glyphs that seemed to crawl when Elena looked at them too long. He held it as if it might bite. “I decoded the outer ring two nights ago,” he said, his voice dropping to a whisper. “It predicted a grain failure in the eastern provinces. Three days later, the granaries reported exactly that. I thought it was a lucky alignment. Then the second ring predicted the tribunal’s audit of the treasury—a full week before the summons arrived.”\n\nElena extended her hand, palm up. “Give it to me, Kaelen.”\n\nHe hesitated, his knuckles whitening around the brass. “You don’t understand. The third ring—the one I haven’t cracked—it’s not a prediction. It’s an instruction. Someone is using this to coordinate the conspiracy. If I hand it over, I become part of it.”\n\n“You are already part of it,” Isolde said softly, not unkindly. “The only question is whether you are a witness or a suspect.”\n\nKaelen flinched. His gaze darted to the balcony, to the locked door, to the shadows between the telescopes. Then, with a breath that shuddered out of him, he pressed the Brass Cipher Cylinder into Elena’s waiting palm. The metal was cold and heavier than it looked, warm only where his fingers had gripped it. Elena closed her hand around it, feeling the faint vibration of the glyphs—a hum like a trapped insect. “If this is a weapon,” she said, “we will turn it against its maker. But first we need the ledger that proves who paid for it.”\n\nKaelen nodded, miserable and relieved. “The garrison ledger,” he said. “The one Julian signed. It’s not in the treasury. It’s in the Archive Vault, beneath the citadel.”",
+  "usage": {
+    "prompt_tokens": 6733,
+    "completion_tokens": 392,
+    "total_tokens": 7125,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 12572.509,
+    "cost_estimate": {
+      "input_cost_usd": 0.000943,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.00011,
+      "total_cost_usd": 0.001052,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_kaelen",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "relieved"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step8_item_transfer",
+        "reason": "Kaelen feels 'miserable and relieved' after handing over the dangerous artifact."
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_elena",
+        "target_id": "item_cipher_cylinder",
+        "relation_type": "possesses",
+        "state": {
+          "status": "held"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_step8_item_transfer",
+        "reason": "Kaelen hands the Brass Cipher Cylinder to Elena."
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_step8_item_transfer",
+        "timeline_id": "main",
+        "step": 8,
+        "predicate": "item_transfer",
+        "summary": "Kaelen hands the Brass Cipher Cylinder to Elena, revealing it predicts events and coordinates a conspiracy, and directs her to the garrison ledger in the Archive Vault.",
+        "participants": {
+          "char_kaelen": "actor",
+          "char_elena": "recipient",
+          "item_cipher_cylinder": "instrument"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_isolde",
+          "char_kaelen"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_observatory",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.5,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

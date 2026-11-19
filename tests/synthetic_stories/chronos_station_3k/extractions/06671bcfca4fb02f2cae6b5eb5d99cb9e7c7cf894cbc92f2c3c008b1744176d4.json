@@ -1,0 +1,143 @@
+{
+  "cache_key": "06671bcfca4fb02f2cae6b5eb5d99cb9e7c7cf894cbc92f2c3c008b1744176d4",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T21:01:22.048707+00:00",
+  "prompt_sha256": "562ecdf0484e8374c3454da71fd76169f6d1fe7378b5ef4e74f59de236074317",
+  "scene_text_sha256": "7259da1c08f5759f584484291961cfb39fdc861657d8a74b2a60f96ce8b6ec6e",
+  "scene_text": "Elena's fury did not break; it hardened. She planted one hand on the obsidian table and leaned toward Julian, her voice dropping into a dangerous register that still carried to every corner of the Council Chamber. \"Empty your pockets,\" she said. \"Now. Every seal, every token, every scrap of metal you thought I would not miss.\" Julian's breath came in shallow pulls. His hands shook as he reached into his coat, then hesitated, his eyes sliding toward the hooded courier. The chamber's lights seemed to narrow around him, the gas giant's amber glow pressing against the observation glass.\n\nWhat happened next was too fast for dignity. Julian lunged sideways, seized the courier's gloved hand, and pressed something heavy and cold into her palm. The Obsidian Signet caught the light for a single black flash, its carved face swallowing the chamber's glow. \"Take this cursed ring and hide it deep inside the stone vault before the guards arrive!\" His voice cracked on the last word. Then he bolted, boots skidding on the deck as he threw himself toward the rear passage that led down into the Archive Vault.\n\nThe hooded courier closed her gloved fingers around the signet and was after him in the same heartbeat. Her cloak snapped behind her as she ran, a dark wing cutting through the Council Chamber's amber haze. The blast doors at the passage mouth began to cycle, their warning chime thin and urgent. Julian reached them first, shoulder-first, and squeezed through the widening gap. The courier followed without a word, her silence more alarming than any shout.\n\nBehind them, Elena straightened slowly. The table's holograms had scattered into static where Julian's hand had struck them. She stared at the passage, then at the balcony doors where Marcus still stood outside, and her expression shifted from rage to something colder and more calculating. The station's ventilation roared once through the vents, as if the Council Chamber itself were exhaling. Somewhere below, deep in the cryogenic dark of the Archive Vault, the Obsidian Signet had become a secret in motion, and the chase had begun.",
+  "usage": {
+    "prompt_tokens": 5547,
+    "completion_tokens": 1375,
+    "total_tokens": 6922,
+    "cached_prompt_tokens": 1280,
+    "reasoning_tokens": 912,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 7294.125,
+    "cost_estimate": {
+      "input_cost_usd": 0.000597,
+      "cached_input_cost_usd": 1.8e-05,
+      "output_cost_usd": 0.000385,
+      "total_cost_usd": 0.001,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_vault"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_item_transfer_01",
+        "reason": "Fled through the rear passage into the Archive Vault after pressing the signet into the courier's hand."
+      },
+      {
+        "entity_id": "char_lyra",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_vault",
+          "mood": "determined"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_item_transfer_01",
+        "reason": "Chased Julian through the blast doors into the Archive Vault passage."
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "determined"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_item_transfer_01",
+        "reason": "Her rage cooled into something colder and more calculating as she watched the chase begin."
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_lyra",
+        "target_id": "item_signet",
+        "relation_type": "possesses",
+        "state": {
+          "status": "concealed"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_item_transfer_01",
+        "reason": "Julian pressed the Obsidian Signet into the courier's gloved hand."
+      },
+      {
+        "source_id": "char_julian",
+        "target_id": "item_signet",
+        "relation_type": "possesses",
+        "state": {},
+        "merge": true,
+        "remove": true,
+        "caused_by_episode_id": "ep_item_transfer_01",
+        "reason": "Julian surrendered the ring to the courier before fleeing."
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_item_transfer_01",
+        "timeline_id": "main",
+        "step": 3,
+        "predicate": "item_transfer",
+        "summary": "Under Elena's furious demand to empty his pockets, Julian pressed the Obsidian Signet into the hooded courier's hand and commanded her to hide it in the Archive Vault, then bolted through the rear passage with the courier in pursuit.",
+        "participants": {
+          "char_julian": "actor",
+          "char_lyra": "recipient",
+          "item_signet": "instrument"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "char_lyra"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

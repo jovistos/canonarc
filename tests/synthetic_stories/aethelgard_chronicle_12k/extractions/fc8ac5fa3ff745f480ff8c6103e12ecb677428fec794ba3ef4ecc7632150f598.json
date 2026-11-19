@@ -1,0 +1,103 @@
+{
+  "cache_key": "fc8ac5fa3ff745f480ff8c6103e12ecb677428fec794ba3ef4ecc7632150f598",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T19:44:20.940501+00:00",
+  "prompt_sha256": "acf3915072d28dfd162b168d3bbb8f78a638a5d99c962e911988e164493092a0",
+  "scene_text_sha256": "219ac7ca1f675b596a1bfe16ab782b94b2e93c3fc15606ab1177408267507359",
+  "scene_text": "The spiral stair to the Starlight Observatory was a corkscrew of cold iron and older stone, each step ringing under Elena’s boots like a struck bell. Isolde followed a half-pace behind, her tribunal cloak whispering against the risers, her calm a deliberate counterweight to the Chancellor’s coiled tension. Midnight had emptied the citadel of its courtiers; only the wind remained, clawing at the arrow-slits, carrying the metallic taste of frost. Elena kept her gloved hand on the rail, counting the turns—forty-two, forty-three—while her mind sorted the day’s whispers into a lattice of threats. The observatory door loomed at the landing, brass-bound and sealed with a wheel of Aethelgard’s seven stars. She pressed her palm to the cold metal and felt the ward hum once before yielding.\n\nInside, the dome arched overhead like the ribcage of some brass leviathan, its seams silvered with moonlight. Kaelen stood at the great orrery, his back to them, one hand resting on the rim of a celestial sphere. He did not turn at their entrance, but his shoulders tightened—a watchful stillness that had learned to read footfalls. “You brought the envoy,” he said, voice low, roughened by sleepless nights. “That is either trust or desperation, Elena.”\n\n“Both,” Elena replied, stepping into the ring of lamplight. “Isolde has seen the tribunal’s ledgers. She knows the numbers do not reconcile. We need your eyes on the sky, Kaelen—and on the brass.”\n\nIsolde inclined her head, her gaze sweeping the cluttered tables: star charts, lens grinders, a half-eaten heel of bread. “The Chancellor speaks of a cipher,” she said evenly. “I speak of evidence that will survive scrutiny. Show us what the observatory hides.”\n\nKaelen finally turned. His face was drawn, the skin beneath his eyes bruised with fatigue, and for a moment the watchfulness cracked into something rawer—fear, or guilt. “The observatory hides nothing,” he said. “It reveals. That is the problem.” He gestured toward the balcony door, where the winter sky burned with unnatural clarity. “The stars have been wrong for three nights. Not shifted—rearranged. Someone is editing the heavens, and I think they began with the Brass Cipher Cylinder.”",
+  "usage": {
+    "prompt_tokens": 6300,
+    "completion_tokens": 491,
+    "total_tokens": 6791,
+    "cached_prompt_tokens": 1152,
+    "reasoning_tokens": 298,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 2776.668,
+    "cost_estimate": {
+      "input_cost_usd": 0.000721,
+      "cached_input_cost_usd": 1.6e-05,
+      "output_cost_usd": 0.000137,
+      "total_cost_usd": 0.000874,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_observatory"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": null,
+        "reason": null
+      },
+      {
+        "entity_id": "char_isolde",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_observatory"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": null,
+        "reason": null
+      }
+    ],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_observatory_revelation",
+        "timeline_id": "main",
+        "step": 7,
+        "predicate": "revelation",
+        "summary": "Kaelen reveals that the stars have been wrong for three nights—rearranged rather than shifted—and suspects someone began editing the heavens with the Brass Cipher Cylinder.",
+        "participants": {
+          "char_kaelen": "actor",
+          "char_elena": "target",
+          "char_isolde": "target"
+        },
+        "witnesses": [
+          "char_kaelen",
+          "char_elena",
+          "char_isolde"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_observatory",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

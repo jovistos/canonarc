@@ -1,0 +1,55 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "shocked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step11_flashback",
+      "reason": null
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_step11_flashback",
+      "timeline_id": "main",
+      "step": 11,
+      "predicate": "flashback",
+      "summary": "Elena recalls the founding of the Astral Concordat ten years ago, where she, Kaelen, and Julian forged the cipher key to protect the realm, a memory that now contrasts sharply with the current betrayal.",
+      "participants": {
+        "char_elena": "actor",
+        "char_kaelen": "participant",
+        "char_julian": "participant"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_kaelen",
+        "char_julian"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_observatory",
+      "story_time": "10_years_ago",
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": true,
+  "story_time": "10_years_ago",
+  "chapter_id": null,
+  "scene_id": null
+}

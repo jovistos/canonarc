@@ -1,0 +1,99 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_balcony"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_001",
+      "reason": "Exited Council Chamber to Balcony."
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "furious"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_001",
+      "reason": "Mood shifted to furious upon accusation."
+    },
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_001",
+      "reason": "Mood shifted to panicked due to accusation."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_elena",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "furious",
+        "trust": -0.95
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_001",
+      "reason": null
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_002",
+      "timeline_id": "main",
+      "step": 2,
+      "predicate": "confrontation",
+      "summary": "Elena accuses Julian of stealing the Obsidian Signet while Marcus is on the balcony.",
+      "participants": {
+        "char_elena": "actor",
+        "char_julian": "target"
+      },
+      "witnesses": [
+        "char_lyra"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": 0,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

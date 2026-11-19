@@ -1,0 +1,56 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_014",
+      "reason": null
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_015",
+      "timeline_id": "main",
+      "step": 16,
+      "predicate": "revelation",
+      "summary": "Lyra reveals the vault discovery to Elena and the council, confirming the ledgers were moved and copied under a false inventory, proving the conspiracy has a hand.",
+      "participants": {
+        "char_lyra": "actor",
+        "char_elena": "target"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_isolde",
+        "char_julian",
+        "char_kaelen",
+        "char_marcus"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

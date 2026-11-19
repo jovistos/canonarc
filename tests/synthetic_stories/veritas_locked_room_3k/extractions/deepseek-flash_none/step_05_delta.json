@@ -1,0 +1,137 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_thorne",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_study"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_giles_unmasking_thorne",
+      "reason": null
+    },
+    {
+      "entity_id": "char_cora",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_study"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": null,
+      "reason": null
+    },
+    {
+      "entity_id": "char_giles",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {},
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [
+        {
+          "alias": "the veiled locksmith",
+          "entity_id": "char_giles",
+          "kind": "disguise",
+          "known_to": [
+            "char_vane",
+            "char_thorne"
+          ],
+          "persona_name": "Locksmith",
+          "valid_from_step": 0,
+          "valid_to_step": null
+        }
+      ],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_giles_unmasking_thorne",
+      "reason": null
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_giles",
+      "target_id": "char_thorne",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "commanding",
+        "trust": -0.9
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_giles_unmasking_thorne",
+      "reason": null
+    },
+    {
+      "source_id": "char_cora",
+      "target_id": "char_thorne",
+      "relation_type": "stance",
+      "state": {
+        "tone": "disdainful",
+        "trust": -0.8
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": null,
+      "reason": null
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_giles_unmasking_thorne",
+      "timeline_id": "main",
+      "step": 5,
+      "predicate": "revelation",
+      "summary": "In the Wine Cellar, the veiled locksmith drew back the black netting to reveal himself as Giles and confronted the cornered Thorne, commanding him in Serbian to hand over the false prescriptions immediately or be in the district jail by dawn.",
+      "participants": {
+        "char_giles": "actor",
+        "char_thorne": "target"
+      },
+      "witnesses": [
+        "char_giles",
+        "char_thorne"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_cellar",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_thorne_key_handoff",
+      "entity_id": "char_cora",
+      "epistemic": "deceived",
+      "believed_summary": "Thorne claimed he heard northern raiders trying to force the cellar grate and went down alone to drive them off into the storm."
+    },
+    {
+      "episode_id": "ep_thorne_key_handoff",
+      "entity_id": "char_mina",
+      "epistemic": "deceived",
+      "believed_summary": "Thorne claimed he heard northern raiders trying to force the cellar grate and went down alone to drive them off into the storm."
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

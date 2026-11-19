@@ -1,0 +1,68 @@
+{
+  "cache_key": "a3eab11cec548366502d5ab52f7f4825fbcf22aa6a74751d62be0762d93ff4cf",
+  "model": "rule-based-non-llm",
+  "created_at": "2026-11-19T19:41:50.299579+00:00",
+  "prompt_sha256": "7dd37abc1d1bdc946dca25cf87403ab5940e008e085a4ac7c42cbeebd15c5360",
+  "scene_text_sha256": "00518d4b4b27d0dfda65e084ca756f06a05da3b5330340adb4b6f329670d7b4c",
+  "scene_text": "As the rain continued to drum against the study windows, Vane's gaze drifted to the unlit hearth, and his mind slipped backward through the years. Ten years ago, the winter had been merciless, blanketing the city in grey slush and choking the alleys with coal smoke and fever. During that brutal epidemic, the charity hospital on the east side had been little more than a crowded warehouse of coughing, shivering souls, lit by flickering tallow candles and smelling sharply of carbolic acid and wet wool.\n\nBack then, Vane had been a younger, more idealistic investigator, assigned to look into the sudden, unexplained deaths of three wardens who had fallen ill within a single week. He remembered standing in that exact same sort of cramped, drafty office, watching Thorne work with tireless, quiet dedication. Thorne had been the only physician willing to remain on the night shift when the other doctors fled to the countryside, his spectacles perpetually fogged from the steam of boiling instruments.\n\nVane had trusted Thorne implicitly in those dark months. When Thorne had signed the death certificates attributing the wardens' demise to rapid pneumonia, Vane had not questioned a single stroke of the pen. He had even defended the physician's methods before the hospital board, praising Thorne's steady nerves and selfless devotion to the dying. It had never once crossed Vane's mind that the very man who tended the feverish might also be the one quietly administering something far more final.\n\nNow, standing in the Mahogany Study a decade later, the memory tasted bitter as ash. Every polite nod, every reassuring word Thorne had spoken during that winter inquest now looked entirely different in the harsh light of the toxicology report. Vane's jaw tightened as he realized how long the doctor had hidden behind his nervous, unassuming manner.",
+  "usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 1.76,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_rule_4",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "flashback",
+        "summary": "As the rain continued to drum against the study windows, Vane's gaze drifted to the unlit hearth, and his mind slipped backward through the years.",
+        "participants": {
+          "char_thorne": "participant",
+          "char_vane": "participant"
+        },
+        "witnesses": [
+          "char_thorne",
+          "char_vane"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": "10_years_ago",
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": true,
+    "story_time": "10_years_ago",
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

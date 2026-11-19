@@ -1,0 +1,57 @@
+{
+  "entities": [],
+  "edges": [
+    {
+      "source_id": "char_isolde",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "stern",
+        "trust": -0.6
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_cipher_confrontation",
+      "reason": "Isolde directly confronts Julian with the Brass Cipher Cylinder bearing his treasury wax."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_cipher_confrontation",
+      "timeline_id": "main",
+      "step": 15,
+      "predicate": "confrontation",
+      "summary": "Isolde sets the Brass Cipher Cylinder before Julian in the Council Chamber and confronts him over treasury wax, while Elena presses him to explain the cipher keyed to the royal accounts; Julian partially cracks, whispering that 'they' called it a precaution against the Chancellor's excesses, as Marcus watches.",
+      "participants": {
+        "char_isolde": "actor",
+        "char_julian": "target",
+        "char_elena": "accuser",
+        "char_marcus": "observer",
+        "item_cipher_cylinder": "instrument"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_isolde",
+        "char_julian",
+        "char_kaelen",
+        "char_marcus"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

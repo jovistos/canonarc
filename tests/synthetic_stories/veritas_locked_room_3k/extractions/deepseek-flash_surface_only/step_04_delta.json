@@ -1,0 +1,67 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_vane",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "indignant"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_vane_flashback_epidemic",
+      "reason": null
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_vane",
+      "target_id": "char_thorne",
+      "relation_type": "stance",
+      "state": {
+        "trust": -0.9,
+        "tone": "stern"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_vane_flashback_epidemic",
+      "reason": null
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_vane_flashback_epidemic",
+      "timeline_id": "main",
+      "step": 4,
+      "predicate": "flashback",
+      "summary": "Ten years ago during a brutal epidemic, Vane trusted Dr. Thorne, who signed death certificates attributing three wardens' deaths to pneumonia; Vane now realizes Thorne may have poisoned them.",
+      "participants": {
+        "char_vane": "investigator",
+        "char_thorne": "physician"
+      },
+      "witnesses": [
+        "char_vane",
+        "char_thorne"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": null,
+      "story_time": "10_years_ago",
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": true,
+  "story_time": "10_years_ago",
+  "chapter_id": null,
+  "scene_id": null
+}

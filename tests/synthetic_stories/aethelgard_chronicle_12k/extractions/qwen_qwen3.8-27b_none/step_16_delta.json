@@ -1,0 +1,83 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step16_item_transfer",
+      "reason": "Lyra enters the Council Chamber from the Archive Vault."
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step16_item_transfer",
+      "reason": "Elena's calm hardens into determination as she accepts the evidence."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_elena",
+      "target_id": "item_signet",
+      "relation_type": "possesses",
+      "state": {
+        "status": "visible"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_step16_item_transfer",
+      "reason": "Elena lifts the Signet from the table, taking possession of it."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_step16_item_transfer",
+      "timeline_id": "main",
+      "step": 16,
+      "predicate": "item_transfer",
+      "summary": "Lyra enters the Council Chamber and hands the Obsidian Signet to Elena, confirming the vault discovery and the conspiracy's fingerprint.",
+      "participants": {
+        "char_lyra": "actor",
+        "char_elena": "recipient",
+        "item_signet": "instrument"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_lyra"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

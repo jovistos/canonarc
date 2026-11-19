@@ -1,0 +1,156 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_vault_confrontation_03",
+      "reason": null
+    },
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {},
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [
+        {
+          "alias": "the hooded courier",
+          "entity_id": "char_lyra",
+          "kind": "disguise",
+          "known_to": [
+            "char_elena"
+          ],
+          "persona_name": "Courier",
+          "valid_from_step": 0,
+          "valid_to_step": null
+        }
+      ],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_vault_confrontation_03",
+      "reason": null
+    },
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_vault_confrontation_03",
+      "reason": null
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_vault_confrontation_03",
+      "reason": null
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_lyra",
+      "target_id": "item_signet",
+      "relation_type": "possesses",
+      "state": {
+        "status": "concealed"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_vault_confrontation_03",
+      "reason": null
+    },
+    {
+      "source_id": "char_julian",
+      "target_id": "char_elena",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "commanding",
+        "trust": -0.8
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_vault_confrontation_03",
+      "reason": null
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_vault_confrontation_03",
+      "timeline_id": "main",
+      "step": 5,
+      "predicate": "confrontation",
+      "summary": "Lyra unmasked in the vault and confronted Julian with the Obsidian Signet; Julian fled to the Council Chamber to lie about the theft.",
+      "participants": {
+        "char_lyra": "actor",
+        "char_julian": "target"
+      },
+      "witnesses": [
+        "char_lyra"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_vault",
+      "story_time": 0,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_council_confrontation_02",
+      "entity_id": "char_julian",
+      "epistemic": "forgotten",
+      "believed_summary": null
+    },
+    {
+      "episode_id": "ep_vault_confrontation_03",
+      "entity_id": "char_elena",
+      "epistemic": "told",
+      "believed_summary": "Julian claims Northern raiders stole the Obsidian Signet while he defended the ledger, though Elena suspects it is a lie."
+    },
+    {
+      "episode_id": "ep_vault_confrontation_03",
+      "entity_id": "char_marcus",
+      "epistemic": "told",
+      "believed_summary": "Julian claims Northern raiders stole the Obsidian Signet while he defended the ledger, though Marcus suspects it is a lie."
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

@@ -1,0 +1,128 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_balcony",
+        "mood": "restless"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_confrontation_signet_002",
+      "reason": "Stepped out onto the Windy Balcony for air, away from the ledgers."
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "furious"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_confrontation_signet_002",
+      "reason": "Her calm cracked once Marcus left; she rounded on Julian with accusation."
+    },
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_confrontation_signet_002",
+      "reason": "Accused outright of stealing the Obsidian Signet; no denial came."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_elena",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "furious",
+        "trust": -0.9
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_confrontation_signet_002",
+      "reason": "She dropped all pretense and addressed him with the informal, contemptuous register: 'Prestani sa tim bednim lazima, izdajnice.'"
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_confrontation_signet_002",
+      "timeline_id": "main",
+      "step": 2,
+      "predicate": "confrontation",
+      "summary": "The moment Marcus stepped onto the Windy Balcony, Elena rounded on Julian and accused him of having stolen the Obsidian Signet from the chamber the night before; Julian paled and offered no denial, glancing toward the passage to the Archive Vault.",
+      "participants": {
+        "char_elena": "accuser",
+        "char_julian": "accused",
+        "item_signet": "subject"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_julian",
+        "char_lyra"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {},
+      "match_score": 0.0
+    },
+    {
+      "episode_id": "ep_marcus_exit_balcony_002",
+      "timeline_id": "main",
+      "step": 2,
+      "predicate": "event",
+      "summary": "Restless from the dragging ledgers, Marcus hauled open the glass doors and stepped out onto the Windy Balcony into the rain, leaving the chamber hushed behind him.",
+      "participants": {
+        "char_marcus": "actor"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_julian",
+        "char_lyra"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 3.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

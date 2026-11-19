@@ -1,0 +1,138 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [
+        {
+          "alias": "the hooded courier",
+          "entity_id": "char_lyra",
+          "kind": "disguise",
+          "known_to": [
+            "char_elena",
+            "char_julian",
+            "char_marcus"
+          ],
+          "persona_name": "Courier",
+          "valid_from_step": 0,
+          "valid_to_step": null
+        }
+      ],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_lyra_reveal_marcus",
+      "reason": "Came up from the vault stairwell into the Council Chamber, hood thrown back, unmasking the courier persona before Marcus and Elena."
+    },
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "indignant"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_lyra_reveal_marcus",
+      "reason": "Surprise and suspicion gave way to terrible comprehension and indignant fury at Julian."
+    },
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "calm"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_lyra_reveal_marcus",
+      "reason": "Drank the amber phial; terror drained away into bland, blank confusion."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_marcus",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "furious",
+        "trust": -0.9
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_lyra_reveal_marcus",
+      "reason": "Marcus wheeled on the young treasurer and roared at him in the informal register for deceiving the military council."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_lyra_reveal_marcus",
+      "timeline_id": "main",
+      "step": 6,
+      "predicate": "revelation",
+      "summary": "Lyra rose from the vault stairwell, hood thrown back and the Obsidian Signet held high, and plainly revealed Julian's emptied pocket, the ring forced into a courier's glove, the stolen charters, and the fabricated raider story; Marcus, comprehending at last, furiously roared at the cornered Julian in the informal register, and Julian swallowed a phial of amber liquid that wiped away his memory of the winter pact and all his fear, leaving only bland bewilderment.",
+      "participants": {
+        "char_lyra": "actor",
+        "char_julian": "target",
+        "char_marcus": "reactor",
+        "char_elena": "observer",
+        "item_signet": "instrument"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_julian",
+        "char_lyra",
+        "char_marcus"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_signet_handoff_flee",
+      "entity_id": "char_marcus",
+      "epistemic": "told",
+      "believed_summary": null
+    },
+    {
+      "episode_id": "ep_elena_confronts_julian",
+      "entity_id": "char_marcus",
+      "epistemic": "told",
+      "believed_summary": null
+    },
+    {
+      "episode_id": "ep_winter_pact_memory",
+      "entity_id": "char_julian",
+      "epistemic": "forgotten",
+      "believed_summary": null
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

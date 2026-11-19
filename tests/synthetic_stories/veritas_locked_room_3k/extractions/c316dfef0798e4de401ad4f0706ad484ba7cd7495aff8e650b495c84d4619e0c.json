@@ -1,0 +1,175 @@
+{
+  "cache_key": "c316dfef0798e4de401ad4f0706ad484ba7cd7495aff8e650b495c84d4619e0c",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T21:03:55.796553+00:00",
+  "prompt_sha256": "7c9087eb6ec950375abdb8325ce2c3f05456b3be55d3f260691e29aa07eb44f4",
+  "scene_text_sha256": "0ffedd0ef80909a7d280a3726363a04be6f4e4d9898bb6b922a1eb9411275e9e",
+  "scene_text": "Deep beneath the house, the Wine Cellar smelled of damp mortar, sour oak casks, and stagnant water. Thorne crouched behind a rack of dusty Bordeaux bottles, his chest heaving as he listened to footsteps descending the brick stairs. When the veiled locksmith rounded the corner with a raised lantern, Thorne pressed himself against the cold wall. Slowly, the locksmith reached up and drew back the black mourning netting, revealing the sharp, determined features of Giles. Thorne gasped, his eyes wide with shock at the unmasking. Giles stepped closer, his voice echoing off the low brick arches. \"Predaj mi sve lažne recepte odmah, Torne, ili ćeš do zore biti u okružnom zatvoru!\"\n\nUpstairs, the Mahogany Study had grown even colder as night settled fully over the estate. Cora returned from the Portrait Gallery, her silk skirts whispering across the floorboards as she rejoined Vane and Mina. Before she could inquire about the missing doctor, the side service door burst open and Thorne stumbled back into the room. His coat was streaked with cobwebs and cellar dust, and his spectacles sat crookedly on his nose.\n\n\"Thank heavens I made it back,\" Thorne panted, clutching at the doorframe for support. Looking straight at Cora and Vane, he launched into a frantic, improvised lie, claiming he had heard northern raiders trying to force the cellar grate and had gone down alone to drive them off into the storm.\n\nCora did not flinch, nor did she offer him a shred of sympathy. She merely raised one finely arched eyebrow, her gaze traveling deliberately from the cobwebs on his shoulders to his trembling, ink-stained hands. \"Oh, what a wonderfully convenient tale of heroic vigilance, dear doctor,\" she murmured, her tone dripping with aristocratic disdain.\n\n\"Oh, what a wonderfully convenient tale of heroic vigilance, dear doctor.\"",
+  "usage": {
+    "prompt_tokens": 4174,
+    "completion_tokens": 3074,
+    "total_tokens": 7248,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 2463,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 15748.323,
+    "cost_estimate": {
+      "input_cost_usd": 0.000584,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.000861,
+      "total_cost_usd": 0.001445,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_thorne",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_study",
+          "mood": "shocked",
+          "condition": "dusty and trembling after cellar confrontation"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step5_giles_unmasks_thorne",
+        "reason": "Thorne was shocked by Giles's unmasking in the Wine Cellar, then returned to the Mahogany Study."
+      },
+      {
+        "entity_id": "char_cora",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_study",
+          "mood": "disdainful"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step5_thorne_raider_lie",
+        "reason": "Cora returned from the Portrait Gallery to the Mahogany Study and responded to Thorne's lie with aristocratic disdain."
+      },
+      {
+        "entity_id": "char_giles",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "disguise_status": "unmasked to Thorne"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step5_giles_unmasks_thorne",
+        "reason": "Giles drew back the mourning veil and revealed his identity to Thorne in the Wine Cellar."
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_cora",
+        "target_id": "char_thorne",
+        "relation_type": "stance",
+        "state": {
+          "attitude": "disdain",
+          "trust": "low"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_step5_thorne_raider_lie",
+        "reason": "Cora saw through Thorne's convenient tale of heroic vigilance and treated him with disdain."
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_step5_giles_unmasks_thorne",
+        "timeline_id": "main",
+        "step": 5,
+        "predicate": "revelation",
+        "summary": "Giles drew back his mourning veil in the Wine Cellar, revealing himself to Thorne and demanding the false prescriptions.",
+        "participants": {
+          "char_giles": "actor",
+          "char_thorne": "target"
+        },
+        "witnesses": [
+          "char_thorne"
+        ],
+        "known_by": {
+          "char_thorne": "direct"
+        },
+        "believed_summaries": {},
+        "location_id": "loc_cellar",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.0,
+        "metadata": {},
+        "match_score": 0.0
+      },
+      {
+        "episode_id": "ep_step5_thorne_raider_lie",
+        "timeline_id": "main",
+        "step": 5,
+        "predicate": "deception",
+        "summary": "Thorne returned to the Mahogany Study with a fabricated story of northern raiders at the cellar grate; Cora met it with aristocratic disdain.",
+        "participants": {
+          "char_thorne": "actor",
+          "char_cora": "target",
+          "char_vane": "witness",
+          "char_mina": "witness"
+        },
+        "witnesses": [
+          "char_cora",
+          "char_vane",
+          "char_mina"
+        ],
+        "known_by": {
+          "char_thorne": "direct",
+          "char_cora": "direct",
+          "char_vane": "direct",
+          "char_mina": "direct"
+        },
+        "believed_summaries": {},
+        "location_id": "loc_study",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 6.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [
+      {
+        "episode_id": "ep_step2_secret_confrontation",
+        "entity_id": "char_cora",
+        "epistemic": "deceived",
+        "believed_summary": "Thorne's absence was explained by his claimed solitary errand to drive northern raiders away from the cellar grate."
+      }
+    ],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

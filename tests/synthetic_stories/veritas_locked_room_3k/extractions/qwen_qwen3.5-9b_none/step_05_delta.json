@@ -1,0 +1,114 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_thorne",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_study"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_05_thorne_return_lie",
+      "reason": "Thorne flees cellar and enters study."
+    },
+    {
+      "entity_id": "char_giles",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_cellar"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_05_thorne_return_lie",
+      "reason": "Giles enters cellar to confront Thorne."
+    },
+    {
+      "entity_id": "char_cora",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_study"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_05_thorne_return_lie",
+      "reason": "Cora returns to study."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_giles",
+      "target_id": "char_thorne",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "commanding",
+        "trust": -0.95
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_05_thorne_return_lie",
+      "reason": null
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_05_thorne_return_lie",
+      "timeline_id": "main",
+      "step": 5,
+      "predicate": "revelation",
+      "summary": "Thorne returns to the Study and lies about raiders; Cora unmasks Giles in the Cellar.",
+      "participants": {
+        "char_thorne": "actor",
+        "char_cora": "observer"
+      },
+      "witnesses": [
+        "char_vane",
+        "char_mina",
+        "char_giles"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_study",
+      "story_time": 0,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_03_key_handoff",
+      "entity_id": "char_thorne",
+      "epistemic": "forgotten",
+      "believed_summary": null
+    },
+    {
+      "episode_id": "ep_02_confrontation_toxicology",
+      "entity_id": "char_thorne",
+      "epistemic": "told",
+      "believed_summary": null
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

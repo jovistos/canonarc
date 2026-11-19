@@ -1,0 +1,146 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_6",
+      "reason": "Entered the Council Chamber from the Archive Vault carrying the signet"
+    },
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "indignant"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_6",
+      "reason": "Learned of the theft and false charters, rounded on Julian"
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_6",
+      "reason": "Fury hardened into resolve as Julian wiped his own memory"
+    },
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "shocked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_6",
+      "reason": "Memory-erasing draught left him blank and bewildered"
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_marcus",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "indignant",
+        "trust": -0.8
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_6",
+      "reason": "Marcus berated Julian for deceiving the military council"
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_6",
+      "timeline_id": "main",
+      "step": 6,
+      "predicate": "revelation",
+      "summary": "Lyra carried the Obsidian Signet into the Council Chamber and laid it on the table, exposing the theft, the false charters and Elena's earlier confrontation to Marcus; Marcus rounded on Julian in indignation, and Julian, cornered, swallowed a memory-erasing draught that wiped the winter pact from his mind.",
+      "participants": {
+        "char_lyra": "actor",
+        "char_julian": "target",
+        "char_marcus": "witness",
+        "char_elena": "witness",
+        "item_signet": "instrument"
+      },
+      "witnesses": [
+        "char_lyra",
+        "char_julian",
+        "char_marcus",
+        "char_elena"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 9.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_2",
+      "entity_id": "char_marcus",
+      "epistemic": "told",
+      "believed_summary": null
+    },
+    {
+      "episode_id": "ep_3",
+      "entity_id": "char_marcus",
+      "epistemic": "told",
+      "believed_summary": null
+    },
+    {
+      "episode_id": "ep_5",
+      "entity_id": "char_marcus",
+      "epistemic": "told",
+      "believed_summary": null
+    },
+    {
+      "episode_id": "ep_4",
+      "entity_id": "char_julian",
+      "epistemic": "forgotten",
+      "believed_summary": null
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

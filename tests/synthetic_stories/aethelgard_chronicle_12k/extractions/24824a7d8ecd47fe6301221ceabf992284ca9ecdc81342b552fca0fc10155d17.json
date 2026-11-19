@@ -1,0 +1,193 @@
+{
+  "cache_key": "24824a7d8ecd47fe6301221ceabf992284ca9ecdc81342b552fca0fc10155d17",
+  "model": "qwen/qwen3.5-9b",
+  "created_at": "2026-11-19T20:02:16.187216+00:00",
+  "prompt_sha256": "d12d6034ec5fc199800ce0c70bab4855f0aed1367dcdd502b4020588e9e37cef",
+  "scene_text_sha256": "72fa631ad6e537fc85fa9c6aa595121c4bceb433c1c91f4e1be758989163d31f",
+  "scene_text": "The Archive Vault smelled of cold stone, old parchment, and the faint mineral tang of groundwater seeping through cracks older than the citadel itself. Lyra moved between the shelves with a courier’s economy, her hood pushed back, her breath misting in the lantern light. She had slipped past the sentries in the Inner Courtyard by timing their patrol to the half-beat—a trick she’d learned from a dead man in Port Sorrow. Now, alone in the Archive Vault, she allowed herself one moment of stillness: a hand pressed flat against the iron shelf, eyes closed, listening for footsteps that never came.\n\nThe ledger was exactly where Kaelen’s cipher promised—third alcove, bottom shelf, behind a false spine labeled “Taxes of the Western Reaches, Vol. IX.” Lyra pulled it free and carried it to the reading table, where the lantern threw her shadow across the pages. The garrison ledger was a forgery, masterfully done: the parchment aged, the ink faded, the signatures of a dozen quartermasters all in their proper hands. But Julian had been careless. On the final page, where the treasury’s seal should have been, he had pressed the Obsidian Signet—a black wax seal reserved for the Chancellor’s most sensitive decrees. Elena never used it on military budgets. Julian had no authority to touch it at all.\n\nLyra’s pulse quickened. She turned the page and found the column of payments: grain shipments diverted, armor purchased from a foundry in the disputed borderlands, coin routed through three shell guilds. At the bottom, a single line: “For the restoration of proper order in Aethelgard.” The handwriting matched Julian’s—she had seen his treasury notes often enough. The young treasurer had not just embezzled. He had built a private army and stamped it with the Chancellor’s own Obsidian Signet. If Elena didn’t know, Julian was a traitor. If she did—Lyra closed the ledger and pressed her palm flat against its cover, as if she could hold the truth still. The lantern flickered. Somewhere above, a sentry’s boots scraped stone. She had perhaps ten minutes before the patrol returned. Enough time to copy the key pages. Not enough time to decide whom to trust.",
+  "usage": {
+    "prompt_tokens": 6619,
+    "completion_tokens": 638,
+    "total_tokens": 7257,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 10209.923,
+    "cost_estimate": {
+      "input_cost_usd": 0.000927,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.000179,
+      "total_cost_usd": 0.001105,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_lyra",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_vault"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [
+          {
+            "alias": "the hooded courier",
+            "entity_id": "char_lyra",
+            "kind": "disguise",
+            "known_to": [
+              "char_elena"
+            ],
+            "persona_name": "Courier",
+            "valid_from_step": 0,
+            "valid_to_step": null
+          }
+        ],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": null,
+        "reason": null
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_vault"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": null,
+        "reason": null
+      },
+      {
+        "entity_id": "char_kaelen",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_vault"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": null,
+        "reason": null
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_vault"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": null,
+        "reason": null
+      },
+      {
+        "entity_id": "char_isolde",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_vault"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": null,
+        "reason": null
+      },
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_council"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": null,
+        "reason": null
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_julian",
+        "target_id": "item_signet",
+        "relation_type": "possesses",
+        "state": {
+          "status": "concealed"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_003",
+        "reason": null
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_009",
+        "timeline_id": "main",
+        "step": 9,
+        "predicate": "revelation",
+        "summary": "Lyra discovers Julian's forgery of the garrison ledger and his unauthorized use of the Obsidian Signet to stamp a private army, revealing him as a traitor.",
+        "participants": {
+          "char_lyra": "actor"
+        },
+        "witnesses": [
+          "char_julian",
+          "char_kaelen",
+          "char_elena",
+          "char_isolde"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_vault",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.5,
+        "metadata": {
+          "discovery_type": "forgery_and_betrayal"
+        },
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

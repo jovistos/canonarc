@@ -1,0 +1,138 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [
+        {
+          "alias": "the hooded courier",
+          "entity_id": "char_lyra",
+          "kind": "disguise",
+          "known_to": [
+            "Elena",
+            "Julian",
+            "Marcus"
+          ],
+          "persona_name": "Courier",
+          "valid_from_step": 0,
+          "valid_to_step": null
+        }
+      ],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_confrontation_02",
+      "reason": "Lyra enters the Council Chamber openly with the signet, making her true identity plain to Marcus as well as the already-informed Elena and Julian."
+    },
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "shocked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_confrontation_02",
+      "reason": "Cornered by Marcus's fury and then emptied of memory by the draught, Julian is left blank and shaking."
+    },
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "furious"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_confrontation_02",
+      "reason": "Marcus's watchful concern hardens into fury when Lyra lays out Julian's deception."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_marcus",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "furious",
+        "trust": -0.8
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_confrontation_02",
+      "reason": "Marcus drops formal address and barks at Julian for deceiving the military council."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_confrontation_02",
+      "timeline_id": "main",
+      "step": 6,
+      "predicate": "confrontation",
+      "summary": "Lyra returned to the Council Chamber and set the Obsidian Signet on the table, exposing Julian's theft and deception to Marcus; the veteran commander furiously turned on Julian, who swallowed a memory-erasing draught and forgot the winter-crisis pact entirely.",
+      "participants": {
+        "char_lyra": "revealer",
+        "char_marcus": "accuser",
+        "char_julian": "target",
+        "char_elena": "observer",
+        "item_signet": "instrument"
+      },
+      "witnesses": [
+        "char_lyra",
+        "char_marcus",
+        "char_julian",
+        "char_elena"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_confrontation_01",
+      "entity_id": "char_marcus",
+      "epistemic": "told",
+      "believed_summary": null
+    },
+    {
+      "episode_id": "ep_item_transfer_01",
+      "entity_id": "char_marcus",
+      "epistemic": "told",
+      "believed_summary": null
+    },
+    {
+      "episode_id": "ep_flashback_01",
+      "entity_id": "char_julian",
+      "epistemic": "forgotten",
+      "believed_summary": null
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}
