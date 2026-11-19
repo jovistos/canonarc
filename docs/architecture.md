@@ -1,6 +1,6 @@
 # Architecture & Storage Philosophy
 
-`narrative-memory` models narrative worlds as a **Tier 1–6 superset** organized along a causal timeline tree.
+`canonarc` models narrative worlds as a **Tier 1–6 superset** organized along a causal timeline tree.
 
 ---
 
@@ -59,7 +59,7 @@
 
 ## 2. Storage Architecture: SQLite Schema
 
-Rather than spreading state across disconnected services, `narrative-memory` maintains its temporal graph and episodic multiverse in a single `.sqlite` database:
+Rather than spreading state across disconnected services, `canonarc` maintains its temporal graph and episodic multiverse in a single `.sqlite` database:
 
 ```sql
 -- 1. Copy-on-Write Timeline Tree
@@ -255,7 +255,7 @@ WHERE rn = 1 AND is_tombstone = 0;
 
 ---
 
-## 4. Modular Subsystem Map (`src/narrative_memory/`)
+## 4. Modular Subsystem Map (`src/canonarc/`)
 
 | Module | Responsibility |
 | :--- | :--- |
@@ -268,5 +268,5 @@ WHERE rn = 1 AND is_tombstone = 0;
 | `extractors.py` | `DeltaExtractor`, `CallableExtractor`, and `OpenAICompatibleExtractor` for LLM delta extraction |
 | `hooks.py` | `EngineHooks` & `BaseEngineHooks` lifecycle callbacks (commit, rollback, branch, gate rejection) |
 | `presets.py` | `SchemaPolicy`, `InteractiveFictionPreset`, `TranslationPreset`, and `SimulationPreset` |
-| `engine.py` | `NarrativeMemoryEngine`, `StepTransaction`, `TimelineSession` (`contextvars`), POV projection & consolidation |
-| `cli.py` | `narrative-memory` CLI inspector (`tree`, `inspect`, `diff`, `history`) |
+| `engine.py` | `CanonArcEngine`, `StepTransaction`, `TimelineSession` (`contextvars`), POV projection & consolidation |
+| `cli.py` | `canonarc` CLI inspector (`tree`, `inspect`, `diff`, `history`) |

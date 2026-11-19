@@ -11,7 +11,7 @@ In sequential LLM generation, feeding past outputs back into the prompt without 
 
 ## The Solution: Two-Stage Anti-Drift Gate
 
-`narrative-memory` guards the Voice Bank behind two strict gates:
+`canonarc` guards the Voice Bank behind two strict gates:
 
 ```
 Raw Output Prose
@@ -59,7 +59,7 @@ When retrieving exemplars for a character or agent, the Voice Bank applies a mul
 
 In scenes with multiple co-present characters (e.g., Arthur in a room with both Merlin in `ti`/`furious` and the Queen in `Vi`/`reverent`), collapsing a speaker's outgoing edges to a single arbitrary target would lock the speaker into one register and hard-filter out all other co-present registers.
 
-`NarrativeMemoryEngine.retrieve_context` and `VoiceBank.rank_exemplars_for_targets` resolve voice targets **per dyad** instead:
+`CanonArcEngine.retrieve_context` and `VoiceBank.rank_exemplars_for_targets` resolve voice targets **per dyad** instead:
 
 1. **In-Scene Target Prioritization**: Outgoing edges directed to co-present characters in the scene (`in_scene_ids`) are prioritized over off-screen 1-hop neighbors. An active `facade` toward an absent character never overrides an in-scene `stance`.
 2. **Per-Pair Layer Merging (`base < stance < facade`)**: Edges are grouped by `(speaker_id, target_id)` and merged from lowest to highest priority (`kinship`/base $\to$ `stance` $\to$ `facade`).
@@ -71,14 +71,14 @@ In scenes with multiple co-present characters (e.g., Arthur in a room with both 
 
 ---
 
-## Embedders & Adapters (`narrative_memory.embedders`)
+## Embedders & Adapters (`canonarc.embedders`)
 
-By default, `narrative-memory` ships with `OfflineNgramEmbedder`:
+By default, `canonarc` ships with `OfflineNgramEmbedder`:
 - **Zero external dependencies**, 128-dimensional L2-normalized `float32` vectors.
 - **Unicode & CJK-aware tokenization** (`_tokenize_units`): Tokenizes Latin/Cyrillic alphanumeric words as well as CJK ideographs, Hiragana/Katakana, and Hangul syllables + adjacent character bigrams so non-space-delimited languages work out of the box.
 - **Weinberger signed CRC32 feature hashing**: Uses `zlib.crc32` for both bucket index and a `±1` sign bit to cancel hash-collision bias cleanly across Python processes.
 - **Batch Embedding**: Implements `embed_batch(texts)` (with `embed_texts_batch()` helper) so committing batches of voice exemplars or episodes uses a single vectorized call when backed by remote/GPU embedders.
-- **Embedder provenance & mismatch detection**: `CausalStore` records `embedder_id` and `embedding_dim` in `store_metadata` on first write (and infers `embedding_dim` for legacy DBs). When reopening a database with a different embedder or dimension, `NarrativeMemoryEngine(..., on_embedder_mismatch=...)` supports:
+- **Embedder provenance & mismatch detection**: `CausalStore` records `embedder_id` and `embedding_dim` in `store_metadata` on first write (and infers `embedding_dim` for legacy DBs). When reopening a database with a different embedder or dimension, `CanonArcEngine(..., on_embedder_mismatch=...)` supports:
   - `"warn"` *(default)*: Emits a `UserWarning` advising migration.
   - `"raise"`: Raises `EmbedderMismatchError` immediately (catches both dimension mismatches and same-dimension model swaps).
   - `"reindex"`: Automatically runs `engine.reindex_embeddings()` in batches on startup.

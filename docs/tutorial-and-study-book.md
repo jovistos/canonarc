@@ -1,4 +1,4 @@
-# `narrative-memory`: Comprehensive Tutorial & Architectural Study Book
+# `canonarc`: Comprehensive Tutorial & Architectural Study Book
 
 > **A deep dive into the design philosophy, mathematical foundations, causal time-travel mechanics, empirical voice anchoring, and episodic event ledger of stateful narrative intelligence.**
 
@@ -34,7 +34,7 @@ flowchart TD
         A5["Linear History"] --> E5["Zero support for Save Slots & Branching Multiverses"]
         A6["State-Only Memory (No Event Ledger)"] --> E6["Past events erased when state resets; State-dict bloat"]
     end
-    subgraph NarrativeMemory["narrative-memory Architecture"]
+    subgraph CanonArc["canonarc Architecture"]
         B1["Discrete Causal Steps (step: int)"]
         B2["Causal Lineage Cutoff (step < current_step)"]
         B3["Directed Pairwise Stance & Register Graph"]
@@ -74,8 +74,8 @@ When a character's mood returns to `"calm"` at Step 90, the fact that an argumen
 * Developers bloat entity state dicts with historical notes.
 * Characters metagame by knowing events they never witnessed.
 
-### 0.2 The Guiding Principles of `narrative-memory`
-`narrative-memory` was designed around four non-negotiable principles:
+### 0.2 The Guiding Principles of `canonarc`
+`canonarc` was designed around four non-negotiable principles:
 1. **Single-File Zero-Ops Portability:** The entire multiverse, graph revisions, episodic events, and vector embeddings reside in a single standard SQLite file (`story.sqlite` or `:memory:`).
 2. **Causal Lineage Boundary:** No query can ever see records with $\text{step} \ge \text{current\_step}$ unless explicitly requested.
 3. **Strict Linguistic & Voice Gating:** Stylistic memory must be filtered by deterministic lexical quality gates and hard grammatical constraints before vector similarity is even considered.
@@ -85,7 +85,7 @@ When a character's mood returns to `"calm"` at Step 90, the fact that an argumen
 
 ## Chapter 1: The Core Ontological Model (The 6-Tier Superset)
 
-The library formalizes world state as a **6-Tier Architectural Superset** defined in [`src/narrative_memory/models.py`](../src/narrative_memory/models.py).
+The library formalizes world state as a **6-Tier Architectural Superset** defined in [`src/canonarc/models.py`](../src/canonarc/models.py).
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -141,7 +141,7 @@ Stores immutable N-ary narrative events with semantic roles, optional narrative 
 
 ## Chapter 2: The Storage Engine & The Recursive Lineage CTE
 
-[`src/narrative_memory/store.py`](../src/narrative_memory/store.py) implements the narrative multiverse in a lean, self-contained SQLite schema.
+[`src/canonarc/store.py`](../src/canonarc/store.py) implements the narrative multiverse in a lean, self-contained SQLite schema.
 
 ### 2.1 The Schema
 The database tracks:
@@ -244,7 +244,7 @@ Counterfactual inspection (`diff_timelines`) and standalone export (`export_snap
 The 2-stage ingestion gate prevents generation drift:
 1. **Gate 1:** Regex extraction across quotation styles (`"..."`, `«...»`, `— ...`), word count ($12 \le N \le 60$), Root-TTR distinctiveness, and long-word density (with optional `on_rejected` telemetry callbacks).
 2. **Gate 2:** Post-polish quality score ($\ge 8.0$).
-3. **Retrieval Cascade:** Strict hard register filtering $\to$ soft tone bonus $\to$ cosine similarity over Weinberger signed-CRC32 n-gram/CJK hash vectors (`narrative_memory.embedders`), with batch vectorization (`embed_batch()`) and built-in `CallableEmbedder`, `OpenAICompatibleEmbedder`, and `OllamaEmbedder` adapters.
+3. **Retrieval Cascade:** Strict hard register filtering $\to$ soft tone bonus $\to$ cosine similarity over Weinberger signed-CRC32 n-gram/CJK hash vectors (`canonarc.embedders`), with batch vectorization (`embed_batch()`) and built-in `CallableEmbedder`, `OpenAICompatibleEmbedder`, and `OllamaEmbedder` adapters.
 
 ---
 
@@ -289,23 +289,23 @@ See [`tests/test_episodic_memory.py`](../tests/test_episodic_memory.py) for the 
 
 | Subsystem | Primary Code File | Key Classes & Functions | Responsibility |
 | :--- | :--- | :--- | :--- |
-| **Data Models** | [`src/narrative_memory/models.py`](../src/narrative_memory/models.py) | `EntityRecord`, `DirectedEdgeRecord`, `EpisodeRecord`, `InformDelta`, `VoiceExemplar`, `StepDelta`, `ResolvedMention` | Pydantic v2 schemas modeling Tiers 1–6 & `EpistemicMode` |
-| **Storage & Causal Graph** | [`src/narrative_memory/store.py`](../src/narrative_memory/store.py) | `MemoryStore`, `CausalStore`, Recursive CTE | 5-table SQLite storage, lineage traversal, snapshots, timeline deletions, atomic rollbacks |
-| **Embedders** | [`src/narrative_memory/embedders.py`](../src/narrative_memory/embedders.py) | `Embedder`, `OfflineNgramEmbedder`, `CallableEmbedder`, `OpenAICompatibleEmbedder`, `OllamaEmbedder` | Pluggable vectorizers with CJK tokenization, signed CRC32 hashing, and batching |
-| **Voice Bank & Gates** | [`src/narrative_memory/voice.py`](../src/narrative_memory/voice.py) | `VoiceBank`, `IngestionGate` | Multi-alphabet regex extraction, Root-TTR gate, hard-register cascade |
-| **Episodic Ranker** | [`src/narrative_memory/episodic.py`](../src/narrative_memory/episodic.py) | `EpisodeRanker`, `DefaultEpisodeRanker`, `EpisodicScoringPolicy` | Deceived-POV safe hybrid 4-signal Tier 6 scorer |
-| **Mention Resolver** | [`src/narrative_memory/resolver.py`](../src/narrative_memory/resolver.py) | `MentionResolver`, `DefaultLexicalResolver` | Word-boundary, shared alias span, and fuzzy inflection resolution |
-| **LLM Extractors** | [`src/narrative_memory/extractors.py`](../src/narrative_memory/extractors.py) | `DeltaExtractor`, `CallableExtractor`, `OpenAICompatibleExtractor` | JSON-fence stripping and Pydantic validation retry loop for `StepDelta` |
-| **Lifecycle Hooks** | [`src/narrative_memory/hooks.py`](../src/narrative_memory/hooks.py) | `EngineHooks`, `BaseEngineHooks` | Observability callbacks for commit, rollback, branch, and gate rejections |
-| **Domain Presets** | [`src/narrative_memory/presets.py`](../src/narrative_memory/presets.py) | `SchemaPolicy`, `InteractiveFictionPreset`, `TranslationPreset`, `SimulationPreset` | Prompt engineering templates for game engines, translation, and simulations |
-| **Engine Facade** | [`src/narrative_memory/engine.py`](../src/narrative_memory/engine.py) | `NarrativeMemoryEngine`, `StepTransaction`, `TimelineSession` | High-level API, POV projection, consolidation, `contextvars` sessions, transactions |
-| **CLI Inspector** | [`src/narrative_memory/cli.py`](../src/narrative_memory/cli.py) | `narrative-memory tree / inspect / diff / history` | Terminal inspection of `.sqlite` timelines, state, diffs, and revisions |
+| **Data Models** | [`src/canonarc/models.py`](../src/canonarc/models.py) | `EntityRecord`, `DirectedEdgeRecord`, `EpisodeRecord`, `InformDelta`, `VoiceExemplar`, `StepDelta`, `ResolvedMention` | Pydantic v2 schemas modeling Tiers 1–6 & `EpistemicMode` |
+| **Storage & Causal Graph** | [`src/canonarc/store.py`](../src/canonarc/store.py) | `MemoryStore`, `CausalStore`, Recursive CTE | 5-table SQLite storage, lineage traversal, snapshots, timeline deletions, atomic rollbacks |
+| **Embedders** | [`src/canonarc/embedders.py`](../src/canonarc/embedders.py) | `Embedder`, `OfflineNgramEmbedder`, `CallableEmbedder`, `OpenAICompatibleEmbedder`, `OllamaEmbedder` | Pluggable vectorizers with CJK tokenization, signed CRC32 hashing, and batching |
+| **Voice Bank & Gates** | [`src/canonarc/voice.py`](../src/canonarc/voice.py) | `VoiceBank`, `IngestionGate` | Multi-alphabet regex extraction, Root-TTR gate, hard-register cascade |
+| **Episodic Ranker** | [`src/canonarc/episodic.py`](../src/canonarc/episodic.py) | `EpisodeRanker`, `DefaultEpisodeRanker`, `EpisodicScoringPolicy` | Deceived-POV safe hybrid 4-signal Tier 6 scorer |
+| **Mention Resolver** | [`src/canonarc/resolver.py`](../src/canonarc/resolver.py) | `MentionResolver`, `DefaultLexicalResolver` | Word-boundary, shared alias span, and fuzzy inflection resolution |
+| **LLM Extractors** | [`src/canonarc/extractors.py`](../src/canonarc/extractors.py) | `DeltaExtractor`, `CallableExtractor`, `OpenAICompatibleExtractor` | JSON-fence stripping and Pydantic validation retry loop for `StepDelta` |
+| **Lifecycle Hooks** | [`src/canonarc/hooks.py`](../src/canonarc/hooks.py) | `EngineHooks`, `BaseEngineHooks` | Observability callbacks for commit, rollback, branch, and gate rejections |
+| **Domain Presets** | [`src/canonarc/presets.py`](../src/canonarc/presets.py) | `SchemaPolicy`, `InteractiveFictionPreset`, `TranslationPreset`, `SimulationPreset` | Prompt engineering templates for game engines, translation, and simulations |
+| **Engine Facade** | [`src/canonarc/engine.py`](../src/canonarc/engine.py) | `CanonArcEngine`, `StepTransaction`, `TimelineSession` | High-level API, POV projection, consolidation, `contextvars` sessions, transactions |
+| **CLI Inspector** | [`src/canonarc/cli.py`](../src/canonarc/cli.py) | `canonarc tree / inspect / diff / history` | Terminal inspection of `.sqlite` timelines, state, diffs, and revisions |
 
 ### Key API & CLI Cheatsheet
 
 ```python
 # Initialization & Concurrency-Safe Sessions
-with NarrativeMemoryEngine("save.sqlite") as engine:
+with CanonArcEngine("save.sqlite") as engine:
     # Transactional Game Loop (Auto-rollback on error)
     with engine.step_transaction(step=current_step, text=scene_text, top_k_episodes=5) as tx:
         ctx = tx.context
@@ -334,8 +334,8 @@ with NarrativeMemoryEngine("save.sqlite") as engine:
 ```
 
 ```bash
-narrative-memory tree save.sqlite
-narrative-memory inspect save.sqlite --timeline main --step 85 --pov char_arthur
-narrative-memory diff save.sqlite main alternate_route --step 85
-narrative-memory history save.sqlite char_arthur --timeline main
+canonarc tree save.sqlite
+canonarc inspect save.sqlite --timeline main --step 85 --pov char_arthur
+canonarc diff save.sqlite main alternate_route --step 85
+canonarc history save.sqlite char_arthur --timeline main
 ```

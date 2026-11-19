@@ -75,9 +75,9 @@ Past Utterance Anchors:
 Every `DomainPreset` exposes a `policy: SchemaPolicy` attribute that controls which state/metadata keys act as hard filters, soft boosts, or edge layers in the core engine, `VoiceBank`, and `DefaultEpisodeRanker` (via `episodic_policy: EpisodicScoringPolicy`):
 
 ```python
-from narrative_memory import NarrativeMemoryEngine, SchemaPolicy, SimulationPreset
-from narrative_memory.episodic import EpisodicScoringPolicy
-from narrative_memory.models import StepContext
+from canonarc import CanonArcEngine, SchemaPolicy, SimulationPreset
+from canonarc.episodic import EpisodicScoringPolicy
+from canonarc.models import StepContext
 
 # Example: Financial / multi-agent simulation filtering on channel & urgency
 sim_policy = SchemaPolicy(
@@ -90,14 +90,14 @@ sim_policy = SchemaPolicy(
         base_decay_rate=0.02,
     ),
 )
-engine = NarrativeMemoryEngine(preset=SimulationPreset(policy=sim_policy))
+engine = CanonArcEngine(preset=SimulationPreset(policy=sim_policy))
 ```
 
 Or implement the full `DomainPreset` protocol:
 
 ```python
-from narrative_memory import DEFAULT_SCHEMA_POLICY, SchemaPolicy
-from narrative_memory.models import StepContext
+from canonarc import DEFAULT_SCHEMA_POLICY, SchemaPolicy
+from canonarc.models import StepContext
 
 class MyCustomPreset:
     policy: SchemaPolicy = DEFAULT_SCHEMA_POLICY
@@ -111,5 +111,5 @@ class MyCustomPreset:
     def extraction_instructions(self) -> str:
         return "Return JSON diff for character state, stances, and discrete episodes."
 
-engine = NarrativeMemoryEngine(preset=MyCustomPreset())
+engine = CanonArcEngine(preset=MyCustomPreset())
 ```
