@@ -1,0 +1,111 @@
+{
+  "timeline_operations": [
+    {
+      "steps": 100,
+      "characters": 12,
+      "ingest_per_step_ms": 0.938,
+      "branch_ms": 0.085,
+      "rollback_ms": 0.067,
+      "deep_rollback_steps": 50,
+      "deep_rollback_ms": 0.57,
+      "diff_timelines_ms": 1.77,
+      "export_snapshot_ms": 23.614
+    },
+    {
+      "steps": 500,
+      "characters": 50,
+      "ingest_per_step_ms": 1.033,
+      "branch_ms": 0.083,
+      "rollback_ms": 0.066,
+      "deep_rollback_steps": 250,
+      "deep_rollback_ms": 1.622,
+      "diff_timelines_ms": 9.651,
+      "export_snapshot_ms": 114.182
+    },
+    {
+      "steps": 1500,
+      "characters": 120,
+      "ingest_per_step_ms": 0.966,
+      "branch_ms": 0.087,
+      "rollback_ms": 0.067,
+      "deep_rollback_steps": 750,
+      "deep_rollback_ms": 4.476,
+      "diff_timelines_ms": 13.992,
+      "export_snapshot_ms": 343.62
+    }
+  ],
+  "retrieval_scaling": [
+    {
+      "steps": 100,
+      "characters": 12,
+      "n_queries": 60,
+      "p50_retrieve_ms": 6.03,
+      "iqr_retrieve_ms": 0.24,
+      "p95_retrieve_ms": 6.327,
+      "p99_retrieve_ms": 6.336,
+      "consolidate_ms": 9.088,
+      "post_consolidation_p50_ms": 4.294,
+      "post_consolidation_p95_ms": 4.575
+    },
+    {
+      "steps": 500,
+      "characters": 50,
+      "n_queries": 60,
+      "p50_retrieve_ms": 15.773,
+      "iqr_retrieve_ms": 0.234,
+      "p95_retrieve_ms": 16.022,
+      "p99_retrieve_ms": 16.053,
+      "consolidate_ms": 55.939,
+      "post_consolidation_p50_ms": 12.186,
+      "post_consolidation_p95_ms": 13.706
+    },
+    {
+      "steps": 1500,
+      "characters": 120,
+      "n_queries": 60,
+      "p50_retrieve_ms": 26.923,
+      "iqr_retrieve_ms": 0.513,
+      "p95_retrieve_ms": 27.483,
+      "p99_retrieve_ms": 27.595,
+      "consolidate_ms": 189.131,
+      "post_consolidation_p50_ms": 21.258,
+      "post_consolidation_p95_ms": 22.174
+    }
+  ],
+  "storage_and_memory_scaling": [
+    {
+      "steps": 100,
+      "characters": 12,
+      "sqlite_file_kb": 232.0,
+      "post_consolidate_sqlite_kb": 148.0,
+      "snapshot_file_kb": 232.0,
+      "peak_heap_kb": 572.3
+    },
+    {
+      "steps": 500,
+      "characters": 50,
+      "sqlite_file_kb": 880.0,
+      "post_consolidate_sqlite_kb": 384.0,
+      "snapshot_file_kb": 764.0,
+      "peak_heap_kb": 2559.9
+    },
+    {
+      "steps": 1500,
+      "characters": 120,
+      "sqlite_file_kb": 2032.0,
+      "post_consolidate_sqlite_kb": 436.0,
+      "snapshot_file_kb": 2028.0,
+      "peak_heap_kb": 7160.7
+    }
+  ],
+  "deceived_pov_vector_isolation": {
+    "total_candidate_episodes": 26,
+    "deceived_query_top1_episode": "ep_secret_cellar_theft",
+    "witness_query_top1_episode": "ep_secret_cellar_theft",
+    "adversarial_secret_query_top1_episode": "ep_distractor_cellar_inventory",
+    "believed_summary_vector_recall_at_1": 1.0,
+    "witness_true_vector_recall_at_1": 1.0,
+    "zero_ground_truth_vector_leak": true,
+    "adversarial_side_channel_blocked": true
+  }
+}
