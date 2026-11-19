@@ -6,7 +6,7 @@ In narrative fiction, game engines (like Ren'Py), and simulations, time is discr
 
 ## 1. Zero-Copy Branching (`branch(at_step, name)`)
 
-When a player reaches a branching choice (e.g., *Accept the Dark Pact* vs. *Refuse*), `narrative-memory` forks the timeline with zero data copying:
+When a player reaches a branching choice (e.g., *Accept the Dark Pact* vs. *Refuse*), `canonarc` forks the timeline with zero data copying:
 
 ```python
 # Main storyline proceeds
@@ -109,7 +109,7 @@ ctx_a = route_a.retrieve_context(step=30, mentions=["Arthur"])
 
 ## 7. Non-Linear Narrative Time & Flashbacks
 
-`narrative-memory` distinguishes **discourse order** (`step: int`) from **diegetic story order** (`story_time`, `chapter_id`, `scene_id`):
+`canonarc` distinguishes **discourse order** (`step: int`) from **diegetic story order** (`story_time`, `chapter_id`, `scene_id`):
 
 ```python
 engine.commit_step(
@@ -139,8 +139,8 @@ When `is_flashback=True`, existing entities and edges at step 40 are **never rol
 Inspect save files without writing Python scripts:
 
 ```bash
-narrative-memory tree saves/story.sqlite
-narrative-memory inspect saves/story.sqlite --timeline dark_pact_route --step 50 --pov char_arthur
-narrative-memory diff saves/story.sqlite main dark_pact_route --step 50
-narrative-memory history saves/story.sqlite char_arthur --timeline dark_pact_route
+canonarc tree saves/story.sqlite
+canonarc inspect saves/story.sqlite --timeline dark_pact_route --step 50 --pov char_arthur
+canonarc diff saves/story.sqlite main dark_pact_route --step 50
+canonarc history saves/story.sqlite char_arthur --timeline dark_pact_route
 ```

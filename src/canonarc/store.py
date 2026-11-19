@@ -262,7 +262,7 @@ class TimelineBranchConflictError(RuntimeError):
 
 
 class MemoryStore(Protocol):
-    """Backend storage protocol for NarrativeMemoryEngine."""
+    """Backend storage protocol for CanonArcEngine."""
 
     def close(self) -> None: ...
     def create_timeline(

@@ -1,7 +1,7 @@
 import tempfile
 from pathlib import Path
-from narrative_memory.store import CausalStore
-from narrative_memory.models import EntityRecord, StepDelta, EdgeDelta, EntityDelta
+from canonarc.store import CausalStore
+from canonarc.models import EntityRecord, StepDelta, EdgeDelta, EntityDelta
 
 
 def test_lineage_resolution_and_branching():
@@ -283,10 +283,10 @@ def test_multigraph_independent_edge_lifecycles():
 
 def test_bounded_episode_loading_and_sql_prefilter():
     """get_lineage_episodes(limit=...) bounds rows loaded while preserving pinned, cue, FTS, and POV matches."""
-    from narrative_memory.engine import NarrativeMemoryEngine
-    from narrative_memory.models import EpisodeRecord, InformDelta
+    from canonarc.engine import CanonArcEngine
+    from canonarc.models import EpisodeRecord, InformDelta
 
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(EntityRecord(entity_id="char_arthur", canonical_name="Arthur"), step=0)
     engine.register_entity(EntityRecord(entity_id="char_merlin", canonical_name="Merlin"), step=0)
 

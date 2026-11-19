@@ -1,11 +1,11 @@
 # API Reference
 
-## `NarrativeMemoryEngine`
+## `CanonArcEngine`
 
 The central facade for state tracking, episodic memory, voice retrieval, mutation, and causal time travel.
 
 ```python
-class NarrativeMemoryEngine:
+class CanonArcEngine:
     def __init__(
         self,
         db_path: str | Path = ":memory:",
@@ -23,7 +23,7 @@ class NarrativeMemoryEngine:
     ) -> None: ...
 ```
 
-Supports Python context management (`with NarrativeMemoryEngine("save.sqlite") as engine:`) as well as concurrency-safe timeline isolation via `engine.session(timeline_id)` (`TimelineSession`) and `with engine.use_timeline(timeline_id):`.
+Supports Python context management (`with CanonArcEngine("save.sqlite") as engine:`) as well as concurrency-safe timeline isolation via `engine.session(timeline_id)` (`TimelineSession`) and `with engine.use_timeline(timeline_id):`.
 
 ### Seeding Methods
 - `register_entity(entity: EntityRecord, aliases: Sequence[str | AliasRecord] = (), step: int = 0, timeline_id: str | None = None) -> None`: Registers an entity and its aliases at `step`.
@@ -205,7 +205,7 @@ class StepContext(BaseModel):
 
 ## Extension Protocols, Adapters & Policies
 
-- `MemoryStore`: Storage protocol implemented by `CausalStore`. Inject a custom backend via `NarrativeMemoryEngine(store=my_store)`. `CausalStore` also provides `get_known_episode_ids()` and bounded/pre-filtered `get_lineage_episodes(..., limit=..., pov_entity_ids=..., cue_entity_ids=..., pinned_episode_ids=..., query_text=...)` backed by SQLite FTS5 (`episodes_fts`).
+- `MemoryStore`: Storage protocol implemented by `CausalStore`. Inject a custom backend via `CanonArcEngine(store=my_store)`. `CausalStore` also provides `get_known_episode_ids()` and bounded/pre-filtered `get_lineage_episodes(..., limit=..., pov_entity_ids=..., cue_entity_ids=..., pinned_episode_ids=..., query_text=...)` backed by SQLite FTS5 (`episodes_fts`).
 - `MentionResolver`: Pluggable entity/coreference resolution protocol (`resolve(text, explicit_mentions, entities, aliases) -> list[ResolvedMention]`). Defaults to `DefaultLexicalResolver(fuzzy_threshold=88.0)`, which uses word-boundary matching and optional `rapidfuzz` inflection matching.
 - `EpisodeRanker` / `EpisodicScoringPolicy`: Pluggable Tier 6 episodic memory ranker (`DefaultEpisodeRanker`) decoupled from `VoiceBank`, configurable via `SchemaPolicy.episodic_policy`.
 - `Embedder` & Built-in Adapters: `OfflineNgramEmbedder`, `CallableEmbedder`, `OpenAICompatibleEmbedder`, and `OllamaEmbedder`, all supporting `embed_batch()`. Embedder provenance (`embedder_id`, `embedding_dim`) is recorded in `store_metadata`, with `on_embedder_mismatch` (`"warn"`, `"raise"`, `"reindex"`, `"ignore"`), `EmbedderMismatchError`, and `get_embedder_info()`.
@@ -215,20 +215,20 @@ class StepContext(BaseModel):
 
 ---
 
-## CLI Reference (`narrative-memory`)
+## CLI Reference (`canonarc`)
 
-Installed as a console script via `[project.scripts]` (`narrative_memory.cli:main`):
+Installed as a console script via `[project.scripts]` (`canonarc.cli:main`):
 
 ```bash
 # Render the hierarchical timeline branch tree (pass --json for machine-readable output)
-narrative-memory tree story_save.sqlite [--json]
+canonarc tree story_save.sqlite [--json]
 
 # Inspect active point-in-time world state on a timeline
-narrative-memory inspect story_save.sqlite [--timeline main] [--step 85] [--inclusive] [--pov char_arthur] [--text "scene cue"] [--json]
+canonarc inspect story_save.sqlite [--timeline main] [--step 85] [--inclusive] [--pov char_arthur] [--text "scene cue"] [--json]
 
 # Diff active entities, edges, and aliases between two branches at a specific step
-narrative-memory diff story_save.sqlite timeline_a timeline_b --step 85 [--json]
+canonarc diff story_save.sqlite timeline_a timeline_b --step 85 [--json]
 
 # Show causal revision trajectory (valid_from..valid_to) for an entity, edge, or alias key
-narrative-memory history story_save.sqlite char_arthur [--timeline main] [--type entity|edge|alias] [--json]
+canonarc history story_save.sqlite char_arthur [--timeline main] [--type entity|edge|alias] [--json]
 ```

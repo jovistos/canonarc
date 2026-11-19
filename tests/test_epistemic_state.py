@@ -1,10 +1,10 @@
-from narrative_memory import (
+from canonarc import (
     AliasRecord,
     EdgeDelta,
     EntityDelta,
     EntityRecord,
     EpisodeRecord,
-    NarrativeMemoryEngine,
+    CanonArcEngine,
     StepDelta,
     TranslationPreset,
     VoiceExemplar,
@@ -14,7 +14,7 @@ from narrative_memory import (
 def test_disguise_alias_scoped_resolution():
     """Tests that a scoped disguise alias masks the entity for fooled observers
     while resolving to the true identity for observers who see through it."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(
         EntityRecord(
             entity_id="char_odysseus",
@@ -89,7 +89,7 @@ def test_disguise_alias_scoped_resolution():
 def test_private_state_and_provenance_redaction():
     """Tests that private_state and unwitnessed causal provenance (reason / caused_by_episode_id)
     are redacted when querying from an ignorant character's POV."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(EntityRecord(entity_id="char_arthur", canonical_name="Arthur"), step=0)
     engine.register_entity(EntityRecord(entity_id="char_lancelot", canonical_name="Lancelot"), step=0)
 
@@ -148,7 +148,7 @@ def test_private_state_and_provenance_redaction():
 def test_deception_and_believed_summary():
     """Tests that InformDelta(epistemic='deceived', believed_summary=...) gives the deceived
     observer a false summary while preserving ground truth for others."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     for eid, name in [
         ("char_mordred", "Mordred"),
         ("char_gawain", "Gawain"),
@@ -205,7 +205,7 @@ def test_deception_and_believed_summary():
 def test_stale_belief_state_override():
     """Tests that a belief_state edge overrides ground-truth entity state for a character
     who has not yet learned of a distant change (e.g. a battlefield death)."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(
         EntityRecord(entity_id="char_arthur", canonical_name="Arthur", state={"status": "alive"}),
         step=0,
@@ -257,7 +257,7 @@ def test_stale_belief_state_override():
 def test_facade_vs_private_stance_voice_selection_and_irony_prompt():
     """Tests that facade edges drive outward voice exemplar selection and hide private
     stance edges from non-POV observers, while omniscient presets render dramatic irony tags."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(EntityRecord(entity_id="char_mordred", canonical_name="Mordred"), step=0)
     engine.register_entity(EntityRecord(entity_id="char_arthur", canonical_name="Arthur"), step=0)
     engine.register_entity(EntityRecord(entity_id="char_percival", canonical_name="Percival"), step=0)

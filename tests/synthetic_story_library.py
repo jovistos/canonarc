@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal, Sequence
 
-from narrative_memory import (
+from canonarc import (
     AliasRecord,
     CachedDeltaExtractor,
     DialogueCandidate,
@@ -19,14 +19,14 @@ from narrative_memory import (
     EpisodeRecord,
     InformDelta,
     InteractiveFictionPreset,
-    NarrativeMemoryEngine,
+    CanonArcEngine,
     OpenAICompatibleExtractor,
     StepDelta,
     TokenUsage,
     VoiceExemplar,
     load_dotenv,
 )
-from narrative_memory.extractors import _strip_json_fences
+from canonarc.extractors import _strip_json_fences
 from synthetic_story_harness import (
     ArtifactSeed,
     CharacterSeed,
@@ -1392,7 +1392,7 @@ class StoryLibraryManager:
         """Loads the saved synthetic story from its subfolder if cached; otherwise generates it via DeepSeek Flash."""
         subfolder = self.story_subfolder(story_slug)
         story_json_path = subfolder / "story.json"
-        env_force = os.environ.get("NARRATIVE_MEMORY_REGENERATE_STORY") == "1"
+        env_force = os.environ.get("CANONARC_REGENERATE_STORY") == "1"
 
         if story_slug == "obsidian_signet_micro":
             return self._get_or_create_micro_baseline(subfolder, force_regenerate=force_regenerate or env_force)
@@ -1767,7 +1767,7 @@ class StoryLibraryManager:
         ]
         (self.root_dir / "README.md").write_text("\n".join(readme), encoding="utf-8")
 
-    def _seed_engine_from_params(self, engine: NarrativeMemoryEngine, params: SynthStoryParams) -> None:
+    def _seed_engine_from_params(self, engine: CanonArcEngine, params: SynthStoryParams) -> None:
         for loc in params.locations:
             engine.register_entity(
                 EntityRecord(
@@ -1843,7 +1843,7 @@ class StoryLibraryManager:
 
     @staticmethod
     def _format_active_world_state_for_extraction(
-        engine: NarrativeMemoryEngine,
+        engine: CanonArcEngine,
         cutoff_step: int,
     ) -> str:
         """Formats the engine's current point-in-time world registry (at step-1) for unguided extraction."""
@@ -1946,7 +1946,7 @@ class StoryLibraryManager:
         blueprint = self.catalog.get(story_slug)
         beat_by_step = {b.step: b for b in blueprint.beats} if blueprint else {}
 
-        env_bypass = os.environ.get("NARRATIVE_MEMORY_BYPASS_EXTRACTION_CACHE") == "1"
+        env_bypass = os.environ.get("CANONARC_BYPASS_EXTRACTION_CACHE") == "1"
         effective_bypass = bypass_extraction_cache or env_bypass
 
         extractions_dir = story.story_dir / "extractions"
@@ -2074,8 +2074,8 @@ class StoryLibraryManager:
             except Exception:  # noqa: BLE001
                 pass
 
-        engine = NarrativeMemoryEngine(":memory:", preset=preset)
-        oracle_engine = NarrativeMemoryEngine(
+        engine = CanonArcEngine(":memory:", preset=preset)
+        oracle_engine = CanonArcEngine(
             ":memory:",
             preset=InteractiveFictionPreset(include_background_edges=True),
         )
@@ -2462,8 +2462,8 @@ class ExtractionBenchmarkScorer:
         chunk: SyntheticChunkSpec,
         raw_delta: StepDelta,
         committed_delta: StepDelta,
-        model_engine: NarrativeMemoryEngine,
-        oracle_engine: NarrativeMemoryEngine,
+        model_engine: CanonArcEngine,
+        oracle_engine: CanonArcEngine,
     ) -> StepExtractionMetrics:
         step = chunk.step
         oracle = chunk.oracle_delta

@@ -46,7 +46,7 @@ class StepTransaction:
 
     def __init__(
         self,
-        engine: NarrativeMemoryEngine,
+        engine: CanonArcEngine,
         step: int,
         *,
         text: str = "",
@@ -146,7 +146,7 @@ class StepTransaction:
         """Runs the configured DeltaExtractor on scene_text, normalizes IDs, and stages the StepDelta."""
         active_extractor = extractor or self.engine.extractor
         if active_extractor is None:
-            raise ValueError("No DeltaExtractor provided to StepTransaction or NarrativeMemoryEngine.")
+            raise ValueError("No DeltaExtractor provided to StepTransaction or CanonArcEngine.")
         effective_prev = self.prev_text if prev_text is None else prev_text
         effective_next = self.next_text if next_text is None else next_text
         prompt = self.engine.build_extraction_prompt(
@@ -180,7 +180,7 @@ class StepTransaction:
 class TimelineSession:
     """Concurrency-safe, immutable-timeline session view bound to a single timeline_id."""
 
-    def __init__(self, engine: NarrativeMemoryEngine, timeline_id: str) -> None:
+    def __init__(self, engine: CanonArcEngine, timeline_id: str) -> None:
         self.engine = engine
         self.timeline_id = timeline_id
 
@@ -383,7 +383,7 @@ class TimelineSession:
         )
 
 
-class NarrativeMemoryEngine:
+class CanonArcEngine:
     """High-level facade for Tier 1-6 narrative memory, episodic recall, time travel, and voice retrieval."""
 
     def __init__(
@@ -404,7 +404,7 @@ class NarrativeMemoryEngine:
         self.store: MemoryStore = store if store is not None else CausalStore(db_path)
         self._default_timeline = timeline_id
         self._timeline_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-            f"narrative_memory_timeline_{id(self)}", default=None
+            f"canonarc_timeline_{id(self)}", default=None
         )
         self.voice_bank = VoiceBank(
             embedder=embedder, gate=gate, episode_ranker=episode_ranker
@@ -572,7 +572,7 @@ class NarrativeMemoryEngine:
         self._embedder_verified = True
         return {"episodes": n_ep, "voice_exemplars": n_vo}
 
-    def __enter__(self) -> NarrativeMemoryEngine:
+    def __enter__(self) -> CanonArcEngine:
         return self
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:

@@ -5,7 +5,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Callable, Literal, Sequence
 
-from narrative_memory import (
+from canonarc import (
     AliasRecord,
     DialogueCandidate,
     EdgeDelta,
@@ -14,11 +14,11 @@ from narrative_memory import (
     EpisodeRecord,
     InformDelta,
     InteractiveFictionPreset,
-    NarrativeMemoryEngine,
+    CanonArcEngine,
     StepDelta,
     VoiceExemplar,
 )
-from narrative_memory.extractors import (
+from canonarc.extractors import (
     CallableExtractor,
     DeltaExtractor,
     OpenAICompatibleExtractor,
@@ -1311,10 +1311,10 @@ class SyntheticStoryE2ERunner:
         self,
         params: SynthStoryParams,
         *,
-        engine: NarrativeMemoryEngine | None = None,
+        engine: CanonArcEngine | None = None,
     ) -> None:
         self.params = params
-        self.engine = engine or NarrativeMemoryEngine(
+        self.engine = engine or CanonArcEngine(
             ":memory:",
             preset=InteractiveFictionPreset(include_background_edges=True),
         )

@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "narrative-memory"
+name = "canonarc"
 version = "0.1.0"
 description = "Tier 1-5 Temporal Graph, Voice Bank & Causal Time-Travel Engine for LLMs"
 readme = "README.md"
@@ -30,7 +30,7 @@ dev = [
 ]
 
 [project.scripts]
-narrative-memory = "narrative_memory.cli:main"
+canonarc = "canonarc.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

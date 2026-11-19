@@ -1,17 +1,17 @@
-from narrative_memory.engine import NarrativeMemoryEngine
-from narrative_memory.models import (
+from canonarc.engine import CanonArcEngine
+from canonarc.models import (
     EdgeDelta,
     EntityDelta,
     EntityRecord,
     StepDelta,
     VoiceExemplar,
 )
-from narrative_memory.presets import TranslationPreset
+from canonarc.presets import TranslationPreset
 
 
 def test_unified_chunk_85_scenario():
     """Validates the exact Chunk 85 Arthur vs. Merlin scenario from the user request."""
-    engine = NarrativeMemoryEngine(":memory:", preset=TranslationPreset())
+    engine = CanonArcEngine(":memory:", preset=TranslationPreset())
 
     # Tier 1: Static Attributes
     engine.register_entity(
@@ -123,7 +123,7 @@ def test_unified_chunk_85_scenario():
 
 
 def test_step_transaction():
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(
         EntityRecord(entity_id="alice", canonical_name="Alice", state={"mood": "happy"}),
         step=0,
@@ -143,8 +143,8 @@ def test_step_transaction():
 
 
 def test_multigraph_voice_and_preset_rendering():
-    from narrative_memory.presets import InteractiveFictionPreset
-    engine = NarrativeMemoryEngine(":memory:", preset=InteractiveFictionPreset())
+    from canonarc.presets import InteractiveFictionPreset
+    engine = CanonArcEngine(":memory:", preset=InteractiveFictionPreset())
 
     engine.register_entity(EntityRecord(entity_id="char_arthur", canonical_name="Arthur"), step=0)
     engine.register_entity(EntityRecord(entity_id="char_mordred", canonical_name="Mordred"), step=0)

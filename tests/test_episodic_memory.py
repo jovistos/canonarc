@@ -1,13 +1,13 @@
 import tempfile
 from pathlib import Path
 
-from narrative_memory import (
+from canonarc import (
     EdgeDelta,
     EntityDelta,
     EntityRecord,
     EpisodeRecord,
     InformDelta,
-    NarrativeMemoryEngine,
+    CanonArcEngine,
     StepDelta,
 )
 
@@ -16,7 +16,7 @@ def test_pitfall_1_and_5_episodic_survival_and_trajectory_after_mood_reset():
     """Tests that when Arthur's mood returns to 'calm' at Step 90, the Step 82 argument
     is still preserved in StepContext.episodes AND trajectory metadata (prior_state/revision_count)
     records the prior furious state without stuffing state dicts."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(
         EntityRecord(entity_id="char_arthur", canonical_name="Arthur", state={"mood": "calm"}),
         step=0,
@@ -102,7 +102,7 @@ def test_pitfall_1_and_5_episodic_survival_and_trajectory_after_mood_reset():
 def test_pitfall_2_causal_provenance_pinning():
     """Tests that caused_by_episode_id and reason link active states to their triggering episode
     and automatically pin that episode in StepContext even among many competing episodes."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(EntityRecord(entity_id="char_arthur", canonical_name="Arthur"), step=0)
     engine.register_entity(EntityRecord(entity_id="char_lancelot", canonical_name="Lancelot"), step=0)
 
@@ -164,7 +164,7 @@ def test_pitfall_2_causal_provenance_pinning():
 
 def test_pitfall_3_n_ary_event_hyperedge_and_structured_queries():
     """Tests N-ary episodes involving >2 entities, artifacts, locations, and witnesses."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     for eid, name, kind in [
         ("char_arthur", "Arthur", "character"),
         ("char_lancelot", "Lancelot", "character"),
@@ -207,7 +207,7 @@ def test_pitfall_3_n_ary_event_hyperedge_and_structured_queries():
 
 def test_pitfall_4_asymmetric_epistemic_memory_and_secondhand_inform():
     """Tests that characters only recall episodes they witnessed or were told about (no metagaming)."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     for eid, name in [
         ("char_arthur", "Arthur"),
         ("char_lancelot", "Lancelot"),
@@ -287,7 +287,7 @@ def test_pitfall_4_asymmetric_epistemic_memory_and_secondhand_inform():
 def test_pitfall_6_cue_based_location_and_semantic_plot_recall():
     """Tests that returning to a location or mentioning semantic plot cues at Step 300
     surfaces a high-salience episode from Step 42 over low-salience recent episodes."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(EntityRecord(entity_id="char_arthur", canonical_name="Arthur"), step=0)
     engine.register_entity(
         EntityRecord(entity_id="loc_tournament", canonical_name="tournament grounds", kind="location"),
@@ -336,7 +336,7 @@ def test_pitfall_6_cue_based_location_and_semantic_plot_recall():
 
 def test_episodic_time_travel_branching_rollback_and_snapshot():
     """Verifies that Tier 6 episodes and epistemics obey timeline branching, rollback_to, and export_snapshot."""
-    engine = NarrativeMemoryEngine(":memory:")
+    engine = CanonArcEngine(":memory:")
     engine.register_entity(EntityRecord(entity_id="char_arthur", canonical_name="Arthur"), step=0)
 
     # Step 20: Shared episode on 'main'
@@ -383,7 +383,7 @@ def test_episodic_time_travel_branching_rollback_and_snapshot():
     with tempfile.TemporaryDirectory() as tmpdir:
         snap_path = Path(tmpdir) / "save_90.sqlite"
         engine.export_snapshot(snap_path, at_step=90, timeline_id="main")
-        loaded = NarrativeMemoryEngine(snap_path)
+        loaded = CanonArcEngine(snap_path)
         snap_eps = loaded.query_episodes(cutoff_step=100)
         assert {e.episode_id for e in snap_eps} == {"ep_shared_20", "ep_war_82"}
         loaded.close()
