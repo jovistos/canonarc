@@ -87,6 +87,8 @@ class SyntheticChunkSpec:
     voice_quality_by_speaker: dict[str, float] = field(default_factory=dict)
     # Diagnostic tags for uncovered/boundary cases tested at this chunk:
     boundary_tags: list[str] = field(default_factory=list)
+    acceptable_moods: dict[str, set[str]] = field(default_factory=dict)
+    optional_inform: list[InformDelta] = field(default_factory=list)
 
 
 @dataclass

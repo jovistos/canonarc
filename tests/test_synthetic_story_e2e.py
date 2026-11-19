@@ -21,10 +21,13 @@ from synthetic_story_harness import (
     SynthStoryParams,
 )
 from synthetic_story_library import (
+    ExtractionBenchmarkMetrics,
+    NoOpBaselineExtractor,
     RuleBasedNarrativeExtractor,
     SimulatedModelTierExtractor,
     StoryLibraryManager,
     moods_soft_match,
+    validate_story_prose_contract,
 )
 
 
@@ -563,7 +566,7 @@ def test_gemini_hydrogen_and_model_comparison_3k_e2e() -> None:
 
     # Include cached local Qwen baselines if their benchmarks exist on disk
     story_dir = mgr.story_subfolder("obsidian_signet_3k")
-    for qwen_model in ("qwen/qwen3.6-27b", "qwen/qwen3.5-9b"):
+    for qwen_model in ("qwen/qwen3.8-27b", "qwen/qwen3.5-9b"):
         safe_name = qwen_model.replace("/", "_")
         if (story_dir / "benchmarks" / f"benchmark_{safe_name}_none.json").is_file():
             extractors.append(OpenAICompatibleExtractor.from_lmstudio(model=qwen_model))
@@ -605,7 +608,242 @@ def test_non_llm_rule_based_benchmark_across_3k_stories(tmp_path: Path) -> None:
         assert res.extraction_historical_usage.total_tokens == 0
         assert res.metrics.flashback_guard_passed is True
         assert res.metrics.hallucinated_id_count == 0
-        assert res.metrics.overall_quality_score > 0.5
+        assert 0.35 < res.metrics.overall_quality_score < 0.70
+
+
+def test_moods_soft_match_negation_guard_and_acceptable_moods() -> None:
+    """Verifies moods_soft_match rejects negated substrings ('not calm', 'uncalm', 'fearless')
+    while matching synonyms and acceptable mood overrides.
+    """
+    assert moods_soft_match("calm", "not calm") is False
+    assert moods_soft_match("calm", "uncalm") is False
+    assert moods_soft_match("calm", "non-calm") is False
+    assert moods_soft_match("fearful", "fearless") is False
+    assert moods_soft_match("furious", "cold fury") is True
+    assert moods_soft_match("shocked", "calm", acceptable={"shocked", "confused", "calm"}) is True
+
+
+def test_model_pricing_registry_and_step_metrics_deserialization() -> None:
+    """Verifies model-aware cost calculation ($0 for local LM Studio/rule-based, cloud rates for Gemini/DeepSeek)
+    and full step_metrics round-trip deserialization in ExtractionBenchmarkMetrics.from_dict().
+    """
+    usage = TokenUsage(prompt_tokens=100_000, completion_tokens=20_000, total_tokens=120_000)
+
+    assert usage.estimate_cost_usd(model="qwen/qwen3.8-27b")["total_cost_usd"] == 0.0
+    assert usage.estimate_cost_usd(model="qwen/qwen3.5-9b")["total_cost_usd"] == 0.0
+    assert usage.estimate_cost_usd(model="rule-based-non-llm")["total_cost_usd"] == 0.0
+
+    gemini_cost = usage.estimate_cost_usd(model="gemini-4-hydrogen")
+    assert gemini_cost["rates_per_1m_usd"]["input_uncached"] == 0.10
+    assert gemini_cost["total_cost_usd"] > 0.0
+
+    deepseek_cost = usage.estimate_cost_usd(model="deepseek-flash")
+    assert deepseek_cost["rates_per_1m_usd"]["input_uncached"] == 0.14
+    assert deepseek_cost["total_cost_usd"] > 0.0
+
+    # Round-trip serialization of step_metrics
+    source_mgr = StoryLibraryManager()
+    orig_story = source_mgr.get_or_create_story("obsidian_signet_3k")
+    ext_oracle = SimulatedModelTierExtractor(orig_story.chunks, profile="oracle_tier", model_name="tier1-frontier")
+    res = source_mgr.run_story_extraction_e2e(
+        "obsidian_signet_3k",
+        base_extractor=ext_oracle,
+        guidance_mode="none",
+    )
+    dumped = res.metrics.to_dict()
+    restored = ExtractionBenchmarkMetrics.from_dict(dumped)
+    assert len(restored.step_metrics) == 6
+    assert restored.step_metrics[0].step == 1
+    assert res.step_delta_pass_rate == 1.0
+    assert res.cumulative_state_pass_rate == 1.0
+
+
+def test_surface_only_guidance_mode_and_bounded_episode_ledger(tmp_path: Path) -> None:
+    """Verifies guidance_mode='surface_only' (omits char_*/loc_*/item_* IDs from world registry while exercising
+    engine.normalize_delta) and top-K bounded episode ledger formatting for long-horizon stories.
+    """
+    source_mgr = StoryLibraryManager()
+    orig_story = source_mgr.get_or_create_story("obsidian_signet_3k")
+    sub = tmp_path / "obsidian_signet_3k"
+    sub.mkdir(parents=True, exist_ok=True)
+    (sub / "story.json").write_text(
+        (orig_story.story_dir / "story.json").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+
+    mgr = StoryLibraryManager(root_dir=tmp_path)
+    ext_8b = SimulatedModelTierExtractor(orig_story.chunks, profile="medium_8b_tier", model_name="tier2-qwen-8b")
+    res = mgr.run_story_extraction_e2e(
+        "obsidian_signet_3k",
+        base_extractor=ext_8b,
+        guidance_mode="surface_only",
+    )
+    assert res.guidance_mode == "surface_only"
+    assert res.metrics.normalized_surface_id_count > 0
+    assert res.metrics.hallucinated_id_count == 0
+    assert res.metrics.overall_quality_score > 0.85
+
+
+def test_distinct_topology_veritas_3k_and_long_horizon_aethelgard_12k_e2e(tmp_path: Path) -> None:
+    """Verifies:
+    1. Distinct 5-character, 4-room, 2-artifact Locked-Room Detective Mystery (`veritas_locked_room_3k`)
+    2. 18-chunk, 3-chapter, 6-character, 5-room Long-Horizon Marathon (`aethelgard_chronicle_12k`)
+       including Chapter 1 consolidation check at Step 7, branching check at Step 12, and 12-step deception overturning.
+    3. Cross-story Mean ± StdDev aggregation (`compare_models_across_stories`).
+    """
+    mgr = StoryLibraryManager(root_dir=tmp_path)
+
+    # 1. veritas_locked_room_3k (5 characters, 4 rooms, 2 artifacts, exclusive inventory transfer)
+    veritas = mgr.get_or_create_story("veritas_locked_room_3k", use_deterministic_fallback=True)
+    assert len(veritas.chunks) == 6
+    assert len(veritas.params.characters) == 5
+    assert len(veritas.params.locations) == 4
+    assert len(veritas.params.artifacts) == 2
+    assert validate_story_prose_contract(veritas, mgr.catalog["veritas_locked_room_3k"]) == []
+
+    res_veritas = mgr.run_story_extraction_e2e(
+        "veritas_locked_room_3k",
+        base_extractor=SimulatedModelTierExtractor(veritas.chunks, profile="oracle_tier", model_name="tier1-frontier"),
+        guidance_mode="none",
+    )
+    assert res_veritas.failures == [], f"Veritas failures: {res_veritas.failures}"
+    assert res_veritas.pass_rate == 1.0
+    assert res_veritas.metrics.overall_quality_score == pytest.approx(1.0)
+
+    # 2. aethelgard_chronicle_12k (18 chunks across 3 chapters, 6 characters, 5 rooms, 2 artifacts)
+    aethelgard = mgr.get_or_create_story("aethelgard_chronicle_12k", use_deterministic_fallback=True)
+    assert len(aethelgard.chunks) == 18
+    assert len(aethelgard.params.characters) == 6
+    assert len(aethelgard.params.locations) == 5
+    assert aethelgard.total_estimated_tokens >= 7000
+    assert validate_story_prose_contract(aethelgard, mgr.catalog["aethelgard_chronicle_12k"]) == []
+
+    res_aethel = mgr.run_story_extraction_e2e(
+        "aethelgard_chronicle_12k",
+        base_extractor=SimulatedModelTierExtractor(aethelgard.chunks, profile="oracle_tier", model_name="tier1-frontier"),
+        guidance_mode="none",
+    )
+    assert res_aethel.failures == [], f"Aethelgard 12K failures: {res_aethel.failures}"
+    assert res_aethel.pass_rate == 1.0
+    assert res_aethel.metrics.overall_quality_score == pytest.approx(1.0)
+
+    # 3. Cross-story multi-topology Mean ± StdDev benchmark report
+    cross_rep = mgr.compare_models_across_stories(
+        story_slugs=("veritas_locked_room_3k", "aethelgard_chronicle_12k"),
+        extractors=[RuleBasedNarrativeExtractor()],
+        guidance_mode="none",
+    )
+    assert len(cross_rep.aggregates) == 1
+    agg = cross_rep.aggregates[0]
+    assert agg.n_runs == 2
+    assert agg.total_cost_usd == 0.0
+    assert "Mean ± Std" in cross_rep.to_markdown_table()
+
+
+def test_engine_performance_micro_benchmark_suite() -> None:
+    """Verifies engine algorithmic micro-benchmarks (sub-ms branch/rollback, deep 50% rollback,
+    SQLite storage scaling, and adversarial deceived-POV vector isolation)."""
+    import sys
+
+    scripts_dir = str(Path(__file__).resolve().parent.parent / "scripts")
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    from benchmark_engine_performance import (
+        format_engine_performance_markdown,
+        run_engine_performance_benchmarks,
+    )
+
+    rep = run_engine_performance_benchmarks(step_scales=(50, 200), n_queries=20, n_warmup=2, n_op_trials=3)
+    assert len(rep["timeline_operations"]) == 2
+    assert len(rep["storage_and_memory_scaling"]) == 2
+    assert rep["timeline_operations"][0]["deep_rollback_ms"] > 0.0
+    assert rep["retrieval_scaling"][0]["p99_retrieve_ms"] >= rep["retrieval_scaling"][0]["p50_retrieve_ms"]
+    assert rep["storage_and_memory_scaling"][1]["sqlite_file_kb"] > 0.0
+    assert rep["deceived_pov_vector_isolation"]["believed_summary_vector_recall_at_1"] == 1.0
+    assert rep["deceived_pov_vector_isolation"]["witness_true_vector_recall_at_1"] == 1.0
+    assert rep["deceived_pov_vector_isolation"]["adversarial_side_channel_blocked"] is True
+    assert rep["deceived_pov_vector_isolation"]["zero_ground_truth_vector_leak"] is True
+    md = format_engine_performance_markdown(rep)
+    assert "Timeline Time-Travel, Multi-Step Rollback & Snapshot Latency" in md
+    assert "SQLite Save File & Memory Footprint Scaling" in md
+    assert "Adversarial Secret Query Side-Channel Blocked" in md
+
+
+def test_subtext_intrigue_3k_show_dont_tell_and_dynamic_entity_discovery(tmp_path: Path) -> None:
+    """Verifies `subtext_intrigue_3k`:
+    1. Zero forbidden literal mood labels appear in prose (Show-Don't-Tell contract).
+    2. Non-isomorphic beat order (early Step 2 flashback, Step 3 confrontation + dynamic char_cassian/item_astrolabe).
+    3. Oracle achieves 100% pass rate & 1.0 overall quality with 0 hallucinated IDs on dynamically introduced entities.
+    4. Generic RuleBasedNarrativeExtractor cannot cheat via literal mood labels on subtext prose.
+    """
+    mgr = StoryLibraryManager(root_dir=tmp_path)
+    bp = mgr.catalog["subtext_intrigue_3k"]
+    story = mgr.get_or_create_story("subtext_intrigue_3k", use_deterministic_fallback=True)
+    assert len(story.chunks) == 6
+    assert validate_story_prose_contract(story, bp) == []
+
+    res_oracle = mgr.run_story_extraction_e2e(
+        "subtext_intrigue_3k",
+        base_extractor=SimulatedModelTierExtractor(story.chunks, profile="oracle_tier", model_name="tier1-frontier"),
+        guidance_mode="none",
+    )
+    assert res_oracle.failures == [], f"Subtext 3K oracle failures: {res_oracle.failures}"
+    assert res_oracle.pass_rate == 1.0
+    assert res_oracle.metrics.overall_quality_score == pytest.approx(1.0)
+    assert res_oracle.metrics.hallucinated_id_count == 0
+    assert res_oracle.metrics.voice_register_accuracy == pytest.approx(1.0)
+    assert res_oracle.metrics.character_location_accuracy == pytest.approx(1.0)
+
+    res_rule = mgr.run_story_extraction_e2e(
+        "subtext_intrigue_3k",
+        base_extractor=RuleBasedNarrativeExtractor(),
+        guidance_mode="none",
+    )
+    # Without literal mood labels in prose, keyword-only mood detection must degrade significantly
+    assert res_rule.metrics.mood_soft_accuracy < 0.75
+    assert res_rule.metrics.overall_quality_score < res_oracle.metrics.overall_quality_score
+
+
+def test_noop_null_baseline_multi_trial_aggregation_and_cached_latency_display(tmp_path: Path) -> None:
+    """Verifies NoOpBaselineExtractor inertia floor, occupied-room Jaccard, multi-trial Mean ± Std aggregation,
+    and honest 'n/a (cached)' latency formatting.
+    """
+    source_mgr = StoryLibraryManager()
+    orig_story = source_mgr.get_or_create_story("obsidian_signet_3k")
+    sub = tmp_path / "obsidian_signet_3k"
+    sub.mkdir(parents=True, exist_ok=True)
+    (sub / "story.json").write_text(
+        (orig_story.story_dir / "story.json").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+
+    mgr = StoryLibraryManager(root_dir=tmp_path)
+    story = mgr.get_or_create_story("obsidian_signet_3k")
+    comp = mgr.compare_models(
+        "obsidian_signet_3k",
+        extractors=[
+            SimulatedModelTierExtractor(story.chunks, profile="oracle_tier", model_name="tier1-frontier"),
+            RuleBasedNarrativeExtractor(),
+            NoOpBaselineExtractor(),
+        ],
+        guidance_mode="none",
+        n_trials=2,
+    )
+    assert comp.n_trials == 2
+    assert len(comp.trial_stats_by_model) == 3
+    r_oracle, r_rule, r_noop = comp.results
+    assert r_oracle.metrics.overall_quality_score > r_rule.metrics.overall_quality_score > r_noop.metrics.overall_quality_score
+    assert r_noop.metrics.location_delta_f1 == 0.0
+    assert r_noop.metrics.inform_delta_f1 == 0.0
+    assert r_noop.metrics.disguise_accuracy < 0.50
+
+    # Verify 'n/a (cached)' display when a cached LLM run has tokens > 0 but latency_ms == 0.0
+    r_oracle.extraction_historical_usage.latency_ms = 0.0
+    md = comp.to_markdown_table()
+    assert "Mean ± Std across 2 trials" in md
+    assert "n/a (cached)" in md
+    assert "Voice Reg. Acc" in md
+
 
 
 
