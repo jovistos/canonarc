@@ -1,7 +1,18 @@
-# `narrative-memory`
+<p align="center">
+  <img src="docs/assets/banner.jpg" alt="canonarc — Temporal Graph, Episodic Ledger, Voice Bank & Causal Time-Travel Engine for LLMs" width="100%" />
+</p>
+
+<h1 align="center"><code>canonarc</code></h1>
 
 <p align="center">
   <strong>Tier 1–6 Temporal Graph, Episodic Ledger, Voice Bank & Causal Time-Travel Engine for LLMs</strong>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.11%2B-blue?style=flat-square" alt="Python 3.11+" />
+  <img src="https://img.shields.io/badge/storage-SQLite%20Single--File-003B57?style=flat-square&logo=sqlite" alt="SQLite Single-File" />
+  <img src="https://img.shields.io/badge/architecture-Tier%201--6%20Causal%20Graph-6366f1?style=flat-square" alt="Tier 1-6 Causal Graph" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License" /></a>
 </p>
 
 <p align="center">
@@ -10,16 +21,17 @@
   <a href="docs/time-travel.md">Time Travel Guide</a> &bull;
   <a href="docs/voice-bank.md">Voice Bank & Anti-Drift</a> &bull;
   <a href="docs/presets.md">Domain Presets</a> &bull;
+  <a href="docs/domains-of-application.md">Domains of Application</a> &bull;
   <a href="docs/api-reference.md">API Reference</a>
 </p>
 
 ---
 
-## What is `narrative-memory`?
+## What is `canonarc`?
 
 Most LLM memory frameworks (`mem0`, `zep`, `langmem`) are designed for **conversational chatbots** operating in continuous wall-clock time. They fall short when building **Interactive Fiction, Visual Novels (Ren'Py / Ink), Multi-Agent Simulations, Creative Writing Co-Pilots, and Sequential Localization Pipelines**, where time moves in discrete **causal steps** (turns, scenes, ticks, or chunks) and narrative state must be **rewindable, branchable, and spoiler-free**.
 
-`narrative-memory` gives your application:
+`canonarc` gives your application:
 - **Tiers 1–4 Temporal Property Graph**: Tracks immutable base attributes (gender, declension, archetypes), asymmetric directed relationships (`A -> B != B -> A`), 1-hop coreference aliases (`"the old wizard"` -> `char_merlin`), and rolling state deltas with trajectory history (`prior_state`, `revision_count`).
 - **Tier 5 Gated Dynamic Voice Bank**: Anchors dialogue style and syntax using historical in-character lines without "error compounding" or self-conditioning drift.
 - **Tier 6 Episodic Event Ledger & Epistemic Visibility**: Tracks N-ary plot events (actions, betrayals, item transfers), causal provenance pointers (`caused_by_episode_id`), and POV witness tracking (`"direct"` vs. `"told"`) to eliminate metagaming and state-dict bloat.
@@ -33,7 +45,7 @@ Most LLM memory frameworks (`mem0`, `zep`, `langmem`) are designed for **convers
 ### Installation
 
 ```bash
-pip install narrative-memory
+pip install canonarc
 ```
 
 *(Dependencies: `pydantic>=2.0`, `numpy>=1.26`, `rapidfuzz>=3.0`, and standard library `sqlite3`)*
@@ -43,8 +55,8 @@ pip install narrative-memory
 ### Basic Usage
 
 ```python
-from narrative_memory import (
-    NarrativeMemoryEngine,
+from canonarc import (
+    CanonArcEngine,
     EntityRecord,
     StepDelta,
     EntityDelta,
@@ -54,7 +66,7 @@ from narrative_memory import (
 )
 
 # 1. Initialize Engine (file path or in-memory)
-engine = NarrativeMemoryEngine("story_save.sqlite")
+engine = CanonArcEngine("story_save.sqlite")
 
 # 2. Tier 1: Seed Root Entities & Aliases (Step 0)
 engine.register_entity(
@@ -213,20 +225,20 @@ with engine.step_transaction(step=85, text=scene_text) as tx:
 Inspect branching timelines, world state, diffs, and entity trajectories directly from `.sqlite` saves:
 
 ```bash
-narrative-memory tree story_save.sqlite
-narrative-memory inspect story_save.sqlite --timeline main --step 85 --pov char_arthur
-narrative-memory diff story_save.sqlite main reconciliation_route --step 85
-narrative-memory history story_save.sqlite char_arthur --timeline main
+canonarc tree story_save.sqlite
+canonarc inspect story_save.sqlite --timeline main --step 85 --pov char_arthur
+canonarc diff story_save.sqlite main reconciliation_route --step 85
+canonarc history story_save.sqlite char_arthur --timeline main
 ```
 
 ---
 
 ## Plug-and-Play Adapters, Sessions & Lifecycle Hooks
 
-- **Zero-dependency Embedders** (`narrative_memory.embedders`): `OfflineNgramEmbedder` (with CJK tokenization & signed feature hashing), `CallableEmbedder`, `OpenAICompatibleEmbedder`, and `OllamaEmbedder` with `embed_batch()` support.
-- **Zero-dependency Extractors** (`narrative_memory.extractors`): `CallableExtractor` and `OpenAICompatibleExtractor` with JSON-fence stripping and schema validation retries.
-- **Tier 6 Episodic Policy & Consolidation** (`narrative_memory.episodic`): Tunable `EpisodicScoringPolicy`, `DefaultEpisodeRanker`, flashback-safe `StepDelta(is_flashback=True)`, `"forgotten"` / `"suppressed"` epistemic updates, and `engine.consolidate_episodes(...)`.
-- **Concurrency-Safe Sessions & Hooks** (`narrative_memory.hooks`): Use `with NarrativeMemoryEngine("save.sqlite") as engine:`, `engine.session("branch_a")`, `with engine.use_timeline("branch_a"):`, and `BaseEngineHooks` (`on_before_commit`, `on_after_commit`, `on_rollback`, `on_branch`, `on_gate_rejected`).
+- **Zero-dependency Embedders** (`canonarc.embedders`): `OfflineNgramEmbedder` (with CJK tokenization & signed feature hashing), `CallableEmbedder`, `OpenAICompatibleEmbedder`, and `OllamaEmbedder` with `embed_batch()` support.
+- **Zero-dependency Extractors** (`canonarc.extractors`): `CallableExtractor` and `OpenAICompatibleExtractor` with JSON-fence stripping and schema validation retries.
+- **Tier 6 Episodic Policy & Consolidation** (`canonarc.episodic`): Tunable `EpisodicScoringPolicy`, `DefaultEpisodeRanker`, flashback-safe `StepDelta(is_flashback=True)`, `"forgotten"` / `"suppressed"` epistemic updates, and `engine.consolidate_episodes(...)`.
+- **Concurrency-Safe Sessions & Hooks** (`canonarc.hooks`): Use `with CanonArcEngine("save.sqlite") as engine:`, `engine.session("branch_a")`, `with engine.use_timeline("branch_a"):`, and `BaseEngineHooks` (`on_before_commit`, `on_after_commit`, `on_rollback`, `on_branch`, `on_gate_rejected`).
 
 ---
 
@@ -237,6 +249,7 @@ narrative-memory history story_save.sqlite char_arthur --timeline main
 - [**Causal Time Travel**](docs/time-travel.md): Lineage trees, copy-on-write branching, atomic rollback, and save-slot exports.
 - [**Voice Bank & Anti-Drift**](docs/voice-bank.md): The 2-stage ingestion gate, n-gram vector retrieval, and hard-register cascade.
 - [**Domain Presets**](docs/presets.md): Pre-built prompt formatters for Interactive Fiction, Localization, and Multi-Agent Simulations.
+- [**Domains of Application**](docs/domains-of-application.md): Primary and emerging use cases, domain-to-capability matrix, and when to choose another tool.
 - [**API Reference**](docs/api-reference.md): Detailed reference for classes, methods, and Pydantic schemas.
 
 ---
