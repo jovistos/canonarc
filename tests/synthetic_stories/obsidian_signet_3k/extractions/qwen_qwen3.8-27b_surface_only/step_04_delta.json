@@ -1,0 +1,53 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "shocked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step4_flashback",
+      "reason": "Elena reflects on her past naivety and trust in Julian, realizing she was wrong."
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_step4_flashback",
+      "timeline_id": "main",
+      "step": 4,
+      "predicate": "flashback",
+      "summary": "Elena recalls a memory from ten years ago where she trusted Julian implicitly during the signing of a historic pact, contrasting it with her current realization of his betrayal.",
+      "participants": {
+        "char_elena": "actor",
+        "char_julian": "target"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_julian"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council_chamber",
+      "story_time": "10_years_ago",
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": true,
+  "story_time": "10_years_ago",
+  "chapter_id": null,
+  "scene_id": null
+}

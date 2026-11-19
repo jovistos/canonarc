@@ -1,0 +1,54 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_chamber_council",
+        "mood": "indignant"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_winter_pact_memory",
+      "reason": "Standing alone in the chamber, remembering the winter pact and the depth of her misplaced trust in Julian."
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_winter_pact_memory",
+      "timeline_id": "main",
+      "step": 4,
+      "predicate": "flashback",
+      "summary": "Ten years ago in the same council chamber, during the winter of the ruined harvest, Elena stood at the head of the oak table as the historic northern pact was sealed with eight seals, trusting young Julian utterly as he read the treasury's guarantees aloud to the assembled lords and couriers.",
+      "participants": {
+        "char_elena": "head_of_table",
+        "char_julian": "reader_of_guarantees"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_julian"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_chamber_council",
+      "story_time": "10_years_ago",
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": true,
+  "story_time": "10_years_ago",
+  "chapter_id": null,
+  "scene_id": null
+}

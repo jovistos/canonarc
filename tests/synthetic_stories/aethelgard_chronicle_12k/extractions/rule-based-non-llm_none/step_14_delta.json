@@ -1,0 +1,55 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "indignant"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_rule_20",
+      "reason": null
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_rule_20",
+      "timeline_id": "main",
+      "step": 0,
+      "predicate": "briefing",
+      "summary": "Boots rang in the Inner Courtyard before the doors opened, and the sentries' challenge cut through the hall's hush like a blade drawn across stone.",
+      "participants": {
+        "char_elena": "participant",
+        "char_isolde": "participant"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_isolde",
+        "char_julian",
+        "char_marcus"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": null,
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

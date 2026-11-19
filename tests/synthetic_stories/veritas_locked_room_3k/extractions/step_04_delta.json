@@ -1,0 +1,35 @@
+{
+  "entities": [],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_flashback_hospital_04",
+      "timeline_id": "main",
+      "step": 4,
+      "predicate": "flashback",
+      "summary": "Vane recalls Thorne's dedicated work during the epidemic ten years ago, signing death certificates for wardens that Vane now suspects were murders.",
+      "participants": {
+        "char_vane": "observer",
+        "char_thorne": "actor"
+      },
+      "witnesses": [
+        "char_vane"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_study",
+      "story_time": "10_years_ago",
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": true,
+  "story_time": "10_years_ago",
+  "chapter_id": null,
+  "scene_id": null
+}

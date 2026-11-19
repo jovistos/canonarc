@@ -1,0 +1,51 @@
+{
+  "entities": [],
+  "edges": [
+    {
+      "source_id": "char_lyra",
+      "target_id": "item_cipher_cylinder",
+      "relation_type": "possesses",
+      "state": {
+        "status": "concealed"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_rule_15",
+      "reason": null
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_rule_15",
+      "timeline_id": "main",
+      "step": 0,
+      "predicate": "item_transfer",
+      "summary": "The Archive Vault smelled of cold stone, old parchment, and the faint mineral tang of groundwater seeping through cracks older than the citadel itself.",
+      "participants": {
+        "char_elena": "participant",
+        "char_julian": "participant"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_julian",
+        "char_kaelen",
+        "char_lyra"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": null,
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

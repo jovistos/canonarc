@@ -1,0 +1,170 @@
+{
+  "cache_key": "fd1d0deee83d3fe62291e0f2767acfa0e63e2363b2850bf8f723d734427e4f5b",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T19:44:13.530660+00:00",
+  "prompt_sha256": "0ee522a8afd04960a57cbf01df3ff0d1c1fd6c5ed7a50b76075fb8748c191e28",
+  "scene_text_sha256": "4e7f0ef0107a360aadc305c67864cd86f66571a4d7863f0ef21c318c07a9065b",
+  "scene_text": "Down in the Archive Vault, the air smelled of dust, iron, and old wax. Lyra, the hooded courier, stood before Julian beneath the low stone ribs of the ceiling. For a moment she was only a silhouette and a voice; then she threw back her hood and mask, and the lantern light struck her face. Julian recoiled, shock blanching him pale. The courier was Lyra—watchful no longer, but determined, her eyes bright with anger and resolve. She stepped forward, and the sealed documents in his satchel seemed to shrink beneath her gaze. \"Predaj mi sve lažne povelje odmah, Julijane, ili ćeš do zore biti u kraljevskoj tamnici!\" she commanded, each word striking the vault like a hammer.\n\nJulian's mouth opened, closed, opened again. His fingers tightened around the leather strap of the ledger, but Lyra's stillness was more threatening than any drawn blade. The false charters, the copied seals, the careful web of lies he had spun—all of it trembled in the space between them. He glanced toward the stair, calculating, cornered.\n\nMoments later, Marcus stepped back into the Council Chamber from the Windy Balcony, his cloak carrying the winter bite of the parapet. At almost the same instant, Julian came up the stairs into the Council Chamber, breathless and too composed. Marcus frowned at him. Julian straightened his cuffs and said, with practiced earnestness, that northern raiders had broken into the annex and stolen the Obsidian Signet while he defended the ledger. The lie settled over the room like oil on water. Elena, still furious inside, felt her fingers curl against the arm of her chair. Lyra remained down in the vault, a hidden blade waiting in the dark.\n\nElena let the silence stretch until Julian's confidence began to fray at the edges. Then she smiled, thin and cutting. \"Oh, what a wonderfully convenient tale of heroic vigilance, dear cousin.\" Marcus looked between them, uncertain, while Julian's gaze flicked toward the stair as if he could already hear the vault breathing beneath the floor.",
+  "usage": {
+    "prompt_tokens": 11943,
+    "completion_tokens": 6370,
+    "total_tokens": 18313,
+    "cached_prompt_tokens": 6912,
+    "reasoning_tokens": 5869,
+    "api_calls": 2,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 1,
+    "validation_errors": 1,
+    "latency_ms": 32193.166,
+    "cost_estimate": {
+      "input_cost_usd": 0.000704,
+      "cached_input_cost_usd": 9.7e-05,
+      "output_cost_usd": 0.001784,
+      "total_cost_usd": 0.002585,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_lyra",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "determined"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [
+          {
+            "alias": "the hooded courier",
+            "entity_id": "char_lyra",
+            "kind": "disguise",
+            "known_to": [
+              "char_elena",
+              "char_julian"
+            ],
+            "persona_name": "Courier",
+            "valid_from_step": 0,
+            "valid_to_step": null
+          }
+        ],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_lyra_unmasking",
+        "reason": "Reveals her face to Julian, dropping the courier disguise."
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_council",
+          "mood": "nervous"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_lyra_unmasking",
+        "reason": "Flees the vault up to the Council Chamber and lies about the Signet."
+      },
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_council",
+          "mood": "watchful"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": null,
+        "reason": "Returns to the Council Chamber from the balcony."
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_confrontation_signet",
+        "reason": "Sees through Julian's convenient tale, anger hardening."
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_lyra",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "register": "ti",
+          "tone": "commanding",
+          "trust": -0.6
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_lyra_unmasking",
+        "reason": "Lyra commands Julian to hand over the false charters."
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_lyra_unmasking",
+        "timeline_id": "main",
+        "step": 5,
+        "predicate": "revelation",
+        "summary": "Lyra throws back her hood and mask in the Archive Vault, revealing herself to the shocked Julian and commanding him to surrender the false charters.",
+        "participants": {
+          "char_lyra": "actor",
+          "char_julian": "target"
+        },
+        "witnesses": [
+          "char_lyra",
+          "char_julian"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_vault",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [
+      {
+        "episode_id": "ep_signet_transfer",
+        "entity_id": "char_marcus",
+        "epistemic": "deceived",
+        "believed_summary": "Northern raiders broke into the annex and stole the Obsidian Signet while Julian defended the ledger."
+      }
+    ],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

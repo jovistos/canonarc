@@ -1,0 +1,139 @@
+{
+  "cache_key": "59e574e629d6b592df97a6c0bb9f29a82884ac83dda764856376354ef374a027",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T19:45:23.479659+00:00",
+  "prompt_sha256": "cf6aa3d98e22760de9bfff6b33d88ea499877153363ebbaea7f50515751f24cd",
+  "scene_text_sha256": "1454b808197a8baf292977a1f514111170bffde574b41fa2b55cbbc3ce306fa6",
+  "scene_text": "Lyra turned from Elena to Marcus, and the old general's confidence hardened into attention as though a blade had been laid across his palms. She spoke without ornament: the second step of the deception had not been an outside theft, nor a forgery by the tribunal's enemies. Julian, the young treasurer, had opened the treasury seal himself, moved the siege fund into a false account, and then presented the missing coin as evidence of foreign sabotage. The Council Chamber went silent in a way that made the guttering lamps sound loud. Marcus's jaw set; his broad shoulders squared beneath the dark wool of his coat; the old soldier's face darkened from confidence to indignation as the shape of the betrayal became clear.\n\nHe rose so sharply that his chair scraped stone. \"Kako se usuđuješ da obmanjuješ vojni savet dok držimo dokaze u rukama!\" he barked, the words cracking through the vaulted hall. Julian flinched as though struck, his nervous hands flying to the table edge, his ledger and inkstand rattling. Lyra did not soften the blow. She laid out the copied page, the false seal, the transfer mark that matched Julian's own cipher, and watched Marcus's anger turn from heat to something colder and more dangerous. 'Step by step,' she said, 'the treasurer built the lie, and step by step we have pulled it down. The theft in the second step was not the tribunal's work. It was his.'\n\nMarcus rounded on Julian, disgust plain in every line of his face. The young treasurer opened his mouth, but no defense came; the Council Chamber had become a court, and the old general's fury was its first verdict. Elena let the silence stretch until Julian's breathing grew audible, thin and quick. Lyra stood beside the evidence with her hands folded, watchful as a judge who had already read the sentence. The councillors shifted in their seats, and the dawn light crept across the table like a slow accusation. Marcus pointed one blunt finger at Julian and then at the ledgers, his voice dropping to a dangerous rumble. 'No more sums,' he said. 'No more seals. You will answer here, before every witness.' Julian looked to Elena, but the Iron Chancellor's calm had become a wall.",
+  "usage": {
+    "prompt_tokens": 7125,
+    "completion_tokens": 1100,
+    "total_tokens": 8225,
+    "cached_prompt_tokens": 1152,
+    "reasoning_tokens": 641,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 5911.4,
+    "cost_estimate": {
+      "input_cost_usd": 0.000836,
+      "cached_input_cost_usd": 1.6e-05,
+      "output_cost_usd": 0.000308,
+      "total_cost_usd": 0.00116,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "indignant"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_treasurer_deception_revelation",
+        "reason": "Marcus's confidence hardens into fury as Lyra lays out Julian's betrayal"
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "calm"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_treasurer_deception_revelation",
+        "reason": "The Iron Chancellor's calm becomes an unbreachable wall as Julian looks to her"
+      },
+      {
+        "entity_id": "char_lyra",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "watchful"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_treasurer_deception_revelation",
+        "reason": "Lyra stands beside the evidence, watchful as a judge who has already read the sentence"
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_marcus",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "register": "ti",
+          "tone": "furious",
+          "trust": -0.9
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_treasurer_deception_revelation",
+        "reason": "Marcus rounds on Julian and barks at him in the informal register, disgusted by the treasurer's deception of the military council"
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_treasurer_deception_revelation",
+        "timeline_id": "main",
+        "step": 17,
+        "predicate": "revelation",
+        "summary": "Lyra reveals to Marcus in the Council Chamber that Julian himself opened the treasury seal, moved the siege fund into a false account, and presented the missing coin as foreign sabotage; Marcus rises in fury, and Julian is left without a defense before every witness.",
+        "participants": {
+          "char_lyra": "revealer",
+          "char_marcus": "auditor",
+          "char_julian": "accused",
+          "char_elena": "observer",
+          "item_signet": "instrument"
+        },
+        "witnesses": [
+          "char_lyra",
+          "char_marcus",
+          "char_julian",
+          "char_elena",
+          "char_isolde",
+          "char_kaelen"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.5,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

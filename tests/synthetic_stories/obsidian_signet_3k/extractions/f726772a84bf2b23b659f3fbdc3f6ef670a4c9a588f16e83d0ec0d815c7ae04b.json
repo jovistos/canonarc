@@ -1,0 +1,190 @@
+{
+  "cache_key": "f726772a84bf2b23b659f3fbdc3f6ef670a4c9a588f16e83d0ec0d815c7ae04b",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T19:48:24.770209+00:00",
+  "prompt_sha256": "1d87474742dd2edbf73d3668c8509f5e0c1194280d1f9643dc2664690042869b",
+  "scene_text_sha256": "ef0cfc48902693293fa7663874c94a6c09d4fe9b776603d15dee7f7d71c4bd8a",
+  "scene_text": "Down in the Archive Vault, the air was stone-cold and tasted of dust and old iron. Julian had backed himself against a shelf of ledgers, chest heaving, when the courier came down the last steps and stopped in the lantern light. Then the grey gloves rose, hooked the scarf, and dragged the wool hood back — and a woman's face looked out of it, hard-jawed and thoroughly determined, dark hair crushed flat by the hood's weight. \"Lyra,\" Julian whispered, shocked, as though the name itself had struck him. \"You were— you were a rider from the north, you said—\"\n\n\"Predaj mi sve lažne povelje odmah, Julijane, ili ćeš do zore biti u kraljevskoj tamnici!\" Lyra's hand was already out, palm up, the Obsidian Signet glinting between her fingers like a black eye. Julian flinched as though she'd raised a blade.\n\nUpstairs, the balcony door groaned open and Marcus came back into the Council Chamber, rubbing warmth into his hands, just as Julian stumbled up the vault stair and into the room — cloak torn, hair wild, breathing like a hunted thing. Marcus's eyes narrowed. \"What in the nine hells happened to you?\" Julian straightened his collar with trembling fingers and delivered his tale: northern raiders had broken into the annex, he said, desperate men with axes, and he had defended the ledger with his life, but the Obsidian Signet was gone.\n\nElena did not move from the window. Inside, the fury sat in her chest like a hot coal, but her voice came out dry as paper. \"Oh, what a wonderfully convenient tale of heroic vigilance, dear cousin.\" Marcus frowned at her tone, uncertain where the blade was pointed. Lyra stayed below in the vault, listening to the ceiling, saying nothing.",
+  "usage": {
+    "prompt_tokens": 5817,
+    "completion_tokens": 1769,
+    "total_tokens": 7586,
+    "cached_prompt_tokens": 1152,
+    "reasoning_tokens": 1164,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 9187.131,
+    "cost_estimate": {
+      "input_cost_usd": 0.000653,
+      "cached_input_cost_usd": 1.6e-05,
+      "output_cost_usd": 0.000495,
+      "total_cost_usd": 0.001165,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_council",
+          "mood": "nervous"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_signet_handoff_flee",
+        "reason": null
+      },
+      {
+        "entity_id": "char_lyra",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "determined"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [
+          {
+            "alias": "the hooded courier",
+            "entity_id": "char_lyra",
+            "kind": "disguise",
+            "known_to": [
+              "char_elena",
+              "char_julian"
+            ],
+            "persona_name": "Courier",
+            "valid_from_step": 0,
+            "valid_to_step": null
+          }
+        ],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_lyra_unmasking",
+        "reason": null
+      },
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_council",
+          "mood": "watchful"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_signet_handoff_flee",
+        "reason": null
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_signet_handoff_flee",
+        "reason": null
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_lyra",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "register": "ti",
+          "tone": "commanding",
+          "trust": -0.6
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_lyra_unmasking",
+        "reason": null
+      },
+      {
+        "source_id": "char_elena",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "tone": "stern",
+          "trust": -0.8
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_signet_handoff_flee",
+        "reason": null
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_lyra_unmasking",
+        "timeline_id": "main",
+        "step": 5,
+        "predicate": "revelation",
+        "summary": "Down in the Archive Vault, the hooded courier pulled back her hood to reveal herself as Lyra, demanding in the informal register that Julian surrender all the forged charters, the Obsidian Signet glinting in her palm as Julian recoiled in shock.",
+        "participants": {
+          "char_lyra": "actor",
+          "char_julian": "target",
+          "item_signet": "instrument"
+        },
+        "witnesses": [
+          "char_lyra",
+          "char_julian"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_vault",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [
+      {
+        "episode_id": "ep_signet_handoff_flee",
+        "entity_id": "char_marcus",
+        "epistemic": "deceived",
+        "believed_summary": "Northern raiders with axes broke into the annex; Julian defended the ledger with his life, but the Obsidian Signet was taken by the raiders."
+      },
+      {
+        "episode_id": "ep_signet_handoff_flee",
+        "entity_id": "char_elena",
+        "epistemic": "deceived",
+        "believed_summary": "Northern raiders with axes broke into the annex; Julian defended the ledger with his life, but the Obsidian Signet was taken by the raiders."
+      }
+    ],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

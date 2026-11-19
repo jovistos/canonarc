@@ -1,0 +1,62 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_thorne",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_toxicology_briefing",
+      "reason": "Thorne flinches visibly and his hands tremble when Vane presents the toxicology findings."
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_toxicology_briefing",
+      "timeline_id": "main",
+      "step": 0,
+      "predicate": "briefing",
+      "summary": "Vane places toxicology findings on the study desk and instructs those present to review them carefully before the police seal the estate.",
+      "participants": {
+        "char_vane": "actor",
+        "char_thorne": "target",
+        "char_cora": "observer",
+        "char_giles": "observer"
+      },
+      "witnesses": [
+        "char_vane",
+        "char_cora",
+        "char_thorne",
+        "char_giles"
+      ],
+      "known_by": {
+        "char_vane": "direct",
+        "char_cora": "direct",
+        "char_thorne": "direct",
+        "char_giles": "direct"
+      },
+      "believed_summaries": {},
+      "location_id": "loc_study",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

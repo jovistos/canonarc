@@ -1,0 +1,106 @@
+{
+  "cache_key": "f603929dfd952bcc553bb1fc3f4c29a09e17168d41f773c8311d283863138362",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T19:44:18.006716+00:00",
+  "prompt_sha256": "912ca7e1934356edb56e18fca9367c5f147f022a2d594ab5d37d9e20c24c06ec",
+  "scene_text_sha256": "35b224bfa5289361f838816dd137fec9f34e016c608b370e52323866b50c540e",
+  "scene_text": "The Council Chamber doors opened from the Inner Courtyard with a groan of iron hinges, and Isolde stepped through in a swirl of torchlit air. The tribunal envoy carried winter on her shoulders and a sealed writ in her gloved hand. Sentries closed the doors behind her, and the chamber's candle flames bent as though bowing to the authority she wore like a second cloak. Elena watched from the council table, her fury banked but not banked enough to soften her eyes.\n\nIsolde inclined her head to the assembled company, then spoke in the measured cadence of one who had rehearsed the words before colder thrones than this. The tribunal would conduct an audit, she announced—an inquiry into the signet, the ledgers, and every charter sealed beneath Aethelgard's roof. Marcus, still believing Julian's cover story about northern raiders, straightened with the relief of a man who thought the threat came from outside the walls. He welcomed the envoy and declared that the city had already suffered enough from foreign banditry.\n\nElena said nothing at first. She let Marcus's certainty ring against the stone, let Julian's carefully blank face absorb the light. The Council Chamber had become a stage, and everyone upon it was pretending not to notice the trap beneath their feet. Isolde's gaze moved from Marcus to Elena, unreadable and patient, while the tribunal's writ caught the candlelight like a thin blade.\n\nThe envoy asked leave to begin at dawn. Marcus nodded. Julian's fingers twitched toward his sleeve. Elena rose at last, and the room turned toward her, expectant and uneasy. \"Until dawn, then,\" she said, her voice dry as parchment. The midnight adjournment scattered the councilors into the cold corridors, but Elena lingered a moment longer in the Council Chamber, listening to the distant courtyard sentries and wondering how many lies could fit between one sunrise and the next.",
+  "usage": {
+    "prompt_tokens": 5980,
+    "completion_tokens": 790,
+    "total_tokens": 6770,
+    "cached_prompt_tokens": 1152,
+    "reasoning_tokens": 421,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 4308.852,
+    "cost_estimate": {
+      "input_cost_usd": 0.000676,
+      "cached_input_cost_usd": 1.6e-05,
+      "output_cost_usd": 0.000221,
+      "total_cost_usd": 0.000913,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_isolde",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_council",
+          "mood": "watchful"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_tribunal_audit",
+        "reason": "Envoy entered the Council Chamber from the Inner Courtyard and settled into a patient, unreadable watch over the assembly."
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "determined"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_tribunal_audit",
+        "reason": "Banked her fury and rose to answer the tribunal's writ with a dry, resolute adjournment."
+      }
+    ],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_tribunal_audit",
+        "timeline_id": "main",
+        "step": 6,
+        "predicate": "briefing",
+        "summary": "Isolde, envoy of the tribunal, enters the Council Chamber bearing a sealed writ and announces a tribunal audit of the Obsidian Signet, the ledgers, and every charter sealed beneath Aethelgard's roof, to begin at dawn; Marcus welcomes her believing raiders are the threat, while Elena and Julian absorb the trap in silence.",
+        "participants": {
+          "char_isolde": "actor",
+          "char_elena": "target",
+          "char_marcus": "supporter",
+          "char_julian": "target"
+        },
+        "witnesses": [
+          "char_isolde",
+          "char_elena",
+          "char_marcus",
+          "char_julian"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.5,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "cache_key": "37c70d8c4e306030a2e67b36ce38ebe04cdbb6a3f402db9c8cd267fbf130e209",
+  "model": "qwen/qwen3.5-9b",
+  "created_at": "2026-11-19T20:02:55.599210+00:00",
+  "prompt_sha256": "760735b4b0e130aee5403d26589ef1d706ba753f868e465941f42140ee5407cf",
+  "scene_text_sha256": "0acb560203d85bb9c0ec88f91649c06a629d0b3eca09b74fd41f96c03d159ad4",
+  "scene_text": "Boots rang in the Inner Courtyard before the doors opened, and the sentries' challenge cut through the hall's hush like a blade drawn across stone. Marcus entered first, the old general shrugging off a cloak dusted with snow, his confidence preceding him like the smell of gun oil and horses. Behind him came Julian, the young treasurer, clutching a leather folio to his chest as though it might shield him from the room's collective gaze. The Council Chamber's braziers threw their shadows long across the flagstones; Marcus stepped over his without breaking stride, while Julian hesitated at the threshold, his nervous glance flicking from Elena to Isolde and back again. A draft followed them in, carrying the courtyard's torch-smoke and the faint, clean bite of winter. Julian's collar was already damp, and he kept shifting his weight as if the floor had grown uneven beneath him.\n\n\"Word travels faster than horses on a morning like this,\" Marcus said, his voice carrying the easy authority of a man who had once ordered battalions to die and been thanked for it. He stopped at the table's head and rested one scarred hand on its edge. \"The watch reports lights in the eastern spire before dawn. I assumed the Council had not convened without its general.\"\n\nElena's expression did not soften. \"Your assumption was correct. We were retrieving what the astromancer found.\"\n\nJulian cleared his throat, a small, damp sound that betrayed too much. He set the folio down with exaggerated care, aligning its corners to the table's grain. \"The treasury has prepared the quarter's accounts, Chancellor. If there is to be an inquiry, I would prefer—\"\n\n\"There is to be an inquiry,\" Isolde said quietly from the doorway. She had not moved, yet somehow she now occupied the room's center. The young treasurer's fingers twitched against the folio. Marcus looked at him, then at the two women, and his confidence thinned into something more watchful. The Council Chamber felt suddenly crowded with all the things no one had yet said aloud.",
+  "usage": {
+    "prompt_tokens": 6903,
+    "completion_tokens": 384,
+    "total_tokens": 7287,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 7220.323,
+    "cost_estimate": {
+      "input_cost_usd": 0.000966,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.000108,
+      "total_cost_usd": 0.001074,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_council"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_012",
+        "reason": null
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_council"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_012",
+        "reason": null
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_marcus",
+        "target_id": "item_cipher_cylinder",
+        "relation_type": "possesses",
+        "state": {
+          "status": "concealed"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_012",
+        "reason": null
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_013",
+        "timeline_id": "main",
+        "step": 14,
+        "predicate": "briefing",
+        "summary": "Marcus and Julian enter the Council Chamber to report on lights in the eastern spire; Elena confirms they are retrieving the astromancer's findings.",
+        "participants": {
+          "char_marcus": "actor",
+          "char_julian": "actor",
+          "char_elena": "target"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_isolde"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 6.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

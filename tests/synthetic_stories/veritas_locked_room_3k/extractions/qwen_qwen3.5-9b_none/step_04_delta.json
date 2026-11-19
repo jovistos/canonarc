@@ -1,0 +1,35 @@
+{
+  "entities": [],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_04_flashback_toxicology",
+      "timeline_id": "main",
+      "step": 4,
+      "predicate": "flashback",
+      "summary": "Vane recalls a memory from ten years ago where he trusted Thorne implicitly during an epidemic, unaware of the doctor's true nature.",
+      "participants": {
+        "char_vane": "actor",
+        "char_thorne": "target"
+      },
+      "witnesses": [
+        "char_vane"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_study",
+      "story_time": "10_years_ago",
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 6.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": true,
+  "story_time": "10_years_ago",
+  "chapter_id": null,
+  "scene_id": null
+}

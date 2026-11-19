@@ -1,0 +1,84 @@
+{
+  "cache_key": "4fae2ff6eb8b67ca231b142277675adc0eaac7c8d275343022d435f360636ef5",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T19:44:30.084265+00:00",
+  "prompt_sha256": "f61095536e6d1d9008899dce8f669ef208592a1687849854186044c35e4d2880",
+  "scene_text_sha256": "72fa631ad6e537fc85fa9c6aa595121c4bceb433c1c91f4e1be758989163d31f",
+  "scene_text": "The Archive Vault smelled of cold stone, old parchment, and the faint mineral tang of groundwater seeping through cracks older than the citadel itself. Lyra moved between the shelves with a courier’s economy, her hood pushed back, her breath misting in the lantern light. She had slipped past the sentries in the Inner Courtyard by timing their patrol to the half-beat—a trick she’d learned from a dead man in Port Sorrow. Now, alone in the Archive Vault, she allowed herself one moment of stillness: a hand pressed flat against the iron shelf, eyes closed, listening for footsteps that never came.\n\nThe ledger was exactly where Kaelen’s cipher promised—third alcove, bottom shelf, behind a false spine labeled “Taxes of the Western Reaches, Vol. IX.” Lyra pulled it free and carried it to the reading table, where the lantern threw her shadow across the pages. The garrison ledger was a forgery, masterfully done: the parchment aged, the ink faded, the signatures of a dozen quartermasters all in their proper hands. But Julian had been careless. On the final page, where the treasury’s seal should have been, he had pressed the Obsidian Signet—a black wax seal reserved for the Chancellor’s most sensitive decrees. Elena never used it on military budgets. Julian had no authority to touch it at all.\n\nLyra’s pulse quickened. She turned the page and found the column of payments: grain shipments diverted, armor purchased from a foundry in the disputed borderlands, coin routed through three shell guilds. At the bottom, a single line: “For the restoration of proper order in Aethelgard.” The handwriting matched Julian’s—she had seen his treasury notes often enough. The young treasurer had not just embezzled. He had built a private army and stamped it with the Chancellor’s own Obsidian Signet. If Elena didn’t know, Julian was a traitor. If she did—Lyra closed the ledger and pressed her palm flat against its cover, as if she could hold the truth still. The lantern flickered. Somewhere above, a sentry’s boots scraped stone. She had perhaps ten minutes before the patrol returned. Enough time to copy the key pages. Not enough time to decide whom to trust.",
+  "usage": {
+    "prompt_tokens": 6484,
+    "completion_tokens": 572,
+    "total_tokens": 7056,
+    "cached_prompt_tokens": 1152,
+    "reasoning_tokens": 327,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 3800.185,
+    "cost_estimate": {
+      "input_cost_usd": 0.000746,
+      "cached_input_cost_usd": 1.6e-05,
+      "output_cost_usd": 0.00016,
+      "total_cost_usd": 0.000923,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_lyra",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "nervous"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_vault_ledger_discovery",
+        "reason": "Alone in the vault, pulse quickening as she realizes the ledger implicates Julian and she has ten minutes to copy it, unsure whom to trust."
+      }
+    ],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_vault_ledger_discovery",
+        "timeline_id": "main",
+        "step": 9,
+        "predicate": "revelation",
+        "summary": "Alone in the Archive Vault, Lyra retrieves the hidden garrison ledger and finds it is a forgery sealed with Elena's Obsidian Signet, revealing Julian diverted grain, bought armor in the borderlands and raised a private army 'for the restoration of proper order in Aethelgard'; with ten minutes before the patrol returns she must choose whether to copy the pages and whom to trust.",
+        "participants": {
+          "char_lyra": "actor",
+          "item_signet": "instrument"
+        },
+        "witnesses": [
+          "char_lyra"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_vault",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.5,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

@@ -1,0 +1,175 @@
+{
+  "cache_key": "97d72135e812bed1030e0a0a36865729181661cd255a30f58c2a28645fbfc2e7",
+  "model": "qwen/qwen3.8-27b",
+  "created_at": "2026-11-19T21:15:54.671070+00:00",
+  "prompt_sha256": "bbb9d66301311fc2c09243977072c3cd5e0d384b4d783e44b711335bb4fb9f42",
+  "scene_text_sha256": "d621ea6d82a53654fd33f4f0e6eb26879ad9ef1304e5195a086442405ef83948",
+  "scene_text": "Down in the Archive Vault, water slid along the stone floor and the air tasted of iron and old secrets. The vault’s ceiling wept moisture onto the shelves, and the light of Julian’s candle trembled across drowned ledgers. Julian had backed against a shelf of rotting parchments when the hooded courier stopped chasing and instead straightened to her full height. With one deliberate motion, she threw back her hood and peeled away the mask. Julian’s shocked breath broke the silence. Lyra stood before him, her dark hair damp with rain, her eyes determined and hard as the signet in her glove. “Predaj mi sve lažne povelje odmah, Julijane, ili ćeš do zore biti u kraljevskoj tamnici!” she said, each word striking the vault walls like a hammer.\n\nJulian’s hands trembled over the false charters tucked beneath his coat. Upstairs, the service door groaned. Marcus stepped back into the Council Chamber from the Windy Balcony, rain sliding from his shoulders, just as Julian scrambled up the stairs and through the tapestry into the candlelit room. The old general stopped short. Julian, breathless and pale, launched into his tale: Northern raiders had broken into the annex, he said; they had stolen the Obsidian Signet while he defended the ledger with his life. The words tumbled out too quickly, polished by panic.\n\nElena remained by the table, her fury banked behind a mask of marble. She looked at Julian, then at Marcus, and let the silence stretch until it became an accusation of its own. “Oh, what a wonderfully convenient tale of heroic vigilance, dear cousin,” she remarked with biting sarcasm, each word sugared and poisoned. Julian flinched. Marcus frowned, turning the story over in his soldier’s mind, while the rain beat against the balcony doors and the chamber smelled again of wax and wet stone.\n\nBelow, in the Archive Vault, Lyra remained among the flooded shelves, the recovered signet and false charters in her keeping, waiting for the moment when the truth could be brought up into the light. The masquerade above had not yet ended; it had only changed masks.",
+  "usage": {
+    "prompt_tokens": 6238,
+    "completion_tokens": 804,
+    "total_tokens": 7042,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 16730.772,
+    "cost_estimate": {
+      "input_cost_usd": 0.000873,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.000225,
+      "total_cost_usd": 0.001098,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_lyra",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "determined"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [
+          {
+            "alias": "the hooded courier",
+            "entity_id": "char_lyra",
+            "kind": "disguise",
+            "known_to": [
+              "char_elena",
+              "char_julian"
+            ],
+            "persona_name": "Courier",
+            "valid_from_step": 0,
+            "valid_to_step": null
+          }
+        ],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step5_revelation",
+        "reason": null
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_council",
+          "mood": "shocked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step5_revelation",
+        "reason": null
+      },
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_council"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step5_revelation",
+        "reason": null
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_lyra",
+        "target_id": "item_signet",
+        "relation_type": "possesses",
+        "state": {
+          "status": "concealed"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_step5_revelation",
+        "reason": null
+      },
+      {
+        "source_id": "char_elena",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "register": "ti",
+          "tone": "sardonic",
+          "trust": -0.9
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_step5_revelation",
+        "reason": null
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_step5_revelation",
+        "timeline_id": "main",
+        "step": 5,
+        "predicate": "revelation",
+        "summary": "Lyra unmasks herself to Julian in the Archive Vault, revealing her identity and possession of the Signet, while Julian returns to the Council Chamber to lie to Elena and Marcus about the theft.",
+        "participants": {
+          "char_lyra": "actor",
+          "char_julian": "target",
+          "char_elena": "witness",
+          "char_marcus": "witness"
+        },
+        "witnesses": [
+          "char_lyra",
+          "char_julian",
+          "char_elena",
+          "char_marcus"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_vault",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.5,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [
+      {
+        "episode_id": "ep_step3_item_transfer",
+        "entity_id": "char_marcus",
+        "epistemic": "deceived",
+        "believed_summary": "Northern raiders stole the Obsidian Signet while Julian defended the ledger."
+      },
+      {
+        "episode_id": "ep_step3_item_transfer",
+        "entity_id": "char_elena",
+        "epistemic": "deceived",
+        "believed_summary": "Northern raiders stole the Obsidian Signet while Julian defended the ledger."
+      }
+    ],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

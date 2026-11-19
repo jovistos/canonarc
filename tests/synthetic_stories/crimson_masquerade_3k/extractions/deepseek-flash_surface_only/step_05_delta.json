@@ -1,0 +1,136 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council",
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_vault_unmask_005",
+      "reason": "Julian fled the Archive Vault up the stairs into the Council Chamber after Lyra unmasked."
+    },
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council",
+        "mood": "watchful"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_vault_unmask_005",
+      "reason": "Marcus stepped back in from the Windy Balcony and now weighs Julian's story."
+    },
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_vault",
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [
+        {
+          "alias": "the hooded courier",
+          "entity_id": "char_lyra",
+          "kind": "disguise",
+          "known_to": [
+            "char_elena",
+            "char_julian"
+          ],
+          "persona_name": "Courier",
+          "valid_from_step": 0,
+          "valid_to_step": null
+        }
+      ],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_vault_unmask_005",
+      "reason": "Lyra threw back her hood and unmasked before Julian, then held the vault."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_lyra",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "commanding",
+        "trust": -0.85
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_vault_unmask_005",
+      "reason": null
+    },
+    {
+      "source_id": "char_lyra",
+      "target_id": "item_signet",
+      "relation_type": "possesses",
+      "state": {
+        "status": "concealed"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_vault_unmask_005",
+      "reason": null
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_vault_unmask_005",
+      "timeline_id": "main",
+      "step": 5,
+      "predicate": "revelation",
+      "summary": "In the flooded Archive Vault, the hooded courier threw back her hood and unmasked as Lyra, then commanded Julian in the informal register to surrender the false charters at once or face the royal dungeon by dawn.",
+      "participants": {
+        "char_lyra": "actor",
+        "char_julian": "target",
+        "item_signet": "instrument"
+      },
+      "witnesses": [
+        "char_lyra",
+        "char_julian"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_vault",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_confrontation_signet_002",
+      "entity_id": "char_marcus",
+      "epistemic": "deceived",
+      "believed_summary": "Julian claims northern raiders broke into the annex and stole the Obsidian Signet while he defended the ledger with his life."
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

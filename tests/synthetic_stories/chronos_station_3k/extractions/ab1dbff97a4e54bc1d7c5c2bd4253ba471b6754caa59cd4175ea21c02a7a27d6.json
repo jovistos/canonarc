@@ -1,0 +1,71 @@
+{
+  "cache_key": "ab1dbff97a4e54bc1d7c5c2bd4253ba471b6754caa59cd4175ea21c02a7a27d6",
+  "model": "qwen/qwen3.8-27b",
+  "created_at": "2026-11-19T21:14:19.384204+00:00",
+  "prompt_sha256": "cc98e935c4f6239314b257b3e8f829ec195d66e1db36625ee1e69ef0327176a4",
+  "scene_text_sha256": "c8f44767ed3c8f8e465b89ca766d3cb01a3f5bb0f6a4a6b8a283d83578a946b8",
+  "scene_text": "The Council Chamber blurred, and for a moment Elena was not standing amid the wreckage of the present but ten years ago, alone beneath the same curved glass. This was memory, not the room as it stood now: the holograms had been younger then, simpler, and the gas giant's storms had seemed less like a threat than a promise. She remembered the winter crisis with the clarity of a scar. The station had been running on reserve power, its docking ring frozen shut, its corridors full of frightened voices. She had been naive_trusting then, a science director who still believed that records and goodwill could hold a coalition together.\n\nJulian had been younger too, his nervousness charming rather than suspect. He had stood beside her during the historic pact signing, his hands steady on the ledger, his voice warm with assurances. She had trusted him implicitly. When the northern delegations demanded concessions, Julian had found compromises in the margins; when the council wavered, he had whispered the right figures into the right ears. Elena had signed the pact with his encouragement ringing in her memory, convinced that the young treasurer was the one honest constant in a station full of shifting alliances.\n\nThe memory sharpened around the signing table. Seals had been pressed into wax; the Obsidian Signet had lain in its case like a sleeping eye. Julian had smiled at her across the documents, and she had smiled back, grateful for his cleverness. The winter wind had howled against the shielded balcony doors even then, though Marcus had not yet opened them. The council had applauded. The pact had seemed, for one bright and foolish moment, like the beginning of something stable.\n\nNow, in the present, Elena stood alone in the Council Chamber with that memory burning behind her eyes. The fury was still there, preserved exactly as she had left it, untouched by the flashback. Ten years ago she had trusted Julian implicitly. Ten years ago she had been naive_trusting. The realization did not soften her; it sharpened the edge of her anger. The room returned around her, the same glass, the same table, the same amber light, but the woman standing in it was no longer the one who had signed that pact.",
+  "usage": {
+    "prompt_tokens": 6103,
+    "completion_tokens": 263,
+    "total_tokens": 6366,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 10151.465,
+    "cost_estimate": {
+      "input_cost_usd": 0.000854,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 7.4e-05,
+      "total_cost_usd": 0.000928,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_step4_flashback",
+        "timeline_id": "main",
+        "step": 4,
+        "predicate": "flashback",
+        "summary": "Elena recalls the winter crisis ten years ago, remembering her naive trust in Julian and the signing of the historic pact where the Obsidian Signet was present.",
+        "participants": {
+          "char_elena": "actor",
+          "char_julian": "target"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian"
+        ],
+        "known_by": {
+          "char_elena": "direct",
+          "char_julian": "direct"
+        },
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": "10_years_ago",
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": true,
+    "story_time": "10_years_ago",
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

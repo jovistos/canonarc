@@ -5,42 +5,47 @@
   "extraction_model": "rule-based-non-llm",
   "guidance_mode": "none",
   "run_cache_key": "b6314076fd62da005df12b4d42f87ce395611e8e454f80eb77db6c1f442d3a9b",
-  "checks_passed": 27,
+  "checks_passed": 28,
   "checks_total": 50,
+  "step_delta_checks_passed": 5,
+  "step_delta_checks_total": 8,
+  "step_delta_pass_rate": 0.625,
+  "cumulative_state_checks_passed": 23,
+  "cumulative_state_checks_total": 42,
+  "cumulative_state_pass_rate": 0.5476,
   "failures": [
-    "[chronos_station_3k Step 2] Room 'loc_council': expected {'char_julian', 'char_elena', 'char_lyra'}, got {'char_julian', 'char_elena', 'char_lyra', 'char_marcus'}",
+    "[chronos_station_3k Step 2] Room 'loc_council': expected {'char_elena', 'char_julian', 'char_lyra'}, got {'char_elena', 'char_julian', 'char_marcus', 'char_lyra'}",
     "[chronos_station_3k Step 2] Room 'loc_balcony': expected {'char_marcus'}, got set()",
     "[chronos_station_3k Step 2] Entity 'char_elena' mood: expected 'furious', got 'calm'",
-    "[chronos_station_3k Step 2] Absent Marcus must not know ep_step2_secret_confrontation",
-    "[chronos_station_3k Step 3] Room 'loc_council': expected {'char_elena'}, got {'char_julian', 'char_elena', 'char_lyra', 'char_marcus'}",
+    "[chronos_station_3k Step 2] Absent char_marcus must not know ep_step2_secret_confrontation",
+    "[chronos_station_3k Step 3] Room 'loc_council': expected {'char_elena'}, got {'char_elena', 'char_julian', 'char_marcus', 'char_lyra'}",
     "[chronos_station_3k Step 3] Room 'loc_vault': expected {'char_julian', 'char_lyra'}, got set()",
     "[chronos_station_3k Step 3] Room 'loc_balcony': expected {'char_marcus'}, got set()",
     "[chronos_station_3k Step 3] Entity 'char_marcus' mood: expected 'restless', got 'furious'",
-    "[chronos_station_3k Step 4] Room 'loc_council': expected {'char_elena'}, got {'char_julian', 'char_elena', 'char_lyra', 'char_marcus'}",
+    "[chronos_station_3k Step 4] Room 'loc_council': expected {'char_elena'}, got {'char_elena', 'char_julian', 'char_marcus', 'char_lyra'}",
     "[chronos_station_3k Step 4] Room 'loc_vault': expected {'char_julian', 'char_lyra'}, got set()",
     "[chronos_station_3k Step 4] Room 'loc_balcony': expected {'char_marcus'}, got set()",
     "[chronos_station_3k Step 4] Entity 'char_marcus' mood: expected 'restless', got 'furious'",
-    "[chronos_station_3k Step 5] Room 'loc_council': expected {'char_julian', 'char_elena', 'char_marcus'}, got {'char_julian', 'char_elena', 'char_lyra'}",
+    "[chronos_station_3k Step 5] Room 'loc_council': expected {'char_elena', 'char_julian', 'char_marcus'}, got {'char_elena', 'char_julian', 'char_lyra'}",
     "[chronos_station_3k Step 5] Room 'loc_vault': expected {'char_lyra'}, got set()",
     "[chronos_station_3k Step 5] Room 'loc_balcony': expected set(), got {'char_marcus'}",
     "[chronos_station_3k Step 5] Entity 'char_marcus' mood: expected 'restless', got 'furious'",
     "[chronos_station_3k Step 5] Entity 'char_julian' mood: expected 'shocked', got 'panicked'",
-    "[chronos_station_3k Step 5] Julian should pierce Lyra's disguise after unmasking",
-    "[chronos_station_3k Step 5] Marcus POV should recall deceived summary, got episode_id='ep_rule_2' timeline_id='main' step=2 predicate='item_transfer' summary='Marcus read the final page, set it down, and rose with a restless scrape of his chair against the deck plating.' participants={'char_elena': 'participant', 'char_julian': 'participant'} witnesses=['char_elena', 'char_julian', 'char_lyra', 'char_marcus'] known_by={'char_elena': 'direct', 'char_julian': 'direct', 'char_lyra': 'direct', 'char_marcus': 'direct'} believed_summaries={} location_id=None story_time=None chapter_id=None scene_id=None consolidated_from=[] salience=7.0 metadata={} match_score=0.5601",
-    "[chronos_station_3k Step 6] Room 'loc_council': expected {'char_julian', 'char_elena', 'char_lyra', 'char_marcus'}, got {'char_julian', 'char_elena', 'char_lyra'}",
+    "[chronos_station_3k Step 5] char_julian should pierce char_lyra's disguise after unmasking",
+    "[chronos_station_3k Step 5] char_marcus POV should recall deceived summary, got episode_id='ep_rule_2' timeline_id='main' step=2 predicate='item_transfer' summary='Marcus read the final page, set it down, and rose with a restless scrape of his chair against the deck plating.' participants={'char_elena': 'participant', 'char_julian': 'participant'} witnesses=['char_elena', 'char_julian', 'char_lyra', 'char_marcus'] known_by={'char_elena': 'direct', 'char_julian': 'direct', 'char_lyra': 'direct', 'char_marcus': 'direct'} believed_summaries={} location_id=None story_time=None chapter_id=None scene_id=None consolidated_from=[] salience=7.0 metadata={} match_score=0.8532",
+    "[chronos_station_3k Step 6] Room 'loc_council': expected {'char_elena', 'char_julian', 'char_marcus', 'char_lyra'}, got {'char_elena', 'char_julian', 'char_lyra'}",
     "[chronos_station_3k Step 6] Room 'loc_balcony': expected set(), got {'char_marcus'}",
-    "[chronos_station_3k Step 6] Entity 'char_marcus' mood: expected 'indignant', got 'furious'",
-    "[chronos_station_3k Step 6] Entity 'char_julian' mood: expected 'shocked', got 'panicked'"
+    "[chronos_station_3k Step 6] Entity 'char_marcus' mood: expected 'indignant', got 'furious'"
   ],
-  "strict_pass_rate": 0.54,
-  "overall_quality_score": 0.5742,
+  "strict_pass_rate": 0.56,
+  "overall_quality_score": 0.5782,
   "benchmark_metrics": {
     "model_id": "rule-based-non-llm",
     "guidance_mode": "none",
-    "overall_quality_score": 0.5742,
+    "overall_quality_score": 0.5782,
     "category_scores": {
       "epistemic_score": 0.5386,
-      "spatial_state_score": 0.4651,
+      "spatial_state_score": 0.4813,
       "pov_retrieval_score": 0.5941,
       "edge_flashback_score": 0.5167,
       "schema_hygiene_score": 1.0
@@ -64,9 +69,9 @@
       "location_delta_f1": 0.25,
       "room_occupancy_jaccard": 0.4167,
       "room_occupancy_exact_rate": 0.1667,
-      "mood_exact_accuracy": 0.7083,
-      "mood_soft_accuracy": 0.75,
-      "mood_delta_f1": 0.4615,
+      "mood_exact_accuracy": 0.75,
+      "mood_soft_accuracy": 0.7917,
+      "mood_delta_f1": 0.5,
       "flashback_guard_passed": true
     },
     "edge_and_causal_metrics": {
@@ -93,7 +98,7 @@
       "pov_entity_jaccard": 0.9907,
       "pov_edge_jaccard": 0.7542,
       "pov_episode_recall": 0.9896,
-      "pov_secret_leak_count": 14
+      "pov_secret_leak_count": 13
     },
     "steps": [
       {
@@ -143,6 +148,11 @@
           "pov_edge_jaccard": 1.0,
           "pov_episode_recall": 1.0,
           "pov_secret_leaks": 0
+        },
+        "mood_counts": {
+          "exact_matches": 4,
+          "soft_matches": 4,
+          "total_characters": 4
         }
       },
       {
@@ -192,6 +202,11 @@
           "pov_edge_jaccard": 0.6905,
           "pov_episode_recall": 1.0,
           "pov_secret_leaks": 1
+        },
+        "mood_counts": {
+          "exact_matches": 3,
+          "soft_matches": 3,
+          "total_characters": 4
         }
       },
       {
@@ -241,6 +256,11 @@
           "pov_edge_jaccard": 0.7391,
           "pov_episode_recall": 1.0,
           "pov_secret_leaks": 2
+        },
+        "mood_counts": {
+          "exact_matches": 3,
+          "soft_matches": 3,
+          "total_characters": 4
         }
       },
       {
@@ -290,6 +310,11 @@
           "pov_edge_jaccard": 0.7833,
           "pov_episode_recall": 1.0,
           "pov_secret_leaks": 3
+        },
+        "mood_counts": {
+          "exact_matches": 3,
+          "soft_matches": 3,
+          "total_characters": 4
         }
       },
       {
@@ -339,14 +364,19 @@
           "pov_edge_jaccard": 0.6685,
           "pov_episode_recall": 1.0,
           "pov_secret_leaks": 4
+        },
+        "mood_counts": {
+          "exact_matches": 2,
+          "soft_matches": 2,
+          "total_characters": 4
         }
       },
       {
         "step": 6,
         "room_occupancy_jaccard": 0.5833,
         "room_occupancy_exact": false,
-        "mood_exact_rate": 0.5,
-        "mood_soft_rate": 0.75,
+        "mood_exact_rate": 0.75,
+        "mood_soft_rate": 1.0,
         "location_delta": {
           "tp": 1,
           "fp": 0,
@@ -354,7 +384,7 @@
         },
         "mood_delta": {
           "tp": 0,
-          "fp": 3,
+          "fp": 2,
           "fn": 1
         },
         "edge_delta": {
@@ -387,7 +417,12 @@
           "pov_entity_jaccard": 1.0,
           "pov_edge_jaccard": 0.6439,
           "pov_episode_recall": 0.9375,
-          "pov_secret_leaks": 4
+          "pov_secret_leaks": 3
+        },
+        "mood_counts": {
+          "exact_matches": 3,
+          "soft_matches": 4,
+          "total_characters": 4
         }
       }
     ]
@@ -444,8 +479,8 @@
     "cached_prompt_tokens": 0,
     "reasoning_tokens": 0,
     "api_calls": 6,
-    "cache_hits": 0,
-    "cache_misses": 6,
+    "cache_hits": 6,
+    "cache_misses": 0,
     "retry_count": 0,
     "validation_errors": 0,
     "latency_ms": 10.076,
@@ -455,9 +490,9 @@
       "output_cost_usd": 0.0,
       "total_cost_usd": 0.0,
       "rates_per_1m_usd": {
-        "input_uncached": 0.14,
-        "input_cached": 0.014,
-        "output": 0.28
+        "input_uncached": 0.0,
+        "input_cached": 0.0,
+        "output": 0.0
       }
     }
   },
@@ -467,21 +502,21 @@
     "total_tokens": 0,
     "cached_prompt_tokens": 0,
     "reasoning_tokens": 0,
-    "api_calls": 6,
-    "cache_hits": 0,
-    "cache_misses": 6,
+    "api_calls": 0,
+    "cache_hits": 6,
+    "cache_misses": 0,
     "retry_count": 0,
     "validation_errors": 0,
-    "latency_ms": 10.076,
+    "latency_ms": 0.0,
     "cost_estimate": {
       "input_cost_usd": 0.0,
       "cached_input_cost_usd": 0.0,
       "output_cost_usd": 0.0,
       "total_cost_usd": 0.0,
       "rates_per_1m_usd": {
-        "input_uncached": 0.14,
-        "input_cached": 0.014,
-        "output": 0.28
+        "input_uncached": 0.0,
+        "input_cached": 0.0,
+        "output": 0.0
       }
     }
   },
@@ -492,20 +527,20 @@
     "cached_prompt_tokens": 0,
     "reasoning_tokens": 1152,
     "api_calls": 7,
-    "cache_hits": 0,
-    "cache_misses": 6,
+    "cache_hits": 6,
+    "cache_misses": 0,
     "retry_count": 0,
     "validation_errors": 0,
     "latency_ms": 10.076,
     "cost_estimate": {
-      "input_cost_usd": 0.000284,
+      "input_cost_usd": 0.0,
       "cached_input_cost_usd": 0.0,
-      "output_cost_usd": 0.001219,
-      "total_cost_usd": 0.001502,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
       "rates_per_1m_usd": {
-        "input_uncached": 0.14,
-        "input_cached": 0.014,
-        "output": 0.28
+        "input_uncached": 0.0,
+        "input_cached": 0.0,
+        "output": 0.0
       }
     }
   }

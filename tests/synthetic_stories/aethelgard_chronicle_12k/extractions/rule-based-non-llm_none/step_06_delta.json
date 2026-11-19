@@ -1,0 +1,55 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "restless"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_rule_12",
+      "reason": null
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_rule_12",
+      "timeline_id": "main",
+      "step": 0,
+      "predicate": "scene_event",
+      "summary": "The Council Chamber doors opened from the Inner Courtyard with a groan of iron hinges, and Isolde stepped through in a swirl of torchlit air.",
+      "participants": {
+        "char_elena": "participant",
+        "char_isolde": "participant"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_isolde",
+        "char_julian",
+        "char_marcus"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": null,
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

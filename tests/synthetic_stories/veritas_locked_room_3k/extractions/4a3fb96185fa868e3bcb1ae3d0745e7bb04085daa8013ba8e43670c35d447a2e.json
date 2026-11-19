@@ -1,0 +1,169 @@
+{
+  "cache_key": "4a3fb96185fa868e3bcb1ae3d0745e7bb04085daa8013ba8e43670c35d447a2e",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T19:41:37.282673+00:00",
+  "prompt_sha256": "9359fc867413a7dc07c1c45db876ab9c4f7b17c9052fed25ce0a2910aa386fad",
+  "scene_text_sha256": "0ffedd0ef80909a7d280a3726363a04be6f4e4d9898bb6b922a1eb9411275e9e",
+  "scene_text": "Deep beneath the house, the Wine Cellar smelled of damp mortar, sour oak casks, and stagnant water. Thorne crouched behind a rack of dusty Bordeaux bottles, his chest heaving as he listened to footsteps descending the brick stairs. When the veiled locksmith rounded the corner with a raised lantern, Thorne pressed himself against the cold wall. Slowly, the locksmith reached up and drew back the black mourning netting, revealing the sharp, determined features of Giles. Thorne gasped, his eyes wide with shock at the unmasking. Giles stepped closer, his voice echoing off the low brick arches. \"Predaj mi sve lažne recepte odmah, Torne, ili ćeš do zore biti u okružnom zatvoru!\"\n\nUpstairs, the Mahogany Study had grown even colder as night settled fully over the estate. Cora returned from the Portrait Gallery, her silk skirts whispering across the floorboards as she rejoined Vane and Mina. Before she could inquire about the missing doctor, the side service door burst open and Thorne stumbled back into the room. His coat was streaked with cobwebs and cellar dust, and his spectacles sat crookedly on his nose.\n\n\"Thank heavens I made it back,\" Thorne panted, clutching at the doorframe for support. Looking straight at Cora and Vane, he launched into a frantic, improvised lie, claiming he had heard northern raiders trying to force the cellar grate and had gone down alone to drive them off into the storm.\n\nCora did not flinch, nor did she offer him a shred of sympathy. She merely raised one finely arched eyebrow, her gaze traveling deliberately from the cobwebs on his shoulders to his trembling, ink-stained hands. \"Oh, what a wonderfully convenient tale of heroic vigilance, dear doctor,\" she murmured, her tone dripping with aristocratic disdain.\n\n\"Oh, what a wonderfully convenient tale of heroic vigilance, dear doctor.\"",
+  "usage": {
+    "prompt_tokens": 6136,
+    "completion_tokens": 3667,
+    "total_tokens": 9803,
+    "cached_prompt_tokens": 1152,
+    "reasoning_tokens": 3151,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 18268.822,
+    "cost_estimate": {
+      "input_cost_usd": 0.000698,
+      "cached_input_cost_usd": 1.6e-05,
+      "output_cost_usd": 0.001027,
+      "total_cost_usd": 0.001741,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_thorne",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_study"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_giles_unmasking_thorne",
+        "reason": null
+      },
+      {
+        "entity_id": "char_cora",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_study"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": null,
+        "reason": null
+      },
+      {
+        "entity_id": "char_giles",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {},
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [
+          {
+            "alias": "the veiled locksmith",
+            "entity_id": "char_giles",
+            "kind": "disguise",
+            "known_to": [
+              "char_vane",
+              "char_thorne"
+            ],
+            "persona_name": "Locksmith",
+            "valid_from_step": 0,
+            "valid_to_step": null
+          }
+        ],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_giles_unmasking_thorne",
+        "reason": null
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_giles",
+        "target_id": "char_thorne",
+        "relation_type": "stance",
+        "state": {
+          "register": "ti",
+          "tone": "commanding",
+          "trust": -0.9
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_giles_unmasking_thorne",
+        "reason": null
+      },
+      {
+        "source_id": "char_cora",
+        "target_id": "char_thorne",
+        "relation_type": "stance",
+        "state": {
+          "tone": "disdainful",
+          "trust": -0.8
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": null,
+        "reason": null
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_giles_unmasking_thorne",
+        "timeline_id": "main",
+        "step": 5,
+        "predicate": "revelation",
+        "summary": "In the Wine Cellar, the veiled locksmith drew back the black netting to reveal himself as Giles and confronted the cornered Thorne, commanding him in Serbian to hand over the false prescriptions immediately or be in the district jail by dawn.",
+        "participants": {
+          "char_giles": "actor",
+          "char_thorne": "target"
+        },
+        "witnesses": [
+          "char_giles",
+          "char_thorne"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_cellar",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [
+      {
+        "episode_id": "ep_thorne_key_handoff",
+        "entity_id": "char_cora",
+        "epistemic": "deceived",
+        "believed_summary": "Thorne claimed he heard northern raiders trying to force the cellar grate and went down alone to drive them off into the storm."
+      },
+      {
+        "episode_id": "ep_thorne_key_handoff",
+        "entity_id": "char_mina",
+        "epistemic": "deceived",
+        "believed_summary": "Thorne claimed he heard northern raiders trying to force the cellar grate and went down alone to drive them off into the storm."
+      }
+    ],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

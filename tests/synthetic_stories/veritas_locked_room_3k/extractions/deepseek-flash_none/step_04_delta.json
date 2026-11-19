@@ -1,0 +1,67 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_vane",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_epidemic_flashback",
+      "reason": "Bitter realization that Thorne's trusted 10-year-old death certificates may conceal murder."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_vane",
+      "target_id": "char_thorne",
+      "relation_type": "stance",
+      "state": {
+        "trust": -0.8,
+        "tone": "stern"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_epidemic_flashback",
+      "reason": "Vane reinterprets Thorne's past reassurance as concealment."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_epidemic_flashback",
+      "timeline_id": "main",
+      "step": 4,
+      "predicate": "flashback",
+      "summary": "Ten years ago during a brutal winter epidemic, a younger, idealistic Vane investigated three wardens' sudden deaths. He watched Thorne work tirelessly on the night shift and trusted the physician implicitly, never questioning the death certificates attributing the deaths to rapid pneumonia. Now, in the Mahogany Study, the memory turns bitter as Vane realizes Thorne may have been quietly administering something fatal.",
+      "participants": {
+        "char_vane": "investigator",
+        "char_thorne": "physician"
+      },
+      "witnesses": [
+        "char_vane",
+        "char_thorne"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": null,
+      "story_time": "10_years_ago",
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": true,
+  "story_time": "10_years_ago",
+  "chapter_id": null,
+  "scene_id": null
+}

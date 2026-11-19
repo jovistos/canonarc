@@ -1,0 +1,143 @@
+{
+  "cache_key": "d890b99fc92b448177b0ec477f36c7a40560f1dab464a73a4eac380a3bfe6bf4",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T19:43:36.003087+00:00",
+  "prompt_sha256": "24232fd3b2f6300377c3d53c417f0d3cf64ff49e41f09dd3f0786c961b124204",
+  "scene_text_sha256": "8aa5063e8fd989815cfb3ef9eedd5b7ff6ebac973295ab07d3b4dec654ea4d4c",
+  "scene_text": "Elena’s fury did not cool. It sharpened. She stepped close enough that Julian could see the reflected flames in her eyes, and her voice fell to a blade’s edge. \"Empty your pockets. Now. Every seam, every hidden lining, every purse you have tucked beneath that ledger.\" Julian’s hands trembled as he fumbled at his belt, but his panicked gaze slid past her toward the hooded courier, and something desperate hardened in his face.\n\nBefore Elena could seize him, Julian wrenched free and lunged sideways. He pressed the Obsidian Signet into the gloved hand of the hooded courier, the black stone cold and heavy as a buried sin. His fingers shook so badly that the ring almost fell between them. \"Take this cursed ring and hide it deep inside the stone vault before the guards arrive!\" he stammered, the words tumbling out in a rush. Then he bolted, boots skidding on marble as he dashed down the narrow passage that descended toward the Archive Vault.\n\nFor an instant the courier stood frozen, the ring burning in their palm. Elena shouted Julian’s name, but the young treasurer was already gone, his footsteps a frantic drumbeat fading into the lower dark. The hooded courier cast one swift look at Elena—an unreadable glance from beneath the hood—then broke into a run, chasing closely after Julian into the Archive Vault. The satchel of false depeches swung against their hip as they vanished through the passage arch.\n\nElena stood alone amid the scattered reports, her chest rising and falling with controlled rage. The Obsidian Signet was no longer in the chamber, and neither was the witness who had just become a thief’s accomplice. From somewhere beneath the floor came the muffled slam of the vault’s outer door, then the hurried scrape of boots on stone stairs. Elena’s calm returned slowly, colder than before, as she gathered the broken seals and turned her face toward the closed balcony doors where Marcus still paced, unseeing, in the winter wind.",
+  "usage": {
+    "prompt_tokens": 5612,
+    "completion_tokens": 1486,
+    "total_tokens": 7098,
+    "cached_prompt_tokens": 1152,
+    "reasoning_tokens": 1043,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 7541.73,
+    "cost_estimate": {
+      "input_cost_usd": 0.000624,
+      "cached_input_cost_usd": 1.6e-05,
+      "output_cost_usd": 0.000416,
+      "total_cost_usd": 0.001057,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_vault"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_signet_transfer",
+        "reason": "Fled down the passage into the Archive Vault after handing off the signet"
+      },
+      {
+        "entity_id": "char_lyra",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_vault"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_signet_transfer",
+        "reason": "Chased Julian into the Archive Vault after taking the signet"
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "calm"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_signet_transfer",
+        "reason": "Her fury cools into a colder, controlled calm as she gathers the broken seals"
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_lyra",
+        "target_id": "item_signet",
+        "relation_type": "possesses",
+        "state": {
+          "status": "concealed"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_signet_transfer",
+        "reason": "Julian pressed the Obsidian Signet into the courier's gloved hand"
+      },
+      {
+        "source_id": "char_julian",
+        "target_id": "item_signet",
+        "relation_type": "possesses",
+        "state": {},
+        "merge": true,
+        "remove": true,
+        "caused_by_episode_id": "ep_signet_transfer",
+        "reason": "Julian surrendered the signet to the courier"
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_signet_transfer",
+        "timeline_id": "main",
+        "step": 3,
+        "predicate": "item_transfer",
+        "summary": "Julian presses the Obsidian Signet into the hooded courier's hand, begging them to hide it in the Archive Vault, then bolts down the passage; the courier chases after him into the vault.",
+        "participants": {
+          "char_julian": "actor",
+          "char_lyra": "recipient",
+          "item_signet": "instrument",
+          "char_elena": "observer"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "char_lyra"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.5,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

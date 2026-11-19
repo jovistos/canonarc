@@ -1,0 +1,70 @@
+{
+  "cache_key": "45be81d2e8096c1ff029522bb1a2414a8584fc9d683c015982e6a216b1564564",
+  "model": "rule-based-non-llm",
+  "created_at": "2026-11-19T21:02:23.860030+00:00",
+  "prompt_sha256": "b50d05e96f3c8a1bcf8980fc54a66f97b2a63c3e6a36f9470ea5879af4266e24",
+  "scene_text_sha256": "fb6b3ba72ebd4ccadd961ae7f257a89caaea738b8dd5ca8cf725b4e9080aa985",
+  "scene_text": "The Council Chamber hung above the Grand Canal like a jewel box suspended over black water, its velvet drapes breathing with the damp draft that slipped through the leaded windows. Candles in gilt sconces threw long, nervous shadows across the mosaic floor, and the air smelled of wax, salt, and old parchment. Below, a gondola knocked softly against the water-steps, and the sound traveled up through the stone like a secret. Elena, calm as a blade laid flat upon silk, stood at the head of the table while Marcus, the old general, leaned over the ledgers with the confidence of a man who had never once doubted the map in his own hand. Julian, the young treasurer, hovered at the table’s edge, his fingers twitching whenever the guards outside shifted their halberds. Near the doorway, the hooded courier waited in perfect stillness, a sealed satchel held against her breast, her face hidden beneath a rain-dark hood.\n\nElena turned a page and let the silence do its work. “Molim vas da pažljivo pregledate ove poverljive izveštaje pre nego što kraljevska straža zatvori kapije,” she said, addressing Marcus with the crisp courtesy of a command wrapped in diplomacy. The old general grunted, squinting at the columns of figures, and the courier stepped forward at last. She bowed low, the hem of her cloak brushing the marble, and spoke in a voice carefully flattened by the hood. “Ponizno vam donosim zapečaćene depeše sa severne granice koje zahtevaju vašu hitnu vojnu procenu.” The seals caught the candlelight, red wax stamped with a northern wolf. The courier’s stillness was more unnerving than any whisper.\n\nMarcus took the depeches but did not break them immediately; he weighed them, as if distrust were a form of prudence. Julian’s gaze darted from the satchel to Elena’s hands and back again. “Yes, indeed,” he murmured, a brief filler reply that fell into the room and vanished like a pebble into deep water. Elena did not look at him. The hooded courier glided back into the shadow beside the door, and the inspection continued, each rustle of parchment sharpening the tension until the chamber felt as taut as a drawn wire.",
+  "usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 1.849,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_rule_7",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "briefing",
+        "summary": "The Council Chamber hung above the Grand Canal like a jewel box suspended over black water, its velvet drapes breathing with the damp draft that slipped through",
+        "participants": {
+          "char_elena": "participant",
+          "char_julian": "participant"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "Lyra",
+          "char_marcus"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

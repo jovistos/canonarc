@@ -1,0 +1,121 @@
+{
+  "cache_key": "1cf8c664ff3e529be1170e1c61b9ef073b31f9f708678f46942c68866e1d3186",
+  "model": "rule-based-non-llm",
+  "created_at": "2026-11-19T19:41:50.189210+00:00",
+  "prompt_sha256": "233e216956c880455ad18a085fab693c2a92e9cdfc5ba565a8f11f369879344b",
+  "scene_text_sha256": "7cbdde8d49e5f0f2d1d44e1421a8c777a2c72b52935fdfbf1f14bb6e68733b04",
+  "scene_text": "Cornered and desperate, Thorne reached deep into the inner pocket of his waistcoat, his fingers closing around cold, notched metal. With a frantic glance at Vane, the physician lunged sideways toward the shrouded figure by the bookshelves and thrust the Brass Ledger Key into the veiled locksmith's gloved hand. \"Take this cursed key and hide it deep inside the stone cellar before the constables arrive!\" Thorne hissed, his voice cracking under the strain of sheer terror.\n\nBefore Vane could intercept him, Thorne bolted through the side service door, his heavy footsteps clattering down the narrow wooden stairs that led toward the kitchens and the damp brick expanse of the Wine Cellar below. The veiled locksmith did not hesitate; with a swift, fluid motion, the cloaked figure pocketed the Brass Ledger Key and swept out after the fleeing doctor, determined not to let him vanish into the subterranean dark.\n\nLeft momentarily alone in the Mahogany Study, Vane stood rigid by the desk, listening to the distant slam of the cellar door echoing up through the floorboards. A moment later, the main door creaked open, and Mina stepped cautiously across the threshold. Having grown uneasy in the mist-filled quiet of the Glass Conservatory, the young ward had walked through the corridor to check on the council, only to find the room in disarray and the chief inspector staring grimly at the empty doorway.\n\n\"Inspector Vane?\" Mina asked softly, her eyes darting from the scattered toxicology papers to the overturned chair near the hearth. Vane turned toward her, forcing his features back into a mask of practiced calm, though his pulse still hammered in his temples. \"Stay here, Miss Mina,\" he instructed gently, gesturing toward the settee. \"The matter is nearly concluded, though I fear the truth lies somewhere beneath our feet.\"",
+  "usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 1.72,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_thorne",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "panicked",
+          "location_id": "loc_cellar"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_3",
+        "reason": null
+      },
+      {
+        "entity_id": "char_giles",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "determined"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_3",
+        "reason": null
+      },
+      {
+        "entity_id": "char_vane",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "panicked",
+          "location_id": "loc_study"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_3",
+        "reason": null
+      }
+    ],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_rule_3",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "item_transfer",
+        "summary": "Cornered and desperate, Thorne reached deep into the inner pocket of his waistcoat, his fingers closing around cold, notched metal.",
+        "participants": {
+          "char_giles": "participant",
+          "char_mina": "participant"
+        },
+        "witnesses": [
+          "char_giles",
+          "char_mina",
+          "char_thorne",
+          "char_vane"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

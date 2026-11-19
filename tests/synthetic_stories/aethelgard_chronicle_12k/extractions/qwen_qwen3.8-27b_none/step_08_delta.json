@@ -1,0 +1,68 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_kaelen",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "relieved"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step8_item_transfer",
+      "reason": "Kaelen feels 'miserable and relieved' after handing over the dangerous artifact."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_elena",
+      "target_id": "item_cipher_cylinder",
+      "relation_type": "possesses",
+      "state": {
+        "status": "held"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_step8_item_transfer",
+      "reason": "Kaelen hands the Brass Cipher Cylinder to Elena."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_step8_item_transfer",
+      "timeline_id": "main",
+      "step": 8,
+      "predicate": "item_transfer",
+      "summary": "Kaelen hands the Brass Cipher Cylinder to Elena, revealing it predicts events and coordinates a conspiracy, and directs her to the garrison ledger in the Archive Vault.",
+      "participants": {
+        "char_kaelen": "actor",
+        "char_elena": "recipient",
+        "item_cipher_cylinder": "instrument"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_isolde",
+        "char_kaelen"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_observatory",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

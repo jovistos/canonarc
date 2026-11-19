@@ -1,0 +1,170 @@
+{
+  "cache_key": "402919fe8fc6af5dc6305e0899f1758eb79790b491aff28d62051d332bcd0c03",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T19:48:41.377328+00:00",
+  "prompt_sha256": "af93ccef2181fcd7507c685e1c600d12630bf164c0931469255db866b6b3e937",
+  "scene_text_sha256": "d75d92aa109c67ae0312fa18021efecb73176ae095550e307a36ad9651fe027c",
+  "scene_text": "The vault stairwell glowed, and Lyra came up out of it with her hood thrown back and the Obsidian Signet held high in her bare hand. The candlelight slid around the black stone and found no reflection in it at all. Marcus turned, saw the ring, and his weather-beaten face went through surprise, suspicion, and then a slow, terrible comprehension as Lyra spoke — plainly, without ornament — of the pocket emptied in this room, of the ring pressed into a courier's glove, of the stolen charters and the lie about raiders that had been stitched together before she had even reached the top step.\n\nMarcus's jaw set until the muscle jumped beneath his scar. Indignant heat flooded his cheeks, and he wheeled on the young treasurer with a roar that rattled the decanters. \"Kako se usuđuješ da obmanjuješ vojni savet dok držimo dokaze u rukama!\"\n\nJulian was cornered against the long oak table, three pairs of eyes pinning him there like knives through a moth. His hands opened and closed. And then — with the strange, jerky calm of a man who has prepared for exactly this — he reached inside his collar and drew out a small glass phial of cloudy amber liquid. He drank it in one swallow before anyone could cross the room. The phial fell and shattered.\n\nJulian blinked. Then blinked again, and the terror drained out of his features, replaced by the bland confusion of a sleeper woken in an unfamiliar house. He looked at the ring, at Marcus's fury, at Elena's cold stare, and there was nothing in his face but polite bewilderment. He did not remember the winter pact. He did not remember the snow at the windows, the tea, the trust, the ten years of it. He did not even remember why he was afraid. Elena watched the man she had built a kingdom beside become a stranger in a single breath, and somewhere far below the Council Chamber, the last candle guttered out.",
+  "usage": {
+    "prompt_tokens": 5989,
+    "completion_tokens": 3114,
+    "total_tokens": 9103,
+    "cached_prompt_tokens": 1152,
+    "reasoning_tokens": 2478,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 16515.674,
+    "cost_estimate": {
+      "input_cost_usd": 0.000677,
+      "cached_input_cost_usd": 1.6e-05,
+      "output_cost_usd": 0.000872,
+      "total_cost_usd": 0.001565,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_lyra",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_council"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [
+          {
+            "alias": "the hooded courier",
+            "entity_id": "char_lyra",
+            "kind": "disguise",
+            "known_to": [
+              "char_elena",
+              "char_julian",
+              "char_marcus"
+            ],
+            "persona_name": "Courier",
+            "valid_from_step": 0,
+            "valid_to_step": null
+          }
+        ],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_lyra_reveal_marcus",
+        "reason": "Came up from the vault stairwell into the Council Chamber, hood thrown back, unmasking the courier persona before Marcus and Elena."
+      },
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "indignant"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_lyra_reveal_marcus",
+        "reason": "Surprise and suspicion gave way to terrible comprehension and indignant fury at Julian."
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "calm"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_lyra_reveal_marcus",
+        "reason": "Drank the amber phial; terror drained away into bland, blank confusion."
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_marcus",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "register": "ti",
+          "tone": "furious",
+          "trust": -0.9
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_lyra_reveal_marcus",
+        "reason": "Marcus wheeled on the young treasurer and roared at him in the informal register for deceiving the military council."
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_lyra_reveal_marcus",
+        "timeline_id": "main",
+        "step": 6,
+        "predicate": "revelation",
+        "summary": "Lyra rose from the vault stairwell, hood thrown back and the Obsidian Signet held high, and plainly revealed Julian's emptied pocket, the ring forced into a courier's glove, the stolen charters, and the fabricated raider story; Marcus, comprehending at last, furiously roared at the cornered Julian in the informal register, and Julian swallowed a phial of amber liquid that wiped away his memory of the winter pact and all his fear, leaving only bland bewilderment.",
+        "participants": {
+          "char_lyra": "actor",
+          "char_julian": "target",
+          "char_marcus": "reactor",
+          "char_elena": "observer",
+          "item_signet": "instrument"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "char_lyra",
+          "char_marcus"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.5,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [
+      {
+        "episode_id": "ep_signet_handoff_flee",
+        "entity_id": "char_marcus",
+        "epistemic": "told",
+        "believed_summary": null
+      },
+      {
+        "episode_id": "ep_elena_confronts_julian",
+        "entity_id": "char_marcus",
+        "epistemic": "told",
+        "believed_summary": null
+      },
+      {
+        "episode_id": "ep_winter_pact_memory",
+        "entity_id": "char_julian",
+        "epistemic": "forgotten",
+        "believed_summary": null
+      }
+    ],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

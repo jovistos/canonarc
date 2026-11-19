@@ -5,16 +5,37 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "canonarc"
 version = "0.1.0"
-description = "Tier 1-5 Temporal Graph, Voice Bank & Causal Time-Travel Engine for LLMs"
+description = "Tier 1-6 Temporal Graph, Episodic Ledger, Voice Bank & Causal Time-Travel Engine for LLMs"
 readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.11"
-keywords = ["memory", "graph", "vector", "time-travel", "llm", "interactive-fiction", "visual-novel", "simulation"]
+authors = [
+    { name = "CanonArc Contributors" },
+]
+keywords = [
+    "memory",
+    "graph",
+    "vector",
+    "time-travel",
+    "epistemic",
+    "llm",
+    "interactive-fiction",
+    "visual-novel",
+    "localization",
+    "simulation",
+]
 classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Topic :: Games/Entertainment :: Role-Playing",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
 ]
 dependencies = [
     "pydantic>=2.0",
@@ -28,6 +49,16 @@ dev = [
     "ruff>=0.4",
     "mypy>=1.10",
 ]
+notebooks = [
+    "jupyterlab>=4.0",
+    "ipykernel>=6.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/canonarc/canonarc"
+Repository = "https://github.com/canonarc/canonarc"
+Documentation = "https://github.com/canonarc/canonarc/tree/main/docs"
+Issues = "https://github.com/canonarc/canonarc/issues"
 
 [project.scripts]
 canonarc = "canonarc.cli:main"

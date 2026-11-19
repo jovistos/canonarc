@@ -1,0 +1,77 @@
+{
+  "cache_key": "1da8eca99361ae0572e9ae66e71ad6a10fe217069b546896d91829af4bc090e5",
+  "model": "qwen/qwen3.8-27b",
+  "created_at": "2026-11-19T21:13:43.014033+00:00",
+  "prompt_sha256": "b00353cde2e92f8958f331cd4cb8ac2540f73263c3fb83aeaa343741826ff59d",
+  "scene_text_sha256": "3638925c99fa8ca059242dbda7c09357fc8910d267cc7772b7c43eaccd06449a",
+  "scene_text": "The Council Chamber hung like a glass lantern above the gas giant, its curved command deck awash in the bruised amber light of the planet's storms. Holographic ledgers shimmered over the obsidian table, columns of figures and sealed authorizations sliding through the air while the station's distant ventilation hummed like a held breath. Elena stood at the head of the table, calm in the way of deep water, her hands folded over a stack of confidential reports. Marcus, the veteran commander, occupied the opposite chair with the easy confidence of a man who had survived worse rooms, though his gaze kept drifting toward the sealed blast doors. Julian, the young treasurer, sat too straight, his fingers worrying the edge of a datapad, and at the chamber's margin lingered the hooded courier, watchful and silent beneath a travel-stained cloak.\n\nElena lifted the top dossier, its red seal catching the light, and turned toward Marcus. Her voice carried no heat, only the precision of a scientist measuring a volatile sample. \"Molim vas da pažljivo pregledate ove poverljive izveštaje pre nego što orbitalna straža zatvori kapije.\" The words settled into the room like a command disguised as courtesy. Marcus inclined his head, already reaching for the papers, but before his fingers could close on them, the hooded courier stepped forward and bowed low, the cloak pooling around her boots. The gesture was formal, almost theatrical, yet her voice emerged muffled and careful. \"Ponizno vam donosim zapečaćene depeše sa severne granice koje zahtevaju vašu hitnu vojnu procenu.\"\n\nMarcus took the depeches without haste, testing their weight, while Julian's nervousness sharpened into something almost audible. The young treasurer glanced from Elena to the courier and back again, as though trying to solve an equation whose variables kept changing. He murmured, barely more than breath, \"Yes, indeed.\" The two words fell flat and awkward, swallowed by the chamber's vast acoustics. Elena did not look at him, but her calm seemed to tighten by a fraction, a wire drawn one notch closer to breaking.\n\nThe inspection continued beneath the slow wheel of the gas giant. Records were opened, seals compared, timestamps cross-checked against the orbital watch. Every click of a datapad seemed louder than it should have been. The hooded courier remained at the edge of the light, watchful, while Marcus read with the patience of a soldier who trusted documents only after he had smelled their ink. Julian's breathing had gone shallow. Outside the panoramic shield, lightning crawled through the planet's upper clouds, and the Council Chamber held its breath around them all.",
+  "usage": {
+    "prompt_tokens": 5809,
+    "completion_tokens": 369,
+    "total_tokens": 6178,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 11107.484,
+    "cost_estimate": {
+      "input_cost_usd": 0.000813,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.000103,
+      "total_cost_usd": 0.000917,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_step1_briefing",
+        "timeline_id": "main",
+        "step": 1,
+        "predicate": "briefing",
+        "summary": "Elena instructs Marcus to review confidential reports before the orbital gates close, while the hooded courier delivers sealed depeches from the northern border for military assessment.",
+        "participants": {
+          "char_elena": "actor",
+          "char_marcus": "target",
+          "char_lyra": "actor",
+          "char_julian": "observer"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_marcus",
+          "char_lyra",
+          "char_julian"
+        ],
+        "known_by": {
+          "char_elena": "direct",
+          "char_marcus": "direct",
+          "char_lyra": "direct",
+          "char_julian": "direct"
+        },
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 6.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

@@ -1,0 +1,161 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_5",
+      "reason": "Fled up the service stairs through the tapestry into the Council Chamber."
+    },
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council",
+        "mood": "watchful"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": null,
+      "reason": "Stepped back into the Council Chamber from the Windy Balcony and weighed Julian's tale with a soldier's skepticism."
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "furious"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_3",
+      "reason": "Her fury banked behind marble as she mocked Julian's convenient tale."
+    },
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {},
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [
+        {
+          "alias": "the hooded courier",
+          "entity_id": "char_lyra",
+          "kind": "disguise",
+          "known_to": [
+            "char_elena",
+            "char_julian"
+          ],
+          "persona_name": "Courier",
+          "valid_from_step": 0,
+          "valid_to_step": null
+        }
+      ],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_5",
+      "reason": "Threw back her hood and peeled away the mask, revealing herself to Julian."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_lyra",
+      "target_id": "item_signet",
+      "relation_type": "possesses",
+      "state": {
+        "status": "concealed"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_3",
+      "reason": "The recovered Obsidian Signet remained in Lyra's keeping in the flooded vault."
+    },
+    {
+      "source_id": "char_lyra",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "commanding",
+        "trust": -0.8
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_5",
+      "reason": "Unmasked, she demands the false charters on threat of the royal dungeon."
+    },
+    {
+      "source_id": "char_elena",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "stern",
+        "trust": -0.7
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_3",
+      "reason": "She answers his cover story with biting, sugared sarcasm."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_5",
+      "timeline_id": "main",
+      "step": 5,
+      "predicate": "revelation",
+      "summary": "In the flooded Archive Vault, the hooded courier threw back her hood and unmasked as Lyra before a shocked Julian, ordering him on pain of the royal dungeon to hand over the false charters.",
+      "participants": {
+        "char_lyra": "actor",
+        "char_julian": "target"
+      },
+      "witnesses": [
+        "char_lyra",
+        "char_julian"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_vault",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_2",
+      "entity_id": "char_marcus",
+      "epistemic": "deceived",
+      "believed_summary": "Northern raiders broke into the annex and stole the Obsidian Signet while Julian defended the ledger with his life."
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

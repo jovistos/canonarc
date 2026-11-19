@@ -1,0 +1,69 @@
+{
+  "cache_key": "26b585247e769871899aaed7b038b8f06b771d2525e1e758c1f01e17acb8e976",
+  "model": "rule-based-non-llm",
+  "created_at": "2026-11-19T19:45:30.756385+00:00",
+  "prompt_sha256": "ea68384adbb37d2136c03a0fd072c6658ffa0062f2e74c1f97f66c0ca96e6a1e",
+  "scene_text_sha256": "39b802d7558149efd04234cfd3271961e269ac7004f16941612db52fc05fb44b",
+  "scene_text": "Ten years ago, the Starlight Observatory had been a place of hope, not conspiracy. Elena stood at the brass telescope, her fingers tracing the engraved constellations, as Kaelen, the astromancer, and Julian, then a young apprentice treasurer, hunched over a table cluttered with star charts and arcane instruments. The air smelled of ozone and old parchment, and the dome above was open to a sky blazing with winter stars. 'The cipher key must be bound to the motion of the heavens,' Kaelen intoned, his voice a low rumble that seemed to resonate with the very stones. 'Only then will it be unbreakable.' Julian nodded, his quill scratching furiously as he copied the astromancer's calculations, his brow furrowed in concentration. Elena watched them, a sense of pride swelling in her chest. This was the birth of the Astral Concordat, the alliance between magic and state that would safeguard Aethelgard for generations.\n\nBut now, as she stood in the same observatory a decade later, the memory twisted like a knife. Ten years ago, she had trusted them both. Kaelen had been her mentor, Julian her protégé. They had worked tirelessly, weaving the cipher key into the very fabric of the city's wards. She remembered the night they finished, the three of them sharing a flask of honeyed wine as the first encrypted scroll passed through the vault. 'We have done something extraordinary,' Kaelen had said, his eyes gleaming with pride. Julian had smiled, shy but proud. Elena had believed in that smile, had staked her career on it. She had trusted the cipher key to keep the realm's most dangerous secrets safe from the tribunal's prying eyes.\n\nNow, the observatory felt colder, the brass instruments dulled by neglect and the weight of secrets. Elena's fingers clenched around the telescope's rim as she recalled the Step 2 confrontation, the moment she learned that Julian had stolen the key, or so the evidence suggested. The memory of that betrayal burned, but so did the memory of Kaelen's quiet encouragement, his unwavering faith in the young treasurer. She remembered the way Kaelen had looked at Julian, as if the young man were his own son, and wondered if that affection had blinded them both. 'Ten years ago, we forged the key to protect the realm,' she whispered to the empty dome. 'Now I must decide whether to destroy it, and those who made it.' The stars above offered no answer, only the distant echo of a promise broken and the soft hiss of wind through the dome's open slit.",
+  "usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 2.167,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_rule_17",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "flashback",
+        "summary": "Ten years ago, the Starlight Observatory had been a place of hope, not conspiracy.",
+        "participants": {
+          "char_elena": "participant",
+          "char_julian": "participant"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "char_kaelen"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": "10_years_ago",
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": true,
+    "story_time": "10_years_ago",
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

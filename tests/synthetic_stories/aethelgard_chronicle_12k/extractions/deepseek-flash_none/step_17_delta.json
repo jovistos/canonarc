@@ -1,0 +1,107 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "indignant"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_treasurer_deception_revelation",
+      "reason": "Marcus's confidence hardens into fury as Lyra lays out Julian's betrayal"
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "calm"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_treasurer_deception_revelation",
+      "reason": "The Iron Chancellor's calm becomes an unbreachable wall as Julian looks to her"
+    },
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "watchful"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_treasurer_deception_revelation",
+      "reason": "Lyra stands beside the evidence, watchful as a judge who has already read the sentence"
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_marcus",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "furious",
+        "trust": -0.9
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_treasurer_deception_revelation",
+      "reason": "Marcus rounds on Julian and barks at him in the informal register, disgusted by the treasurer's deception of the military council"
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_treasurer_deception_revelation",
+      "timeline_id": "main",
+      "step": 17,
+      "predicate": "revelation",
+      "summary": "Lyra reveals to Marcus in the Council Chamber that Julian himself opened the treasury seal, moved the siege fund into a false account, and presented the missing coin as foreign sabotage; Marcus rises in fury, and Julian is left without a defense before every witness.",
+      "participants": {
+        "char_lyra": "revealer",
+        "char_marcus": "auditor",
+        "char_julian": "accused",
+        "char_elena": "observer",
+        "item_signet": "instrument"
+      },
+      "witnesses": [
+        "char_lyra",
+        "char_marcus",
+        "char_julian",
+        "char_elena",
+        "char_isolde",
+        "char_kaelen"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

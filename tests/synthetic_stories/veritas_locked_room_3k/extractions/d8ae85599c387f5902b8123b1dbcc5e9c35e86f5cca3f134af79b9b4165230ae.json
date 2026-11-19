@@ -1,0 +1,134 @@
+{
+  "cache_key": "d8ae85599c387f5902b8123b1dbcc5e9c35e86f5cca3f134af79b9b4165230ae",
+  "model": "qwen/qwen3.8-27b",
+  "created_at": "2026-11-19T21:16:34.421230+00:00",
+  "prompt_sha256": "0b741aee0fc07ebee3002a048c0251b016c52393ed0f5686fb0504174c7619a9",
+  "scene_text_sha256": "65733a890e92526b76f7ecbd8a59eaf7b543b83534d0c8d1629823896d877224",
+  "scene_text": "The silence that followed Vane's announcement stretched thin and brittle. Cora's composure, though practiced, began to fray at the edges under the relentless ticking of the grandfather clock. She rose from her velvet armchair with a sharp rustle of black silk, her jaw set in a line of aristocratic impatience. \"I have endured quite enough of this morbid stalemate,\" she declared, smoothing her gloves. Without waiting for permission from the chief inspector, Cora swept out of the Mahogany Study and ascended the grand staircase toward the Portrait Gallery, seeking the cold, drafty solitude of her ancestors' painted gazes.\n\nThe moment the heavy door clicked shut behind her, the atmosphere in the study fractured. Vane's calm veneer vanished entirely, replaced by a cold, focused fury that seemed to draw all the air from the room. He rounded the mahogany desk in three brisk strides, blocking Thorne's path to the hearth. The physician stumbled backward, his heel catching on the edge of the Persian rug, his face draining of color until it matched his starched collar.\n\n\"You thought the rain would wash away your tracks, didn't you?\" Vane's voice dropped to a low, dangerous growl as he leaned in, his eyes locked onto the trembling doctor. Thorne clutched his medical satchel to his chest like a shield, stammering incoherently about misread symptoms and late-night rounds. Vane slammed his palm onto the desk, rattling the inkwell and the brass-mounted magnifying glass. \"Prestani sa tim bednim lažima, doktore, jer znam da si sinoć ukrao mesingani ključ iz kabineta!\"\n\nThorne's breath hitched in his throat, a ragged, panicked sound. He looked wildly toward the veiled locksmith for some sign of intervention, but the cloaked figure remained motionless near the bookshelves, watching the confrontation unfold. Trapped between the chief inspector's accusing glare and the damning toxicology report lying open on the desk, Thorne realized that his carefully constructed alibi had collapsed.",
+  "usage": {
+    "prompt_tokens": 5958,
+    "completion_tokens": 473,
+    "total_tokens": 6431,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 12460.309,
+    "cost_estimate": {
+      "input_cost_usd": 0.000834,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.000132,
+      "total_cost_usd": 0.000967,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_cora",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_gallery",
+          "mood": "indignant"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step2_confrontation",
+        "reason": null
+      },
+      {
+        "entity_id": "char_vane",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step2_confrontation",
+        "reason": null
+      },
+      {
+        "entity_id": "char_thorne",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "panicked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step2_confrontation",
+        "reason": null
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_vane",
+        "target_id": "char_thorne",
+        "relation_type": "stance",
+        "state": {
+          "register": "ti",
+          "tone": "furious",
+          "trust": -0.9
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_step2_confrontation",
+        "reason": null
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_step2_confrontation",
+        "timeline_id": "main",
+        "step": 2,
+        "predicate": "confrontation",
+        "summary": "Vane confronts Thorne in the Mahogany Study, accusing him of stealing the brass ledger key, while Cora exits to the Portrait Gallery and Giles watches silently.",
+        "participants": {
+          "char_vane": "accuser",
+          "char_thorne": "accused"
+        },
+        "witnesses": [
+          "char_vane",
+          "char_thorne",
+          "char_giles"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_study",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.5,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

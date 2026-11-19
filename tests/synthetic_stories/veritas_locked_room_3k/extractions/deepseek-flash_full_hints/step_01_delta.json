@@ -1,0 +1,151 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_vane",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "calm",
+        "demeanor": "authoritative"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [
+        {
+          "alias": "chief inspector",
+          "entity_id": "char_vane",
+          "kind": "title",
+          "known_to": null,
+          "persona_name": null,
+          "valid_from_step": 1,
+          "valid_to_step": null
+        }
+      ],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step1_opening_briefing",
+      "reason": null
+    },
+    {
+      "entity_id": "char_cora",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "composed",
+        "demeanor": "cool"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [
+        {
+          "alias": "dowager countess",
+          "entity_id": "char_cora",
+          "kind": "title",
+          "known_to": null,
+          "persona_name": null,
+          "valid_from_step": 1,
+          "valid_to_step": null
+        }
+      ],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step1_opening_briefing",
+      "reason": null
+    },
+    {
+      "entity_id": "char_thorne",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "anxious",
+        "anxiety": "high"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [
+        {
+          "alias": "family physician",
+          "entity_id": "char_thorne",
+          "kind": "title",
+          "known_to": null,
+          "persona_name": null,
+          "valid_from_step": 1,
+          "valid_to_step": null
+        }
+      ],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step1_opening_briefing",
+      "reason": null
+    },
+    {
+      "entity_id": "char_giles",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "silent",
+        "posture": "watchful"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [
+        {
+          "alias": "the veiled locksmith",
+          "entity_id": "char_giles",
+          "kind": "epithet",
+          "known_to": null,
+          "persona_name": null,
+          "valid_from_step": 1,
+          "valid_to_step": null
+        }
+      ],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step1_opening_briefing",
+      "reason": null
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_step1_opening_briefing",
+      "timeline_id": "main",
+      "step": 1,
+      "predicate": "briefing",
+      "summary": "Vane presents toxicology findings to Cora, Thorne, and the veiled locksmith (Giles) in the Mahogany Study, requesting careful review before police seal the estate.",
+      "participants": {
+        "char_vane": "presenter",
+        "char_cora": "attendee",
+        "char_thorne": "attendee",
+        "char_giles": "attendee"
+      },
+      "witnesses": [
+        "char_vane",
+        "char_cora",
+        "char_giles",
+        "char_thorne"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_study",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.0,
+      "metadata": {
+        "language": "Serbian"
+      },
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

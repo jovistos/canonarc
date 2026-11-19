@@ -1,0 +1,119 @@
+{
+  "cache_key": "3258f7b6a41e0e6a688186ec3b1eaa7f1dbf56c3ef754e998693a352ada6486a",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T19:41:08.836788+00:00",
+  "prompt_sha256": "e23efb8005133c219ab543bc2e3bb83c4ea2141ee4663b24d71d483a84915733",
+  "scene_text_sha256": "65733a890e92526b76f7ecbd8a59eaf7b543b83534d0c8d1629823896d877224",
+  "scene_text": "The silence that followed Vane's announcement stretched thin and brittle. Cora's composure, though practiced, began to fray at the edges under the relentless ticking of the grandfather clock. She rose from her velvet armchair with a sharp rustle of black silk, her jaw set in a line of aristocratic impatience. \"I have endured quite enough of this morbid stalemate,\" she declared, smoothing her gloves. Without waiting for permission from the chief inspector, Cora swept out of the Mahogany Study and ascended the grand staircase toward the Portrait Gallery, seeking the cold, drafty solitude of her ancestors' painted gazes.\n\nThe moment the heavy door clicked shut behind her, the atmosphere in the study fractured. Vane's calm veneer vanished entirely, replaced by a cold, focused fury that seemed to draw all the air from the room. He rounded the mahogany desk in three brisk strides, blocking Thorne's path to the hearth. The physician stumbled backward, his heel catching on the edge of the Persian rug, his face draining of color until it matched his starched collar.\n\n\"You thought the rain would wash away your tracks, didn't you?\" Vane's voice dropped to a low, dangerous growl as he leaned in, his eyes locked onto the trembling doctor. Thorne clutched his medical satchel to his chest like a shield, stammering incoherently about misread symptoms and late-night rounds. Vane slammed his palm onto the desk, rattling the inkwell and the brass-mounted magnifying glass. \"Prestani sa tim bednim lažima, doktore, jer znam da si sinoć ukrao mesingani ključ iz kabineta!\"\n\nThorne's breath hitched in his throat, a ragged, panicked sound. He looked wildly toward the veiled locksmith for some sign of intervention, but the cloaked figure remained motionless near the bookshelves, watching the confrontation unfold. Trapped between the chief inspector's accusing glare and the damning toxicology report lying open on the desk, Thorne realized that his carefully constructed alibi had collapsed.",
+  "usage": {
+    "prompt_tokens": 5635,
+    "completion_tokens": 800,
+    "total_tokens": 6435,
+    "cached_prompt_tokens": 1152,
+    "reasoning_tokens": 383,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 4390.097,
+    "cost_estimate": {
+      "input_cost_usd": 0.000628,
+      "cached_input_cost_usd": 1.6e-05,
+      "output_cost_usd": 0.000224,
+      "total_cost_usd": 0.000868,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_cora",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_gallery",
+          "mood": "indignant"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_toxicology_briefing",
+        "reason": "Cora abandons the study in aristocratic impatience and retreats to the Portrait Gallery before the confrontation begins."
+      },
+      {
+        "entity_id": "char_vane",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_vane_confrontation_thorne",
+        "reason": "Once Cora leaves, Vane's calm veneer drops into cold fury as he corners Thorne."
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_vane",
+        "target_id": "char_thorne",
+        "relation_type": "stance",
+        "state": {
+          "register": "ti",
+          "tone": "furious",
+          "trust": -0.8
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_vane_confrontation_thorne",
+        "reason": "Vane drops formal address and accuses Thorne of stealing the brass key the previous night."
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_vane_confrontation_thorne",
+        "timeline_id": "main",
+        "step": 2,
+        "predicate": "confrontation",
+        "summary": "After Cora swept out of the study, Inspector Vane cornered Thorne, dropping all formality to accuse him of stealing the brass ledger key the night before; Thorne's alibi collapsed while the veiled locksmith watched motionless.",
+        "participants": {
+          "char_vane": "accuser",
+          "char_thorne": "accused",
+          "char_giles": "onlooker"
+        },
+        "witnesses": [
+          "char_vane",
+          "char_thorne",
+          "char_giles"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_study",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.5,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

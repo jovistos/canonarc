@@ -1,0 +1,138 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [
+        {
+          "alias": "the hooded courier",
+          "entity_id": "char_lyra",
+          "kind": "disguise",
+          "known_to": [
+            "char_elena",
+            "char_julian"
+          ],
+          "persona_name": "Courier",
+          "valid_from_step": 0,
+          "valid_to_step": null
+        }
+      ],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_lyra_unmasking",
+      "reason": "Reveals her face to Julian, dropping the courier disguise."
+    },
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council",
+        "mood": "nervous"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_lyra_unmasking",
+      "reason": "Flees the vault up to the Council Chamber and lies about the Signet."
+    },
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council",
+        "mood": "watchful"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": null,
+      "reason": "Returns to the Council Chamber from the balcony."
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "furious"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_confrontation_signet",
+      "reason": "Sees through Julian's convenient tale, anger hardening."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_lyra",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "commanding",
+        "trust": -0.6
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_lyra_unmasking",
+      "reason": "Lyra commands Julian to hand over the false charters."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_lyra_unmasking",
+      "timeline_id": "main",
+      "step": 5,
+      "predicate": "revelation",
+      "summary": "Lyra throws back her hood and mask in the Archive Vault, revealing herself to the shocked Julian and commanding him to surrender the false charters.",
+      "participants": {
+        "char_lyra": "actor",
+        "char_julian": "target"
+      },
+      "witnesses": [
+        "char_lyra",
+        "char_julian"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_vault",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_signet_transfer",
+      "entity_id": "char_marcus",
+      "epistemic": "deceived",
+      "believed_summary": "Northern raiders broke into the annex and stole the Obsidian Signet while Julian defended the ledger."
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

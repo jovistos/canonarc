@@ -1,0 +1,101 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "shocked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_draught_erasure",
+      "reason": "Drank the memory-erasing draught and stares blankly at the Signet, emptied of the past."
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_draught_erasure",
+      "reason": "Her calm turns to stone as the witness is lost but the Signet remains."
+    },
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "shocked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_draught_erasure",
+      "reason": "His fury falters at the sight of the emptied treasurer."
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_draught_erasure",
+      "timeline_id": "main",
+      "step": 18,
+      "predicate": "erasure",
+      "summary": "Cornered in the Council Chamber by five peers, Julian drinks a memory-erasing draught from an amber vial before Marcus can stop him; the ten-years-ago winter siege pact is scoured from his mind, leaving a bewildered boy where the treasurer had been.",
+      "participants": {
+        "char_julian": "actor",
+        "char_elena": "witness",
+        "char_marcus": "intervener",
+        "char_lyra": "witness",
+        "char_kaelen": "witness",
+        "char_isolde": "witness",
+        "item_signet": "instrument"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_marcus",
+        "char_lyra",
+        "char_kaelen",
+        "char_isolde",
+        "char_julian"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 9.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_flashback_astral_concordat",
+      "entity_id": "char_julian",
+      "epistemic": "forgotten",
+      "believed_summary": null
+    }
+  ],
+  "is_flashback": false,
+  "story_time": "dawn",
+  "chapter_id": null,
+  "scene_id": null
+}

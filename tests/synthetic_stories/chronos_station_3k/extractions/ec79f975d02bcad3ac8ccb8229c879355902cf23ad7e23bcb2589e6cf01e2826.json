@@ -1,0 +1,103 @@
+{
+  "cache_key": "ec79f975d02bcad3ac8ccb8229c879355902cf23ad7e23bcb2589e6cf01e2826",
+  "model": "rule-based-non-llm",
+  "created_at": "2026-11-19T21:01:46.114030+00:00",
+  "prompt_sha256": "bf1ce12d15c38fb17f83143406b7ae03224363832b558a17357178a4778a887a",
+  "scene_text_sha256": "7259da1c08f5759f584484291961cfb39fdc861657d8a74b2a60f96ce8b6ec6e",
+  "scene_text": "Elena's fury did not break; it hardened. She planted one hand on the obsidian table and leaned toward Julian, her voice dropping into a dangerous register that still carried to every corner of the Council Chamber. \"Empty your pockets,\" she said. \"Now. Every seal, every token, every scrap of metal you thought I would not miss.\" Julian's breath came in shallow pulls. His hands shook as he reached into his coat, then hesitated, his eyes sliding toward the hooded courier. The chamber's lights seemed to narrow around him, the gas giant's amber glow pressing against the observation glass.\n\nWhat happened next was too fast for dignity. Julian lunged sideways, seized the courier's gloved hand, and pressed something heavy and cold into her palm. The Obsidian Signet caught the light for a single black flash, its carved face swallowing the chamber's glow. \"Take this cursed ring and hide it deep inside the stone vault before the guards arrive!\" His voice cracked on the last word. Then he bolted, boots skidding on the deck as he threw himself toward the rear passage that led down into the Archive Vault.\n\nThe hooded courier closed her gloved fingers around the signet and was after him in the same heartbeat. Her cloak snapped behind her as she ran, a dark wing cutting through the Council Chamber's amber haze. The blast doors at the passage mouth began to cycle, their warning chime thin and urgent. Julian reached them first, shoulder-first, and squeezed through the widening gap. The courier followed without a word, her silence more alarming than any shout.\n\nBehind them, Elena straightened slowly. The table's holograms had scattered into static where Julian's hand had struck them. She stared at the passage, then at the balcony doors where Marcus still stood outside, and her expression shifted from rage to something colder and more calculating. The station's ventilation roared once through the vents, as if the Council Chamber itself were exhaling. Somewhere below, deep in the cryogenic dark of the Archive Vault, the Obsidian Signet had become a secret in motion, and the chase had begun.",
+  "usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 1.918,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_3",
+        "reason": null
+      },
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_3",
+        "reason": null
+      }
+    ],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_rule_3",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "item_transfer",
+        "summary": "Elena's fury did not break; it hardened.",
+        "participants": {
+          "char_elena": "participant",
+          "char_julian": "participant"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "Lyra",
+          "char_marcus"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

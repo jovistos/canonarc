@@ -1,0 +1,72 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_thorne",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_01_confrontation_toxicology",
+      "reason": null
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_vane",
+      "target_id": "char_thorne",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "commanding",
+        "trust": -0.8
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_01_confrontation_toxicology",
+      "reason": null
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_01_confrontation_toxicology",
+      "timeline_id": "main",
+      "step": 1,
+      "predicate": "confrontation",
+      "summary": "Vane presents toxicology reports to Thorne in the Study, causing him to panic and flinch.",
+      "participants": {
+        "char_vane": "actor",
+        "char_thorne": "target",
+        "item_arsenic_vial": "instrument"
+      },
+      "witnesses": [
+        "char_cora",
+        "char_giles"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_study",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.5,
+      "metadata": {
+        "language": "mixed",
+        "trigger_phrase": "Molim vas da pažljivo pregledate ove toksikološke nalaze"
+      },
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

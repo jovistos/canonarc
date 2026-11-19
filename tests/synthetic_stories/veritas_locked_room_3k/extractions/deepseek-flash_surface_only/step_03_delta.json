@@ -1,0 +1,119 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_thorne",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_cellar"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_thorne_key_handoff",
+      "reason": "Thorne bolts through the side service door and descends the stairs toward the Wine Cellar."
+    },
+    {
+      "entity_id": "char_giles",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_cellar",
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_thorne_key_handoff",
+      "reason": "The veiled locksmith pockets the key and sweeps out after the fleeing doctor into the cellar."
+    },
+    {
+      "entity_id": "char_vane",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "calm"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_thorne_key_handoff",
+      "reason": "Vane forces his features back into a mask of practiced calm."
+    },
+    {
+      "entity_id": "char_mina",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_study",
+        "mood": "nervous"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": null,
+      "reason": "Uneasy in the mist-filled conservatory, Mina walks to the Mahogany Study and finds the room in disarray."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_giles",
+      "target_id": "item_ledger_key",
+      "relation_type": "possesses",
+      "state": {
+        "status": "concealed"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_thorne_key_handoff",
+      "reason": null
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_thorne_key_handoff",
+      "timeline_id": "main",
+      "step": 3,
+      "predicate": "item_transfer",
+      "summary": "Cornered, Thorne thrusts the Brass Ledger Key into the veiled locksmith's hand and begs him to hide it in the cellar, then flees through the service door with the locksmith in pursuit.",
+      "participants": {
+        "char_thorne": "giver",
+        "char_giles": "recipient",
+        "char_vane": "observer",
+        "item_ledger_key": "object"
+      },
+      "witnesses": [
+        "char_thorne",
+        "char_giles",
+        "char_vane"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_study",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

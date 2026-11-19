@@ -1,0 +1,68 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "furious"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_flashback_pact",
+      "reason": "Old trust curdles; present fury reignites while recalling Julian's false assurances."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_elena",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "trust": -0.8,
+        "tone": "stern",
+        "register": "cold"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_flashback_pact",
+      "reason": "Remembering how Julian's sworn assurances proved hollow hardens Elena against him."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_flashback_pact",
+      "timeline_id": "main",
+      "step": 4,
+      "predicate": "flashback",
+      "summary": "Ten years ago, a young, trusting Elena signed the historic pact beside Julian, believing his sworn assurances that the accounts were clean and the seals authentic.",
+      "participants": {
+        "char_elena": "signer",
+        "char_julian": "co-signer"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_julian"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": "10_years_ago",
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 6.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": true,
+  "story_time": "10_years_ago",
+  "chapter_id": null,
+  "scene_id": null
+}

@@ -1,0 +1,149 @@
+{
+  "cache_key": "7a5ca51ee25cb13840edbe18bf959bfe65f0e6f4e6cc54f00e2c24b795c76765",
+  "model": "qwen/qwen3.5-9b",
+  "created_at": "2026-11-19T20:01:18.248202+00:00",
+  "prompt_sha256": "a74d08adf3a7ca0fd88994f0eda2c2f1be03267a179b82c81a54003823b1d66c",
+  "scene_text_sha256": "c24e8d8d7892995a6b447216b302b31897b6dfeb08e8a9bacc8ce4f5faa1ecae",
+  "scene_text": "The chamber had grown stifling. Wax smoke, old stone, and the sour smell of fear seemed to gather beneath the vaulted ceiling until Marcus could no longer abide it. The old general grew restless, his confident posture tightening into something impatient and hard. He folded the last report without comment, tucked it beneath his arm, and crossed to the narrow side door. Neither Elena nor Julian dared to speak as he pushed it open, letting in a knife of winter air from the Windy Balcony. Marcus stepped outside onto the high stone parapet, the heavy doors swinging shut behind him with a boom that echoed down the hall.\n\nThe silence that followed was not peace. It was a held breath. Elena turned from the table, and her calm broke like ice under a hammer. She became furious, her eyes fixing on Julian with such cold contempt that the young treasurer took a half-step back, his ledger slipping against his chest. \"Prestani sa tim bednim lažima, izdajniče, jer znam da si sinoć ukrao crni pečat iz komore!\" The words cracked across the chamber. Julian went panicked, his mouth opening and closing around a denial that would not come.\n\nElena advanced on him, one gloved hand striking the table hard enough to make the wax seals jump. \"Do not look toward the door. Do not look toward the guards. Look at me, Julian, and tell me where the Obsidian Signet is.\" Her voice dropped, more terrible for its quiet. Julian’s face drained of what little color remained; he shook his head, then stopped, then shook it again, trapped between terror and calculation.\n\nIn the shadows beside the pillar, the hooded courier remained perfectly still, watching the confrontation without a word. The disguise of a border messenger had served its purpose; now the courier’s watchful silence became another pressure in the room, a witness who might yet become an accomplice. Beyond the closed balcony doors, Marcus’s boots scraped against stone as he paced the windy parapet, unaware of the storm breaking behind him.",
+  "usage": {
+    "prompt_tokens": 6004,
+    "completion_tokens": 655,
+    "total_tokens": 6659,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 10124.108,
+    "cost_estimate": {
+      "input_cost_usd": 0.000841,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.000183,
+      "total_cost_usd": 0.001024,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_balcony",
+          "mood": "restless"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_001",
+        "reason": "Exited Council Chamber to Balcony due to stifling atmosphere; mood shifted from confident to restless."
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_001",
+        "reason": "Mood shifted from calm to furious upon realizing the theft."
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "panicked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_001",
+        "reason": "Mood shifted from nervous to panicked upon accusation."
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_elena",
+        "target_id": "item_signet",
+        "relation_type": "possesses",
+        "state": {
+          "status": "concealed"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_001",
+        "reason": null
+      },
+      {
+        "source_id": "char_elena",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "register": "ti",
+          "tone": "furious",
+          "trust": -0.95
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_001",
+        "reason": null
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_002",
+        "timeline_id": "main",
+        "step": 2,
+        "predicate": "confrontation",
+        "summary": "Elena accuses Julian of stealing the Obsidian Signet in front of Marcus and Lyra.",
+        "participants": {
+          "char_elena": "actor",
+          "char_julian": "target",
+          "item_signet": "instrument"
+        },
+        "witnesses": [
+          "char_marcus",
+          "char_lyra"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.5,
+        "metadata": {
+          "accusation_type": "theft",
+          "artifact_involved": "item_signet"
+        },
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

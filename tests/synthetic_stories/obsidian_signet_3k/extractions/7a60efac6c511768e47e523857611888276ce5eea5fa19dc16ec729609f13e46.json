@@ -1,0 +1,133 @@
+{
+  "cache_key": "7a60efac6c511768e47e523857611888276ce5eea5fa19dc16ec729609f13e46",
+  "model": "qwen/qwen3.8-27b",
+  "created_at": "2026-11-19T21:11:35.100000+00:00",
+  "prompt_sha256": "5722b033aad6557ba486973dc8f787a1e3a23329605e003d983d3bb804a42fbb",
+  "scene_text_sha256": "a3993029e0653d0b9c556c9b36ebab35f8953762f94d0cb1b86e878d22176cc4",
+  "scene_text": "\"Empty them,\" Elena said. \"Every pocket. Every fold. Now.\" She held out one hand, palm up, and her rings caught the candlelight like a row of tiny executions. Julian's breath came in short, ragged pulls. He fumbled at his coat as though his fingers had forgotten their business, and for one long moment the whole chamber seemed to hang suspended between one heartbeat and the next.\n\nThen he moved. Not toward Elena — toward the courier. He seized the grey-gloved hand and forced something into it: a heavy ring of black stone, dull-polished, cold as a drowned coin, its flat face cut with a signet no honest hand should have carried. \"Take this cursed ring and hide it deep inside the stone vault before the guards arrive!\" His voice cracked on the last word. The courier's fingers closed around the Obsidian Signet automatically, and Julian was already running — boots skidding on the flagstones, shoulder clipping a side table so that a decanter went over and spilled red across the ledgers.\n\nHe wrenched open the low iron door behind the tapestry, the one that led down into the Archive Vault, and vanished into the dark mouth of the stairwell. The hooded courier stood frozen for an instant, staring down at the black ring in the grey glove — then bolted after him, hood flying back in the slipstream, wool cloak snapping.\n\nElena remained alone in the Council Chamber amid the overturned wine and the guttering candles. She stared at the open vault door, at the darkness beyond it, and her fury slowly hardened into something older and colder: the certainty of a woman watching a decade of trust burn down a stairwell she had built with her own hands.",
+  "usage": {
+    "prompt_tokens": 5793,
+    "completion_tokens": 465,
+    "total_tokens": 6258,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 11803.975,
+    "cost_estimate": {
+      "input_cost_usd": 0.000811,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.00013,
+      "total_cost_usd": 0.000941,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_vault",
+          "mood": "panicked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step3_item_transfer",
+        "reason": null
+      },
+      {
+        "entity_id": "char_lyra",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_vault"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step3_item_transfer",
+        "reason": null
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "determined"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step3_item_transfer",
+        "reason": null
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_lyra",
+        "target_id": "item_signet",
+        "relation_type": "possesses",
+        "state": {
+          "status": "concealed"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_step3_item_transfer",
+        "reason": null
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_step3_item_transfer",
+        "timeline_id": "main",
+        "step": 3,
+        "predicate": "item_transfer",
+        "summary": "Julian forces the Obsidian Signet into Lyra's hand and flees into the Archive Vault, with Lyra chasing after him.",
+        "participants": {
+          "char_julian": "actor",
+          "char_lyra": "recipient",
+          "item_signet": "instrument"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "char_lyra"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.5,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

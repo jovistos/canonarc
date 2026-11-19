@@ -1,0 +1,146 @@
+{
+  "cache_key": "70c5657626c21deef266b4833979f2826fe3130e389f6401a2773aa0c258285f",
+  "model": "qwen/qwen3.5-9b",
+  "created_at": "2026-11-19T19:59:55.813113+00:00",
+  "prompt_sha256": "6d1cbfa09aafaeebf3d07a611d38cff2abbf962853cb58eb3322ec72b68490df",
+  "scene_text_sha256": "0ffedd0ef80909a7d280a3726363a04be6f4e4d9898bb6b922a1eb9411275e9e",
+  "scene_text": "Deep beneath the house, the Wine Cellar smelled of damp mortar, sour oak casks, and stagnant water. Thorne crouched behind a rack of dusty Bordeaux bottles, his chest heaving as he listened to footsteps descending the brick stairs. When the veiled locksmith rounded the corner with a raised lantern, Thorne pressed himself against the cold wall. Slowly, the locksmith reached up and drew back the black mourning netting, revealing the sharp, determined features of Giles. Thorne gasped, his eyes wide with shock at the unmasking. Giles stepped closer, his voice echoing off the low brick arches. \"Predaj mi sve lažne recepte odmah, Torne, ili ćeš do zore biti u okružnom zatvoru!\"\n\nUpstairs, the Mahogany Study had grown even colder as night settled fully over the estate. Cora returned from the Portrait Gallery, her silk skirts whispering across the floorboards as she rejoined Vane and Mina. Before she could inquire about the missing doctor, the side service door burst open and Thorne stumbled back into the room. His coat was streaked with cobwebs and cellar dust, and his spectacles sat crookedly on his nose.\n\n\"Thank heavens I made it back,\" Thorne panted, clutching at the doorframe for support. Looking straight at Cora and Vane, he launched into a frantic, improvised lie, claiming he had heard northern raiders trying to force the cellar grate and had gone down alone to drive them off into the storm.\n\nCora did not flinch, nor did she offer him a shred of sympathy. She merely raised one finely arched eyebrow, her gaze traveling deliberately from the cobwebs on his shoulders to his trembling, ink-stained hands. \"Oh, what a wonderfully convenient tale of heroic vigilance, dear doctor,\" she murmured, her tone dripping with aristocratic disdain.\n\n\"Oh, what a wonderfully convenient tale of heroic vigilance, dear doctor.\"",
+  "usage": {
+    "prompt_tokens": 6232,
+    "completion_tokens": 618,
+    "total_tokens": 6850,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 9657.222,
+    "cost_estimate": {
+      "input_cost_usd": 0.000872,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.000173,
+      "total_cost_usd": 0.001046,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_thorne",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_study"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_05_thorne_return_lie",
+        "reason": "Thorne flees cellar and enters study."
+      },
+      {
+        "entity_id": "char_giles",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_cellar"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_05_thorne_return_lie",
+        "reason": "Giles enters cellar to confront Thorne."
+      },
+      {
+        "entity_id": "char_cora",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_study"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_05_thorne_return_lie",
+        "reason": "Cora returns to study."
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_giles",
+        "target_id": "char_thorne",
+        "relation_type": "stance",
+        "state": {
+          "register": "ti",
+          "tone": "commanding",
+          "trust": -0.95
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_05_thorne_return_lie",
+        "reason": null
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_05_thorne_return_lie",
+        "timeline_id": "main",
+        "step": 5,
+        "predicate": "revelation",
+        "summary": "Thorne returns to the Study and lies about raiders; Cora unmasks Giles in the Cellar.",
+        "participants": {
+          "char_thorne": "actor",
+          "char_cora": "observer"
+        },
+        "witnesses": [
+          "char_vane",
+          "char_mina",
+          "char_giles"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_study",
+        "story_time": 0,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.5,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [
+      {
+        "episode_id": "ep_03_key_handoff",
+        "entity_id": "char_thorne",
+        "epistemic": "forgotten",
+        "believed_summary": null
+      },
+      {
+        "episode_id": "ep_02_confrontation_toxicology",
+        "entity_id": "char_thorne",
+        "epistemic": "told",
+        "believed_summary": null
+      }
+    ],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

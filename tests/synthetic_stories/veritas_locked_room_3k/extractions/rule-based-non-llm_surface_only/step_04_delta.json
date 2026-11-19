@@ -1,0 +1,36 @@
+{
+  "entities": [],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_rule_16",
+      "timeline_id": "main",
+      "step": 0,
+      "predicate": "flashback",
+      "summary": "As the rain continued to drum against the study windows, Vane's gaze drifted to the unlit hearth, and his mind slipped backward through the years.",
+      "participants": {
+        "char_thorne": "participant",
+        "char_vane": "participant"
+      },
+      "witnesses": [
+        "char_thorne",
+        "char_vane"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": null,
+      "story_time": "10_years_ago",
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": true,
+  "story_time": "10_years_ago",
+  "chapter_id": null,
+  "scene_id": null
+}

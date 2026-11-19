@@ -92,7 +92,7 @@ CREATE INDEX IF NOT EXISTS idx_revisions_edge_type
 
 -- 3. Tier 5 Voice Exemplars
 CREATE TABLE IF NOT EXISTS voice_exemplars (
-    exemplar_id           TEXT PRIMARY KEY,
+    exemplar_id           TEXT NOT NULL,
     timeline_id           TEXT NOT NULL REFERENCES timelines(timeline_id),
     step                  INTEGER NOT NULL,
     speaker_id            TEXT NOT NULL,
@@ -102,7 +102,8 @@ CREATE TABLE IF NOT EXISTS voice_exemplars (
     metadata              TEXT NOT NULL DEFAULT '{}',
     quality_score         REAL NOT NULL,
     distinctiveness_score REAL NOT NULL,
-    embedding             BLOB NOT NULL
+    embedding             BLOB NOT NULL,
+    PRIMARY KEY (timeline_id, exemplar_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_voice_lookup
@@ -110,7 +111,7 @@ CREATE INDEX IF NOT EXISTS idx_voice_lookup
 
 -- 4. Tier 6 Episodic Event Ledger
 CREATE TABLE IF NOT EXISTS episodes (
-    episode_id   TEXT PRIMARY KEY,
+    episode_id   TEXT NOT NULL,
     timeline_id  TEXT NOT NULL REFERENCES timelines(timeline_id),
     step         INTEGER NOT NULL,
     predicate    TEXT NOT NULL DEFAULT 'event',
@@ -120,7 +121,8 @@ CREATE TABLE IF NOT EXISTS episodes (
     participants TEXT NOT NULL DEFAULT '{}', -- JSON map: entity_id -> role
     witnesses    TEXT NOT NULL DEFAULT '[]', -- JSON list of entity_ids
     metadata     TEXT NOT NULL DEFAULT '{}',
-    embedding    BLOB NOT NULL DEFAULT X''
+    embedding    BLOB NOT NULL DEFAULT X'',
+    PRIMARY KEY (timeline_id, episode_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_episodes_lookup
@@ -140,11 +142,33 @@ CREATE TABLE IF NOT EXISTS episode_epistemics (
 CREATE INDEX IF NOT EXISTS idx_episode_epistemics_lookup
     ON episode_epistemics(timeline_id, episode_id, step DESC);
 
--- 6. FTS5 Summary Index for Bounded Candidate Pre-Filtering
+-- 6. FTS5 Summary Index & Sync Triggers for Bounded Candidate Pre-Filtering
 CREATE VIRTUAL TABLE IF NOT EXISTS episodes_fts USING fts5(
     timeline_id UNINDEXED,
     episode_id UNINDEXED,
     summary
+);
+
+CREATE TRIGGER IF NOT EXISTS episodes_ai AFTER INSERT ON episodes BEGIN
+    DELETE FROM episodes_fts WHERE timeline_id = NEW.timeline_id AND episode_id = NEW.episode_id;
+    INSERT INTO episodes_fts(timeline_id, episode_id, summary)
+    VALUES (NEW.timeline_id, NEW.episode_id, NEW.summary);
+END;
+
+CREATE TRIGGER IF NOT EXISTS episodes_ad AFTER DELETE ON episodes BEGIN
+    DELETE FROM episodes_fts WHERE timeline_id = OLD.timeline_id AND episode_id = OLD.episode_id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS episodes_au AFTER UPDATE OF summary ON episodes BEGIN
+    DELETE FROM episodes_fts WHERE timeline_id = OLD.timeline_id AND episode_id = OLD.episode_id;
+    INSERT INTO episodes_fts(timeline_id, episode_id, summary)
+    VALUES (NEW.timeline_id, NEW.episode_id, NEW.summary);
+END;
+
+-- 7. Store Metadata (Embedder Provenance & Dimension Tracking)
+CREATE TABLE IF NOT EXISTS store_metadata (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
 );
 ```
 

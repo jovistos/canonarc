@@ -1,0 +1,76 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_isolde",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_courtyard",
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_tribunal_delay",
+      "reason": "Having agreed to stall the tribunal inquiry, Isolde sweeps out of the observatory and her resolve hardens into determination."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_isolde",
+      "target_id": "char_elena",
+      "relation_type": "stance",
+      "state": {
+        "tone": "stern",
+        "trust": 0.15,
+        "register": "Vi"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_tribunal_delay",
+      "reason": "Isolde grudgingly accepts Elena's plea and grants a delay, warning her the tribunal will show no mercy if she is wrong."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_tribunal_delay",
+      "timeline_id": "main",
+      "step": 12,
+      "predicate": "appeal",
+      "summary": "Elena privately appeals to Isolde in the Starlight Observatory, insisting Julian was framed and begging her to delay the tribunal's verdict until the true traitor is exposed; Isolde, after searching Elena's face for deceit, agrees to stall the inquiry but warns there will be no mercy if the proof fails.",
+      "participants": {
+        "char_elena": "actor",
+        "char_isolde": "target"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_isolde"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_observatory",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_confrontation_signet",
+      "entity_id": "char_isolde",
+      "epistemic": "told",
+      "believed_summary": null
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

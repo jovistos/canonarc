@@ -5,33 +5,34 @@
   "extraction_model": "qwen/qwen3.5-9b",
   "guidance_mode": "none",
   "run_cache_key": "78394ecc0d71bd4f3709527495c782b01a9cbc1a5e5befe2f979288a201edf2e",
-  "checks_passed": 36,
+  "checks_passed": 41,
   "checks_total": 50,
+  "step_delta_checks_passed": 5,
+  "step_delta_checks_total": 8,
+  "step_delta_pass_rate": 0.625,
+  "cumulative_state_checks_passed": 36,
+  "cumulative_state_checks_total": 42,
+  "cumulative_state_pass_rate": 0.8571,
   "failures": [
-    "[obsidian_signet_3k Step 2] Entity 'char_marcus' mood: expected 'restless', got 'confident'",
-    "[obsidian_signet_3k Step 2] Absent Marcus must not know ep_step2_secret_confrontation",
-    "[obsidian_signet_3k Step 3] Entity 'char_marcus' mood: expected 'restless', got 'confident'",
-    "[obsidian_signet_3k Step 4] Entity 'char_marcus' mood: expected 'restless', got 'confident'",
-    "[obsidian_signet_3k Step 5] Entity 'char_marcus' mood: expected 'restless', got 'confident'",
+    "[obsidian_signet_3k Step 2] Absent char_marcus must not know ep_step2_secret_confrontation",
     "[obsidian_signet_3k Step 5] Entity 'char_lyra' mood: expected 'determined', got 'watchful'",
     "[obsidian_signet_3k Step 5] Entity 'char_julian' mood: expected 'shocked', got 'panicked'",
-    "[obsidian_signet_3k Step 5] Julian should pierce Lyra's disguise after unmasking",
-    "[obsidian_signet_3k Step 5] Marcus POV should recall deceived summary, got episode_id='ep_002' timeline_id='main' step=2 predicate='confrontation' summary='Elena accuses Julian of stealing the Obsidian Signet and reveals her fury on the Council Chamber floor.' participants={'char_elena': 'actor', 'char_julian': 'target'} witnesses=['char_marcus', 'char_lyra'] known_by={'char_elena': 'direct', 'char_julian': 'direct', 'char_marcus': 'direct', 'char_lyra': 'direct'} believed_summaries={} location_id='loc_council' story_time=None chapter_id=None scene_id=None consolidated_from=[] salience=8.5 metadata={'accused_of': 'theft', 'item_involved': 'item_signet'} match_score=0.6142",
-    "[obsidian_signet_3k Step 6] Room 'loc_council': expected {'char_julian', 'char_elena', 'char_lyra', 'char_marcus'}, got set()",
-    "[obsidian_signet_3k Step 6] Room 'loc_vault': expected set(), got {'char_julian', 'char_elena', 'char_marcus', 'char_lyra'}",
+    "[obsidian_signet_3k Step 5] char_julian should pierce char_lyra's disguise after unmasking",
+    "[obsidian_signet_3k Step 5] char_marcus POV should recall deceived summary, got episode_id='ep_002' timeline_id='main' step=2 predicate='confrontation' summary='Elena accuses Julian of stealing the Obsidian Signet and reveals her fury on the Council Chamber floor.' participants={'char_elena': 'actor', 'char_julian': 'target'} witnesses=['char_marcus', 'char_lyra'] known_by={'char_elena': 'direct', 'char_julian': 'direct', 'char_marcus': 'direct', 'char_lyra': 'direct'} believed_summaries={} location_id='loc_council' story_time=None chapter_id=None scene_id=None consolidated_from=[] salience=8.5 metadata={'accused_of': 'theft', 'item_involved': 'item_signet'} match_score=0.8507",
+    "[obsidian_signet_3k Step 6] Room 'loc_council': expected {'char_elena', 'char_lyra', 'char_marcus', 'char_julian'}, got set()",
+    "[obsidian_signet_3k Step 6] Room 'loc_vault': expected set(), got {'char_elena', 'char_marcus', 'char_lyra', 'char_julian'}",
     "[obsidian_signet_3k Step 6] Entity 'char_marcus' mood: expected 'indignant', got 'confident'",
-    "[obsidian_signet_3k Step 6] Entity 'char_lyra' mood: expected 'determined', got 'watchful'",
-    "[obsidian_signet_3k Step 6] Entity 'char_julian' mood: expected 'shocked', got 'panicked'"
+    "[obsidian_signet_3k Step 6] Entity 'char_lyra' mood: expected 'determined', got 'watchful'"
   ],
-  "strict_pass_rate": 0.72,
-  "overall_quality_score": 0.6997,
+  "strict_pass_rate": 0.82,
+  "overall_quality_score": 0.7154,
   "benchmark_metrics": {
     "model_id": "qwen/qwen3.5-9b",
     "guidance_mode": "none",
-    "overall_quality_score": 0.6997,
+    "overall_quality_score": 0.7154,
     "category_scores": {
       "epistemic_score": 0.6958,
-      "spatial_state_score": 0.709,
+      "spatial_state_score": 0.7718,
       "pov_retrieval_score": 0.76,
       "edge_flashback_score": 0.4111,
       "schema_hygiene_score": 1.0
@@ -55,9 +56,9 @@
       "location_delta_f1": 0.6667,
       "room_occupancy_jaccard": 0.8889,
       "room_occupancy_exact_rate": 0.8333,
-      "mood_exact_accuracy": 0.625,
-      "mood_soft_accuracy": 0.625,
-      "mood_delta_f1": 0.5,
+      "mood_exact_accuracy": 0.8333,
+      "mood_soft_accuracy": 0.8333,
+      "mood_delta_f1": 0.5714,
       "flashback_guard_passed": true
     },
     "edge_and_causal_metrics": {
@@ -134,14 +135,19 @@
           "pov_edge_jaccard": 1.0,
           "pov_episode_recall": 1.0,
           "pov_secret_leaks": 0
+        },
+        "mood_counts": {
+          "exact_matches": 4,
+          "soft_matches": 4,
+          "total_characters": 4
         }
       },
       {
         "step": 2,
         "room_occupancy_jaccard": 1.0,
         "room_occupancy_exact": true,
-        "mood_exact_rate": 0.75,
-        "mood_soft_rate": 0.75,
+        "mood_exact_rate": 1.0,
+        "mood_soft_rate": 1.0,
         "location_delta": {
           "tp": 1,
           "fp": 0,
@@ -150,7 +156,7 @@
         "mood_delta": {
           "tp": 2,
           "fp": 0,
-          "fn": 1
+          "fn": 0
         },
         "edge_delta": {
           "tp": 1,
@@ -183,14 +189,19 @@
           "pov_edge_jaccard": 1.0,
           "pov_episode_recall": 1.0,
           "pov_secret_leaks": 1
+        },
+        "mood_counts": {
+          "exact_matches": 4,
+          "soft_matches": 4,
+          "total_characters": 4
         }
       },
       {
         "step": 3,
         "room_occupancy_jaccard": 1.0,
         "room_occupancy_exact": true,
-        "mood_exact_rate": 0.75,
-        "mood_soft_rate": 0.75,
+        "mood_exact_rate": 1.0,
+        "mood_soft_rate": 1.0,
         "location_delta": {
           "tp": 2,
           "fp": 0,
@@ -232,14 +243,19 @@
           "pov_edge_jaccard": 1.0,
           "pov_episode_recall": 1.0,
           "pov_secret_leaks": 1
+        },
+        "mood_counts": {
+          "exact_matches": 4,
+          "soft_matches": 4,
+          "total_characters": 4
         }
       },
       {
         "step": 4,
         "room_occupancy_jaccard": 1.0,
         "room_occupancy_exact": true,
-        "mood_exact_rate": 0.75,
-        "mood_soft_rate": 0.75,
+        "mood_exact_rate": 1.0,
+        "mood_soft_rate": 1.0,
         "location_delta": {
           "tp": 0,
           "fp": 0,
@@ -281,14 +297,19 @@
           "pov_edge_jaccard": 1.0,
           "pov_episode_recall": 1.0,
           "pov_secret_leaks": 1
+        },
+        "mood_counts": {
+          "exact_matches": 4,
+          "soft_matches": 4,
+          "total_characters": 4
         }
       },
       {
         "step": 5,
         "room_occupancy_jaccard": 1.0,
         "room_occupancy_exact": true,
-        "mood_exact_rate": 0.25,
-        "mood_soft_rate": 0.25,
+        "mood_exact_rate": 0.5,
+        "mood_soft_rate": 0.5,
         "location_delta": {
           "tp": 2,
           "fp": 0,
@@ -330,14 +351,19 @@
           "pov_edge_jaccard": 0.8917,
           "pov_episode_recall": 1.0,
           "pov_secret_leaks": 0
+        },
+        "mood_counts": {
+          "exact_matches": 2,
+          "soft_matches": 2,
+          "total_characters": 4
         }
       },
       {
         "step": 6,
         "room_occupancy_jaccard": 0.3333,
         "room_occupancy_exact": false,
-        "mood_exact_rate": 0.25,
-        "mood_soft_rate": 0.25,
+        "mood_exact_rate": 0.5,
+        "mood_soft_rate": 0.5,
         "location_delta": {
           "tp": 0,
           "fp": 4,
@@ -379,6 +405,11 @@
           "pov_edge_jaccard": 0.8045,
           "pov_episode_recall": 1.0,
           "pov_secret_leaks": 0
+        },
+        "mood_counts": {
+          "exact_matches": 2,
+          "soft_matches": 2,
+          "total_characters": 4
         }
       }
     ]
@@ -435,44 +466,44 @@
     "cached_prompt_tokens": 0,
     "reasoning_tokens": 0,
     "api_calls": 6,
-    "cache_hits": 0,
-    "cache_misses": 6,
+    "cache_hits": 6,
+    "cache_misses": 0,
     "retry_count": 0,
     "validation_errors": 0,
     "latency_ms": 48660.492,
     "cost_estimate": {
-      "input_cost_usd": 0.004954,
+      "input_cost_usd": 0.0,
       "cached_input_cost_usd": 0.0,
-      "output_cost_usd": 0.000837,
-      "total_cost_usd": 0.005791,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
       "rates_per_1m_usd": {
-        "input_uncached": 0.14,
-        "input_cached": 0.014,
-        "output": 0.28
+        "input_uncached": 0.0,
+        "input_cached": 0.0,
+        "output": 0.0
       }
     }
   },
   "llm_extraction_current_run_billable_usage": {
-    "prompt_tokens": 35384,
-    "completion_tokens": 2989,
-    "total_tokens": 38373,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
     "cached_prompt_tokens": 0,
     "reasoning_tokens": 0,
-    "api_calls": 6,
-    "cache_hits": 0,
-    "cache_misses": 6,
+    "api_calls": 0,
+    "cache_hits": 6,
+    "cache_misses": 0,
     "retry_count": 0,
     "validation_errors": 0,
-    "latency_ms": 48660.492,
+    "latency_ms": 0.0,
     "cost_estimate": {
-      "input_cost_usd": 0.004954,
+      "input_cost_usd": 0.0,
       "cached_input_cost_usd": 0.0,
-      "output_cost_usd": 0.000837,
-      "total_cost_usd": 0.005791,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
       "rates_per_1m_usd": {
-        "input_uncached": 0.14,
-        "input_cached": 0.014,
-        "output": 0.28
+        "input_uncached": 0.0,
+        "input_cached": 0.0,
+        "output": 0.0
       }
     }
   },
@@ -483,20 +514,20 @@
     "cached_prompt_tokens": 0,
     "reasoning_tokens": 1070,
     "api_calls": 7,
-    "cache_hits": 0,
-    "cache_misses": 6,
+    "cache_hits": 6,
+    "cache_misses": 0,
     "retry_count": 0,
     "validation_errors": 0,
     "latency_ms": 48660.492,
     "cost_estimate": {
-      "input_cost_usd": 0.005237,
+      "input_cost_usd": 0.0,
       "cached_input_cost_usd": 0.0,
-      "output_cost_usd": 0.001956,
-      "total_cost_usd": 0.007193,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
       "rates_per_1m_usd": {
-        "input_uncached": 0.14,
-        "input_cached": 0.014,
-        "output": 0.28
+        "input_uncached": 0.0,
+        "input_cached": 0.0,
+        "output": 0.0
       }
     }
   }

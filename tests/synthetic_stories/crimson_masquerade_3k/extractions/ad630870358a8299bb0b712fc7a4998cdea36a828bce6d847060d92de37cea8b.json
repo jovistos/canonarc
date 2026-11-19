@@ -1,0 +1,178 @@
+{
+  "cache_key": "ad630870358a8299bb0b712fc7a4998cdea36a828bce6d847060d92de37cea8b",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T19:43:17.455842+00:00",
+  "prompt_sha256": "7cac9f82f00031528062d5d22db087653f53ed720807910167a0ff27d0a90fd4",
+  "scene_text_sha256": "d6d2784d38895e6bbeda4b9aac67ac717259d4b31d13956cc989a940a9d913cb",
+  "scene_text": "The tapestry swung aside and Lyra entered the Council Chamber with the Obsidian Signet held high in her gloved hand. Water dripped from her cloak onto the mosaic floor, and the black stone caught the candlelight like a captive piece of night. For a heartbeat no one breathed. Julian went very still. Marcus turned from the balcony doors, his frown deepening as Lyra crossed to the table and set the signet down between the ledgers. In a low, steady voice, she told the old general everything: the theft, the false charters, the confrontation Elena had begun the moment he had stepped out into the rain.\n\nMarcus listened without interrupting, but his jaw tightened as the truth assembled itself. When Lyra finished, he rounded on Julian with the full indignation of a soldier who had been lied to in his own command room. “Kako se usuđuješ da obmanjuješ vojni savet dok držimo dokaze u rukama!” he barked. The words rang against the velvet and the glass. Julian, cornered at the table with Elena on one side and Marcus on the other, looked from the signet to the ledgers and back again, his face working through panic, calculation, and something colder beneath.\n\nThen Julian’s hand went to his coat and emerged with a small crystal vial. Elena lunged, but he was quicker than his trembling had suggested. He wrenched the stopper free and swallowed the draught in one convulsive motion. The memory-erasing damper hit him like a blow to the skull. His eyes went wide, then blank, then bewildered. The winter pact ten years ago—the snow, the seals, the trust, the historic signing, the whole flashback of that naive_trusting season—curdled and vanished from his mind, leaving only a hollow room and strangers staring at him.\n\nHe blinked at the Obsidian Signet as if he had never seen it before. The vial rolled across the table and came to rest against a ledger. Marcus’s indignation turned to disgust; Elena’s fury hardened into resolve. Lyra stood with her hood thrown back, the truth finally spoken, while the candles burned low around the four of them. Outside, the rain swept the Windy Balcony, and the Crimson Masquerade closed its final scene.",
+  "usage": {
+    "prompt_tokens": 6044,
+    "completion_tokens": 1201,
+    "total_tokens": 7245,
+    "cached_prompt_tokens": 1280,
+    "reasoning_tokens": 654,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 6413.061,
+    "cost_estimate": {
+      "input_cost_usd": 0.000667,
+      "cached_input_cost_usd": 1.8e-05,
+      "output_cost_usd": 0.000336,
+      "total_cost_usd": 0.001021,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_lyra",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_council"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_6",
+        "reason": "Entered the Council Chamber from the Archive Vault carrying the signet"
+      },
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "indignant"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_6",
+        "reason": "Learned of the theft and false charters, rounded on Julian"
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "determined"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_6",
+        "reason": "Fury hardened into resolve as Julian wiped his own memory"
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "shocked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_6",
+        "reason": "Memory-erasing draught left him blank and bewildered"
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_marcus",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "register": "ti",
+          "tone": "indignant",
+          "trust": -0.8
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_6",
+        "reason": "Marcus berated Julian for deceiving the military council"
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_6",
+        "timeline_id": "main",
+        "step": 6,
+        "predicate": "revelation",
+        "summary": "Lyra carried the Obsidian Signet into the Council Chamber and laid it on the table, exposing the theft, the false charters and Elena's earlier confrontation to Marcus; Marcus rounded on Julian in indignation, and Julian, cornered, swallowed a memory-erasing draught that wiped the winter pact from his mind.",
+        "participants": {
+          "char_lyra": "actor",
+          "char_julian": "target",
+          "char_marcus": "witness",
+          "char_elena": "witness",
+          "item_signet": "instrument"
+        },
+        "witnesses": [
+          "char_lyra",
+          "char_julian",
+          "char_marcus",
+          "char_elena"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 9.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [
+      {
+        "episode_id": "ep_2",
+        "entity_id": "char_marcus",
+        "epistemic": "told",
+        "believed_summary": null
+      },
+      {
+        "episode_id": "ep_3",
+        "entity_id": "char_marcus",
+        "epistemic": "told",
+        "believed_summary": null
+      },
+      {
+        "episode_id": "ep_5",
+        "entity_id": "char_marcus",
+        "epistemic": "told",
+        "believed_summary": null
+      },
+      {
+        "episode_id": "ep_4",
+        "entity_id": "char_julian",
+        "epistemic": "forgotten",
+        "believed_summary": null
+      }
+    ],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

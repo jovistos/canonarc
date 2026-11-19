@@ -1,0 +1,83 @@
+{
+  "cache_key": "0f5458797c89036824f0166aaac5a0d1b3fc51f515e1d6f1eda013b1bdb25b26",
+  "model": "rule-based-non-llm",
+  "created_at": "2026-11-19T19:45:29.164921+00:00",
+  "prompt_sha256": "1e7ae23851c1a302ff635f89cb790ac2515fa3b66a31c5300782ae7da0cf43aa",
+  "scene_text_sha256": "cbf7112913d7f65753b499530b4195f8820064722e1c94473b1e27b1c0c8dbfd",
+  "scene_text": "The council chamber of Aethelgard swallowed the last grey light of dusk, its vaulted ribs vanishing into shadow while braziers hissed along the marble floor. Elena, the Iron Chancellor, remained calm behind the long table, her gloved fingers moving with deliberate precision across a fan of sealed reports. Marcus, the old general, stood opposite her with the easy confidence of a man who had survived too many winters to be impressed by paperwork, while Julian, the young treasurer, hovered at the table’s end, nervous and pale, his gaze darting toward every locked door. Near the pillars, the hooded courier waited in watchful silence, travel-stained cloak drawn close, a sealed satchel pressed against the chest.\n\nElena did not look up as she slid a bundle of wax-sealed documents toward Marcus. \"Molim vas da pažljivo pregledate ove poverljive izveštaje pre nego što kraljevska straža zatvori kapije.\" Her voice was quiet, but it carried the weight of a command through the chamber’s cold acoustics. Marcus inclined his head, already breaking the first seal with his thumbnail, his confidence undimmed even as the braziers guttered.\n\nThe hooded courier stepped forward then, boots whispering over the stones, and bowed low before the old general. \"Ponizno vam donosim zapečaćene depeše sa severne granice koje zahtevaju vašu hitnu vojnu procenu.\" The satchel shifted against their side; something inside gave a dull, hard click. Julian flinched at the sound and murmured a brief two-word filler reply, \"Yes, indeed.\" His hands tightened around the ledger he had been pretending to read.\n\nElena’s calm gaze flicked from Marcus to Julian and back again, measuring the small betrayals that collect in a room before a storm. The courier remained bowed, watchful beneath the hood, while Marcus read on with mounting absorption. Outside, the first sentries began closing the outer gates, their iron hinges groaning through the citadel like a warning.",
+  "usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 1.783,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [],
+    "edges": [
+      {
+        "source_id": "char_lyra",
+        "target_id": "item_cipher_cylinder",
+        "relation_type": "possesses",
+        "state": {
+          "status": "concealed"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_7",
+        "reason": null
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_rule_7",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "item_transfer",
+        "summary": "The council chamber of Aethelgard swallowed the last grey light of dusk, its vaulted ribs vanishing into shadow while braziers hissed along the marble floor.",
+        "participants": {
+          "char_elena": "participant",
+          "char_julian": "participant"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "char_lyra",
+          "char_marcus"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_council_revelation_006",
+      "reason": "Lyra carried the Obsidian Signet out of the Archive Vault and entered the Council Chamber."
+    },
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "indignant"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_council_revelation_006",
+      "reason": "Marcus's watchfulness curdled into full indignation at being lied to in his own command room."
+    },
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "shocked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_council_revelation_006",
+      "reason": "The memory-erasing draught left Julian blank, bewildered, and cornered."
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_council_revelation_006",
+      "reason": "Elena's fury hardened into resolve as the truth was finally spoken."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_lyra",
+      "target_id": "item_signet",
+      "relation_type": "possesses",
+      "state": {
+        "status": "concealed"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_council_revelation_006",
+      "reason": "Lyra bore the Obsidian Signet into the Council Chamber and set it down between the ledgers."
+    },
+    {
+      "source_id": "char_marcus",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "furious",
+        "trust": -0.7
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_council_revelation_006",
+      "reason": "Marcus rounded on Julian in the informal register, barking that he dared deceive the military council with the evidence in their hands."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_council_revelation_006",
+      "timeline_id": "main",
+      "step": 6,
+      "predicate": "revelation",
+      "summary": "Lyra entered the Council Chamber with the Obsidian Signet, laid it between the ledgers, and told Marcus the whole truth of the theft, the false charters, and Elena's earlier confrontation; Marcus turned on Julian with soldierly fury, and Julian, cornered, swallowed a crystal vial of memory-erasing draught that wiped the ten-year-old winter pact from his mind.",
+      "participants": {
+        "char_lyra": "actor",
+        "char_marcus": "auditor",
+        "char_julian": "target",
+        "char_elena": "observer",
+        "item_signet": "instrument"
+      },
+      "witnesses": [
+        "char_lyra",
+        "char_marcus",
+        "char_julian",
+        "char_elena"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 9.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_confrontation_signet_002",
+      "entity_id": "char_marcus",
+      "epistemic": "told",
+      "believed_summary": null
+    },
+    {
+      "episode_id": "ep_flashback_pact_003",
+      "entity_id": "char_julian",
+      "epistemic": "forgotten",
+      "believed_summary": null
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

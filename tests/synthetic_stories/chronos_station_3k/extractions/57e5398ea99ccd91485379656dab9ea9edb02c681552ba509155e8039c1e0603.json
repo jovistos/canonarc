@@ -1,0 +1,84 @@
+{
+  "cache_key": "57e5398ea99ccd91485379656dab9ea9edb02c681552ba509155e8039c1e0603",
+  "model": "qwen/qwen3.5-9b",
+  "created_at": "2026-11-19T19:58:03.931408+00:00",
+  "prompt_sha256": "4d28ae960316051f95ba69ec4c7db789725a20dd2cdd4a4872e2728e50fcd2eb",
+  "scene_text_sha256": "c8f44767ed3c8f8e465b89ca766d3cb01a3f5bb0f6a4a6b8a283d83578a946b8",
+  "scene_text": "The Council Chamber blurred, and for a moment Elena was not standing amid the wreckage of the present but ten years ago, alone beneath the same curved glass. This was memory, not the room as it stood now: the holograms had been younger then, simpler, and the gas giant's storms had seemed less like a threat than a promise. She remembered the winter crisis with the clarity of a scar. The station had been running on reserve power, its docking ring frozen shut, its corridors full of frightened voices. She had been naive_trusting then, a science director who still believed that records and goodwill could hold a coalition together.\n\nJulian had been younger too, his nervousness charming rather than suspect. He had stood beside her during the historic pact signing, his hands steady on the ledger, his voice warm with assurances. She had trusted him implicitly. When the northern delegations demanded concessions, Julian had found compromises in the margins; when the council wavered, he had whispered the right figures into the right ears. Elena had signed the pact with his encouragement ringing in her memory, convinced that the young treasurer was the one honest constant in a station full of shifting alliances.\n\nThe memory sharpened around the signing table. Seals had been pressed into wax; the Obsidian Signet had lain in its case like a sleeping eye. Julian had smiled at her across the documents, and she had smiled back, grateful for his cleverness. The winter wind had howled against the shielded balcony doors even then, though Marcus had not yet opened them. The council had applauded. The pact had seemed, for one bright and foolish moment, like the beginning of something stable.\n\nNow, in the present, Elena stood alone in the Council Chamber with that memory burning behind her eyes. The fury was still there, preserved exactly as she had left it, untouched by the flashback. Ten years ago she had trusted Julian implicitly. Ten years ago she had been naive_trusting. The realization did not soften her; it sharpened the edge of her anger. The room returned around her, the same glass, the same table, the same amber light, but the woman standing in it was no longer the one who had signed that pact.",
+  "usage": {
+    "prompt_tokens": 5951,
+    "completion_tokens": 274,
+    "total_tokens": 6225,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 5326.27,
+    "cost_estimate": {
+      "input_cost_usd": 0.000833,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 7.7e-05,
+      "total_cost_usd": 0.00091,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_council_confrontation_02",
+        "reason": "Memory of past trust sharpens present anger."
+      }
+    ],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_flashback_signing_pact",
+        "timeline_id": "main",
+        "step": 4,
+        "predicate": "flashback",
+        "summary": "Elena recalls the historic pact signing ten years ago where she trusted Julian implicitly.",
+        "participants": {
+          "char_elena": "actor",
+          "char_julian": "actor"
+        },
+        "witnesses": [
+          "char_elena"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": "10_years_ago",
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 5.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": true,
+    "story_time": "10_years_ago",
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

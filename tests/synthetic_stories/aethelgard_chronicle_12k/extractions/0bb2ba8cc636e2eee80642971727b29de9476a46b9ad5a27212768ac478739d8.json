@@ -1,0 +1,166 @@
+{
+  "cache_key": "0bb2ba8cc636e2eee80642971727b29de9476a46b9ad5a27212768ac478739d8",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T19:45:17.407684+00:00",
+  "prompt_sha256": "b287f3df6cae2066f1d68b6988e4fe90d7bfc70b69c9698d643ec694bee909fa",
+  "scene_text_sha256": "f11a60bb3b9af817c1beaf4361094697c11b8a585fef30b4c4f5d30465b48c36",
+  "scene_text": "Dawn bled through the high lancet windows of the Council Chamber in thin, pewter ribbons, staining the frost on the glass before it could melt. Elena stood at the head of the long oak table, the Iron Chancellor's calm as fixed as the carved seals above the hearth, though her fingers rested a fraction too still upon the map. The chamber smelled of cold stone, lamp oil, and the iron tang of winter carried up from the courtyard. When the hidden stair behind the tapestry grated open, every aide in the room flinched; Lyra came up from the Archive Vault with dust on her boots and her hood thrown back, breath ragged in the hush.\n\nThe hooded courier crossed the floor without asking leave and placed the Obsidian Signet in the center of the table. It struck the wood with a small, final sound, and the black stone seemed to drink the lamplight rather than reflect it. Lyra did not look at the aides, only at Elena. 'The vault discovery is confirmed,' she said, her voice low but steady enough to carry to the rafters. 'The ledgers were not burned. They were moved, copied, and sealed under a false inventory. The signet opens the last lock. Whoever wore it ordered the winter requisitions diverted before the siege ever began.'\n\nElena's calm did not break; it hardened. She lifted the Signet, turned it once, and set it down with deliberate care. 'Then the conspiracy has a hand,' she said, 'and we have its fingerprint.' Around the table, the councillors leaned in, the pale dawn catching the rings on their fingers and the fear in their eyes. Lyra remained standing, watchful as ever, her gaze moving from the sealed doors to the archives stair, as if she expected the vault itself to follow her into the Council Chamber. The Obsidian Signet lay between them like a black tooth pulled from some great beast, and for the first time that morning Elena allowed herself to believe the truth might survive daylight. But the chamber's warmth had not returned; the vault's cold still clung to Lyra's cloak, and the councillors' silence asked the question no one dared voice: if the Signet had opened the last lock, who had closed the first?",
+  "usage": {
+    "prompt_tokens": 7048,
+    "completion_tokens": 1654,
+    "total_tokens": 8702,
+    "cached_prompt_tokens": 1152,
+    "reasoning_tokens": 997,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 8179.723,
+    "cost_estimate": {
+      "input_cost_usd": 0.000825,
+      "cached_input_cost_usd": 1.6e-05,
+      "output_cost_usd": 0.000463,
+      "total_cost_usd": 0.001305,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_lyra",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_council",
+          "mood": "determined"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [
+          {
+            "alias": "the hooded courier",
+            "entity_id": "char_lyra",
+            "kind": "disguise",
+            "known_to": [
+              "char_elena",
+              "char_julian",
+              "char_isolde",
+              "char_kaelen",
+              "char_marcus"
+            ],
+            "persona_name": "Courier",
+            "valid_from_step": 0,
+            "valid_to_step": null
+          }
+        ],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_signet_revelation_council",
+        "reason": "Lyra climbs from the Archive Vault into the Council Chamber with her hood thrown back, openly appearing before the assembled council."
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "determined"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_signet_revelation_council",
+        "reason": "Elena's calm hardens into resolve as she lifts the Signet and names the conspiracy's fingerprint."
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_elena",
+        "target_id": "item_signet",
+        "relation_type": "possesses",
+        "state": {
+          "status": "revealed"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_signet_revelation_council",
+        "reason": "Lyra sets the Obsidian Signet on the council table and Elena takes it up deliberately."
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_signet_revelation_council",
+        "timeline_id": "main",
+        "step": 16,
+        "predicate": "revelation",
+        "summary": "Lyra returns from the Archive Vault at dawn, hood thrown back, and lays the Obsidian Signet on the Council Chamber table before Elena, confirming the ledgers were not burned but moved, copied and sealed under a false inventory, and that whoever wore the Signet diverted the winter requisitions before the siege; Elena declares the conspiracy has a hand and a fingerprint.",
+        "participants": {
+          "char_lyra": "actor",
+          "char_elena": "target",
+          "item_signet": "instrument"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_isolde",
+          "char_julian",
+          "char_kaelen",
+          "char_marcus"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": "dawn",
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [
+      {
+        "episode_id": "ep_vault_ledger_discovery",
+        "entity_id": "char_elena",
+        "epistemic": "told",
+        "believed_summary": null
+      },
+      {
+        "episode_id": "ep_vault_ledger_discovery",
+        "entity_id": "char_isolde",
+        "epistemic": "told",
+        "believed_summary": null
+      },
+      {
+        "episode_id": "ep_vault_ledger_discovery",
+        "entity_id": "char_kaelen",
+        "epistemic": "told",
+        "believed_summary": null
+      },
+      {
+        "episode_id": "ep_vault_ledger_discovery",
+        "entity_id": "char_marcus",
+        "epistemic": "told",
+        "believed_summary": null
+      },
+      {
+        "episode_id": "ep_vault_ledger_discovery",
+        "entity_id": "char_julian",
+        "epistemic": "told",
+        "believed_summary": null
+      }
+    ],
+    "is_flashback": false,
+    "story_time": "dawn",
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

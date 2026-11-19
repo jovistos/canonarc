@@ -1,0 +1,137 @@
+{
+  "cache_key": "9961f7812dc9ab3d32d80a387ad69c1d95c4742b5d80a8dc1ae3689e229a563f",
+  "model": "rule-based-non-llm",
+  "created_at": "2026-11-19T21:02:24.217175+00:00",
+  "prompt_sha256": "0f1c485c360c417134426ca47a17ec1caa8f20f2fdb24865b2d3e07a047499e1",
+  "scene_text_sha256": "d621ea6d82a53654fd33f4f0e6eb26879ad9ef1304e5195a086442405ef83948",
+  "scene_text": "Down in the Archive Vault, water slid along the stone floor and the air tasted of iron and old secrets. The vault’s ceiling wept moisture onto the shelves, and the light of Julian’s candle trembled across drowned ledgers. Julian had backed against a shelf of rotting parchments when the hooded courier stopped chasing and instead straightened to her full height. With one deliberate motion, she threw back her hood and peeled away the mask. Julian’s shocked breath broke the silence. Lyra stood before him, her dark hair damp with rain, her eyes determined and hard as the signet in her glove. “Predaj mi sve lažne povelje odmah, Julijane, ili ćeš do zore biti u kraljevskoj tamnici!” she said, each word striking the vault walls like a hammer.\n\nJulian’s hands trembled over the false charters tucked beneath his coat. Upstairs, the service door groaned. Marcus stepped back into the Council Chamber from the Windy Balcony, rain sliding from his shoulders, just as Julian scrambled up the stairs and through the tapestry into the candlelit room. The old general stopped short. Julian, breathless and pale, launched into his tale: Northern raiders had broken into the annex, he said; they had stolen the Obsidian Signet while he defended the ledger with his life. The words tumbled out too quickly, polished by panic.\n\nElena remained by the table, her fury banked behind a mask of marble. She looked at Julian, then at Marcus, and let the silence stretch until it became an accusation of its own. “Oh, what a wonderfully convenient tale of heroic vigilance, dear cousin,” she remarked with biting sarcasm, each word sugared and poisoned. Julian flinched. Marcus frowned, turning the story over in his soldier’s mind, while the rain beat against the balcony doors and the chamber smelled again of wax and wet stone.\n\nBelow, in the Archive Vault, Lyra remained among the flooded shelves, the recovered signet and false charters in her keeping, waiting for the moment when the truth could be brought up into the light. The masquerade above had not yet ended; it had only changed masks.",
+  "usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 1.92,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "shocked",
+          "location_id": "loc_balcony"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_11",
+        "reason": null
+      },
+      {
+        "entity_id": "char_lyra",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "determined"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_11",
+        "reason": null
+      },
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_balcony"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_11",
+        "reason": null
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_11",
+        "reason": null
+      }
+    ],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_rule_11",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "confrontation",
+        "summary": "Down in the Archive Vault, water slid along the stone floor and the air tasted of iron and old secrets.",
+        "participants": {
+          "char_elena": "participant",
+          "char_julian": "participant"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "char_lyra",
+          "Lyra",
+          "char_marcus"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

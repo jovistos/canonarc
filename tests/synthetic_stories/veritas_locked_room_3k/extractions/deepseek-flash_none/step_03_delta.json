@@ -1,0 +1,131 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_thorne",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_cellar",
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_thorne_key_handoff",
+      "reason": "Fled down the service stairs into the Wine Cellar."
+    },
+    {
+      "entity_id": "char_giles",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_cellar",
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_thorne_key_handoff",
+      "reason": "Pursued the fleeing physician into the Wine Cellar after pocketing the key."
+    },
+    {
+      "entity_id": "char_vane",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_study",
+        "mood": "calm"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_thorne_key_handoff",
+      "reason": "Remained in the study, forcing his features into practiced calm."
+    },
+    {
+      "entity_id": "char_mina",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_study",
+        "mood": "nervous"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_thorne_key_handoff",
+      "reason": "Left the conservatory uneasily and entered the study in disarray."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_giles",
+      "target_id": "item_ledger_key",
+      "relation_type": "possesses",
+      "state": {
+        "status": "concealed"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_thorne_key_handoff",
+      "reason": "Thorne thrust the Brass Ledger Key into the veiled locksmith's gloved hand."
+    },
+    {
+      "source_id": "char_thorne",
+      "target_id": "item_ledger_key",
+      "relation_type": "possesses",
+      "state": {},
+      "merge": true,
+      "remove": true,
+      "caused_by_episode_id": "ep_thorne_key_handoff",
+      "reason": "Thorne surrendered the key to the veiled locksmith."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_thorne_key_handoff",
+      "timeline_id": "main",
+      "step": 3,
+      "predicate": "item_transfer",
+      "summary": "Cornered by Vane, Thorne thrust the Brass Ledger Key into the veiled locksmith's hand and fled toward the Wine Cellar; the locksmith pocketed it and gave chase, while Mina entered the study to find Vane alone.",
+      "participants": {
+        "char_thorne": "actor",
+        "char_giles": "recipient",
+        "item_ledger_key": "instrument",
+        "char_vane": "observer"
+      },
+      "witnesses": [
+        "char_thorne",
+        "char_giles",
+        "char_vane"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_study",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

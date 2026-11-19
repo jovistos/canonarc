@@ -1,0 +1,102 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_cora",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_gallery"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_02_confrontation_toxicology",
+      "reason": null
+    },
+    {
+      "entity_id": "char_vane",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "furious"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_02_confrontation_toxicology",
+      "reason": null
+    },
+    {
+      "entity_id": "char_thorne",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_02_confrontation_toxicology",
+      "reason": null
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_vane",
+      "target_id": "char_thorne",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "furious",
+        "trust": -0.95
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_02_confrontation_toxicology",
+      "reason": null
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_02_confrontation_toxicology",
+      "timeline_id": "main",
+      "step": 2,
+      "predicate": "confrontation",
+      "summary": "Vane confronts Thorne in the Study regarding the stolen key and arsenic, causing Thorne to panic while Cora flees to the Gallery.",
+      "participants": {
+        "char_vane": "actor",
+        "char_thorne": "target"
+      },
+      "witnesses": [
+        "char_giles"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_study",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {
+        "language_switch": true,
+        "threat_level": "high"
+      },
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

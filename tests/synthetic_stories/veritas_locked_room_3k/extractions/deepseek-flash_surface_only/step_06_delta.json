@@ -1,0 +1,121 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_giles",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_study"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_cora_denounces_thorne",
+      "reason": "Giles enters the Mahogany Study carrying the Brass Ledger Key"
+    },
+    {
+      "entity_id": "char_cora",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "furious"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_cora_denounces_thorne",
+      "reason": "Cora's composure snaps into righteous fury at Thorne's deception"
+    },
+    {
+      "entity_id": "char_thorne",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "calm"
+      },
+      "private_state": {
+        "memory": "wiped of the ten-years-ago hospital inquest"
+      },
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_cora_denounces_thorne",
+      "reason": "Panic drains away into blank confusion after swallowing the memory-erasing draught"
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_cora",
+      "target_id": "char_thorne",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "furious",
+        "trust": -0.9
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_cora_denounces_thorne",
+      "reason": "Cora rounds on Thorne in righteous indignation over his fabricated alibi"
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_cora_denounces_thorne",
+      "timeline_id": "main",
+      "step": 6,
+      "predicate": "confrontation",
+      "summary": "Giles enters the Mahogany Study with the Brass Ledger Key and reveals Thorne's theft to Cora, who furiously denounces him; cornered by Cora, Vane and Giles, Thorne swallows a memory-erasing draught and is left blank and confused.",
+      "participants": {
+        "char_giles": "revealer",
+        "char_cora": "accuser",
+        "char_thorne": "target",
+        "char_vane": "observer",
+        "char_mina": "bystander"
+      },
+      "witnesses": [
+        "char_giles",
+        "char_cora",
+        "char_thorne",
+        "char_vane",
+        "char_mina"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_study",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_vane_confronts_thorne",
+      "entity_id": "char_cora",
+      "epistemic": "told",
+      "believed_summary": null
+    },
+    {
+      "episode_id": "ep_vane_flashback_epidemic",
+      "entity_id": "char_thorne",
+      "epistemic": "forgotten",
+      "believed_summary": null
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

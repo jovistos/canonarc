@@ -1,0 +1,69 @@
+{
+  "cache_key": "9e5266c909439c84c2b71c2cd7f1aecec4b1509314727ea05c966a821f242465",
+  "model": "rule-based-non-llm",
+  "created_at": "2026-11-19T19:45:30.953800+00:00",
+  "prompt_sha256": "fe16622ca6bc0523cfbf2df5fcc9e8735aa20b717e0afd1c911ffc9c3b4d7e68",
+  "scene_text_sha256": "99658ed0c5172eb4473f69e61254de2fc82568085c089c5443421658b8bf31bc",
+  "scene_text": "The Starlight Observatory was silent save for the creak of the brass dome and the distant toll of the citadel's bell. Elena stood by the telescope, her silhouette sharp against the pale glow of dawn seeping through the slit. Isolde, the tribunal envoy, entered without knocking, her dark robes rustling like the wings of a carrion bird. She had been waiting in the Inner Courtyard, watching the muster with cold eyes, and now she had come for answers. 'You summoned me, Chancellor,' Isolde said, her voice calm but edged with steel. 'I trust this is about the young treasurer.'\n\nElena turned, her face unreadable. 'It is. Julian did not steal the cipher key. He was framed.' The words hung in the air, heavy with consequence. Isolde's expression did not change, but her fingers tightened around the hilt of her ceremonial dagger. 'The evidence is compelling,' she said. 'The tribunal has already begun its inquiry. Why should I believe you now?'\n\nElena stepped closer, her voice dropping to a whisper. 'Because I have seen the truth in the stars, and in the archives. The real thief is still at large, and if we do not act, the realm will fall. Julian was a pawn, a scapegoat. I need you to delay the tribunal's verdict until I can expose the true traitor.' She remembered the Step 2 confrontation vividly: the forged ledger, the missing key, the look of horror on Julian's face as the guards seized him. Isolde studied her for a long moment, her eyes searching Elena's face for any sign of deception. Then, slowly, she nodded. 'Very well. I will stall the inquiry. But if you are wrong, Chancellor, the tribunal will not be merciful. Not to you, not to Julian, not to anyone.'\n\nElena felt a flicker of relief, but it was tempered by the weight of what she had just set in motion. Isolde's determination was a double-edged sword; once the envoy set her mind to a course, she would pursue it with relentless precision. Her jaw set with the resolve of a woman who had seen too many lies go unpunished. 'Thank you,' Elena said, and meant it. Isolde inclined her head. 'Do not thank me yet. Just make sure your proof is as unshakeable as the citadel's walls.' With that, she turned and swept out of the observatory, leaving Elena alone with the dawn and the faint scent of ozone from the telescope's brass. Elena looked up at the fading stars, and for the first time in days, she allowed herself to hope. She could still see the young treasurer's trembling hands as they dragged him away, and she knew she could not let that injustice stand.",
+  "usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 2.28,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_rule_18",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "scene_event",
+        "summary": "The Starlight Observatory was silent save for the creak of the brass dome and the distant toll of the citadel's bell.",
+        "participants": {
+          "char_elena": "participant",
+          "char_isolde": "participant"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_isolde",
+          "char_julian"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

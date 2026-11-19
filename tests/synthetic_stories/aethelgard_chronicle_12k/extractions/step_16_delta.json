@@ -1,0 +1,134 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_council",
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [
+        {
+          "alias": "the hooded courier",
+          "entity_id": "char_lyra",
+          "kind": "disguise",
+          "known_to": [
+            "char_elena",
+            "char_julian",
+            "char_isolde",
+            "char_kaelen",
+            "char_marcus"
+          ],
+          "persona_name": "Courier",
+          "valid_from_step": 0,
+          "valid_to_step": null
+        }
+      ],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_signet_revelation_council",
+      "reason": "Lyra climbs from the Archive Vault into the Council Chamber with her hood thrown back, openly appearing before the assembled council."
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_signet_revelation_council",
+      "reason": "Elena's calm hardens into resolve as she lifts the Signet and names the conspiracy's fingerprint."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_elena",
+      "target_id": "item_signet",
+      "relation_type": "possesses",
+      "state": {
+        "status": "revealed"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_signet_revelation_council",
+      "reason": "Lyra sets the Obsidian Signet on the council table and Elena takes it up deliberately."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_signet_revelation_council",
+      "timeline_id": "main",
+      "step": 16,
+      "predicate": "revelation",
+      "summary": "Lyra returns from the Archive Vault at dawn, hood thrown back, and lays the Obsidian Signet on the Council Chamber table before Elena, confirming the ledgers were not burned but moved, copied and sealed under a false inventory, and that whoever wore the Signet diverted the winter requisitions before the siege; Elena declares the conspiracy has a hand and a fingerprint.",
+      "participants": {
+        "char_lyra": "actor",
+        "char_elena": "target",
+        "item_signet": "instrument"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_isolde",
+        "char_julian",
+        "char_kaelen",
+        "char_marcus"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": "dawn",
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_vault_ledger_discovery",
+      "entity_id": "char_elena",
+      "epistemic": "told",
+      "believed_summary": null
+    },
+    {
+      "episode_id": "ep_vault_ledger_discovery",
+      "entity_id": "char_isolde",
+      "epistemic": "told",
+      "believed_summary": null
+    },
+    {
+      "episode_id": "ep_vault_ledger_discovery",
+      "entity_id": "char_kaelen",
+      "epistemic": "told",
+      "believed_summary": null
+    },
+    {
+      "episode_id": "ep_vault_ledger_discovery",
+      "entity_id": "char_marcus",
+      "epistemic": "told",
+      "believed_summary": null
+    },
+    {
+      "episode_id": "ep_vault_ledger_discovery",
+      "entity_id": "char_julian",
+      "epistemic": "told",
+      "believed_summary": null
+    }
+  ],
+  "is_flashback": false,
+  "story_time": "dawn",
+  "chapter_id": null,
+  "scene_id": null
+}

@@ -1,0 +1,90 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_observatory"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_flashback_001",
+      "reason": "Elena is physically present in the observatory during the flashback memory."
+    },
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_observatory"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_flashback_001",
+      "reason": "Julian is physically present in the observatory during the flashback memory."
+    },
+    {
+      "entity_id": "char_kaelen",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_observatory"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_flashback_001",
+      "reason": "Kaelen is physically present in the observatory during the flashback memory."
+    }
+  ],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_flashback_001",
+      "timeline_id": "main",
+      "step": 11,
+      "predicate": "flashback",
+      "summary": "Elena recalls the founding of the Astral Concordat ten years ago at the Starlight Observatory, where she, Kaelen, and Julian forged the cipher key.",
+      "participants": {
+        "char_elena": "actor",
+        "char_kaelen": "actor",
+        "char_julian": "actor"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_kaelen",
+        "char_julian"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_observatory",
+      "story_time": "10_years_ago",
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {
+        "memory_trigger": "Elena standing at the brass telescope in the present day",
+        "emotional_tone": "bittersweet_betrayal"
+      },
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": true,
+  "story_time": "10_years_ago",
+  "chapter_id": null,
+  "scene_id": null
+}

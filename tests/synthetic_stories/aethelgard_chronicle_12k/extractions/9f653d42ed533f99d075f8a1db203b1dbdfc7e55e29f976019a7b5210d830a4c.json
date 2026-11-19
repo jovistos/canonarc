@@ -1,0 +1,87 @@
+{
+  "cache_key": "9f653d42ed533f99d075f8a1db203b1dbdfc7e55e29f976019a7b5210d830a4c",
+  "model": "rule-based-non-llm",
+  "created_at": "2026-11-19T19:45:29.283281+00:00",
+  "prompt_sha256": "cf961aefa81c742291cfdebef93ce2109d3e3eb5abe3e9d0fb1ea8f005837cee",
+  "scene_text_sha256": "c24e8d8d7892995a6b447216b302b31897b6dfeb08e8a9bacc8ce4f5faa1ecae",
+  "scene_text": "The chamber had grown stifling. Wax smoke, old stone, and the sour smell of fear seemed to gather beneath the vaulted ceiling until Marcus could no longer abide it. The old general grew restless, his confident posture tightening into something impatient and hard. He folded the last report without comment, tucked it beneath his arm, and crossed to the narrow side door. Neither Elena nor Julian dared to speak as he pushed it open, letting in a knife of winter air from the Windy Balcony. Marcus stepped outside onto the high stone parapet, the heavy doors swinging shut behind him with a boom that echoed down the hall.\n\nThe silence that followed was not peace. It was a held breath. Elena turned from the table, and her calm broke like ice under a hammer. She became furious, her eyes fixing on Julian with such cold contempt that the young treasurer took a half-step back, his ledger slipping against his chest. \"Prestani sa tim bednim lažima, izdajniče, jer znam da si sinoć ukrao crni pečat iz komore!\" The words cracked across the chamber. Julian went panicked, his mouth opening and closing around a denial that would not come.\n\nElena advanced on him, one gloved hand striking the table hard enough to make the wax seals jump. \"Do not look toward the door. Do not look toward the guards. Look at me, Julian, and tell me where the Obsidian Signet is.\" Her voice dropped, more terrible for its quiet. Julian’s face drained of what little color remained; he shook his head, then stopped, then shook it again, trapped between terror and calculation.\n\nIn the shadows beside the pillar, the hooded courier remained perfectly still, watching the confrontation without a word. The disguise of a border messenger had served its purpose; now the courier’s watchful silence became another pressure in the room, a witness who might yet become an accomplice. Beyond the closed balcony doors, Marcus’s boots scraped against stone as he paced the windy parapet, unaware of the storm breaking behind him.",
+  "usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 1.864,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "panicked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_8",
+        "reason": null
+      }
+    ],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_rule_8",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "scene_event",
+        "summary": "The chamber had grown stifling.",
+        "participants": {
+          "char_elena": "participant",
+          "char_julian": "participant"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "char_lyra",
+          "char_marcus"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

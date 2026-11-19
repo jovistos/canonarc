@@ -1,0 +1,89 @@
+{
+  "cache_key": "75ae29a6fa46df40cc431ab88045eb568ab32be7ede7a05bf566eecf4bbc7478",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T19:41:04.359402+00:00",
+  "prompt_sha256": "5f58c8f5999a870f95008d04e1d194368460783b98fb38092acc0ae6c9f067c2",
+  "scene_text_sha256": "af11dded0a17c636f60275481e148f2d9fd8d1e251a04d344eb34604dc9b1f97",
+  "scene_text": "Rain lashed against the tall leaded panes of the Mahogany Study, blurring the gaslit gardens beyond into streaks of amber and slate. Inside, the air hung heavy with the lingering scent of Cavendish pipe tobacco, damp wool, and old parchment. Vane, the chief inspector, stood beside the unlit hearth with his hands clasped behind his back, his posture as rigid as the carved oak mantelpiece. Across the room, Cora, the dowager countess, sat in a high-backed velvet armchair, her rings catching the flicker of the oil lamps as she watched the others with a cool, unblinking composure.\n\nNear the bookshelves, Thorne shifted his weight from foot to foot, his spectacles misting slightly in the warmth of the room. Every few seconds, the family physician glanced toward the heavy brass-bound door, his fingers drumming an anxious rhythm against his leather medical satchel. Beside him stood the veiled locksmith, a tall, silent figure draped in a dark traveling cloak, whose face remained obscured behind a lattice of black mourning netting. Neither spoke, yet the tension between them seemed to hum like a taut wire.\n\nFarther down the hall, completely removed from the suffocating scrutiny of the study, Mina remained quiet in the Glass Conservatory. The young ward sat alone among the ferns and misted panes, listening to the steady drumming of the autumn downpour on the glass roof overhead. She had been instructed to wait there until the family council concluded, though the distance did little to shield her from the dread that had settled over the estate since the master's sudden collapse.\n\nAt last, Vane stepped forward and placed a folded sheaf of parchment upon the polished mahogany desk, smoothing the edges with a deliberate, unhurried palm. \"Molim vas da pažljivo pregledate ove toksikološke nalaze pre nego što policija zapečati imanje.\" His voice was calm, almost conversational, yet the weight of the words caused Thorne to flinch visibly. Cora inclined her head, her expression unreadable, while the veiled locksmith tilted his head toward the desk, watching Thorne's trembling hands with quiet, unwavering focus.",
+  "usage": {
+    "prompt_tokens": 5479,
+    "completion_tokens": 516,
+    "total_tokens": 5995,
+    "cached_prompt_tokens": 1152,
+    "reasoning_tokens": 292,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 3417.074,
+    "cost_estimate": {
+      "input_cost_usd": 0.000606,
+      "cached_input_cost_usd": 1.6e-05,
+      "output_cost_usd": 0.000144,
+      "total_cost_usd": 0.000766,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_thorne",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "panicked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_toxicology_briefing",
+        "reason": "Flinches visibly and his hands tremble at the toxicology findings."
+      }
+    ],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_toxicology_briefing",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "briefing",
+        "summary": "Inspector Vane laid the toxicology findings on the study desk and urged those present to review them before the estate is sealed; Thorne flinched visibly while Cora and the veiled locksmith looked on.",
+        "participants": {
+          "char_vane": "actor",
+          "char_cora": "observer",
+          "char_thorne": "target",
+          "char_giles": "observer"
+        },
+        "witnesses": [
+          "char_vane",
+          "char_cora",
+          "char_thorne",
+          "char_giles"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_study",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

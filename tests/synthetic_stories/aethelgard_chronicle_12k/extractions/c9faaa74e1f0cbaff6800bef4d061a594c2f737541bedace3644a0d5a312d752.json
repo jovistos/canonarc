@@ -1,0 +1,135 @@
+{
+  "cache_key": "c9faaa74e1f0cbaff6800bef4d061a594c2f737541bedace3644a0d5a312d752",
+  "model": "rule-based-non-llm",
+  "created_at": "2026-11-19T19:45:29.441000+00:00",
+  "prompt_sha256": "3c5e201d49fecc2bcddd6e2ad5d1fe6a1d1d42e1213857d646c1a96a079358fa",
+  "scene_text_sha256": "8aa5063e8fd989815cfb3ef9eedd5b7ff6ebac973295ab07d3b4dec654ea4d4c",
+  "scene_text": "Elena’s fury did not cool. It sharpened. She stepped close enough that Julian could see the reflected flames in her eyes, and her voice fell to a blade’s edge. \"Empty your pockets. Now. Every seam, every hidden lining, every purse you have tucked beneath that ledger.\" Julian’s hands trembled as he fumbled at his belt, but his panicked gaze slid past her toward the hooded courier, and something desperate hardened in his face.\n\nBefore Elena could seize him, Julian wrenched free and lunged sideways. He pressed the Obsidian Signet into the gloved hand of the hooded courier, the black stone cold and heavy as a buried sin. His fingers shook so badly that the ring almost fell between them. \"Take this cursed ring and hide it deep inside the stone vault before the guards arrive!\" he stammered, the words tumbling out in a rush. Then he bolted, boots skidding on marble as he dashed down the narrow passage that descended toward the Archive Vault.\n\nFor an instant the courier stood frozen, the ring burning in their palm. Elena shouted Julian’s name, but the young treasurer was already gone, his footsteps a frantic drumbeat fading into the lower dark. The hooded courier cast one swift look at Elena—an unreadable glance from beneath the hood—then broke into a run, chasing closely after Julian into the Archive Vault. The satchel of false depeches swung against their hip as they vanished through the passage arch.\n\nElena stood alone amid the scattered reports, her chest rising and falling with controlled rage. The Obsidian Signet was no longer in the chamber, and neither was the witness who had just become a thief’s accomplice. From somewhere beneath the floor came the muffled slam of the vault’s outer door, then the hurried scrape of boots on stone stairs. Elena’s calm returned slowly, colder than before, as she gathered the broken seals and turned her face toward the closed balcony doors where Marcus still paced, unseeing, in the winter wind.",
+  "usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 1.82,
+    "cost_estimate": {
+      "input_cost_usd": 0.0,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious",
+          "location_id": "loc_vault"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_9",
+        "reason": null
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "panicked",
+          "location_id": "loc_vault"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_9",
+        "reason": null
+      },
+      {
+        "entity_id": "char_lyra",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "panicked",
+          "location_id": "loc_vault"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_9",
+        "reason": null
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_lyra",
+        "target_id": "item_cipher_cylinder",
+        "relation_type": "possesses",
+        "state": {
+          "status": "concealed"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_rule_9",
+        "reason": null
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_rule_9",
+        "timeline_id": "main",
+        "step": 0,
+        "predicate": "item_transfer",
+        "summary": "Elena’s fury did not cool.",
+        "participants": {
+          "char_elena": "participant",
+          "char_julian": "participant"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_julian",
+          "char_lyra",
+          "char_marcus"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

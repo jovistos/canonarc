@@ -1,0 +1,133 @@
+{
+  "cache_key": "0dc1f920aa56c545d76ec82f7829ffb377fbc51a9039ad5c522b8fa9a6d7f3d4",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T19:45:28.910939+00:00",
+  "prompt_sha256": "8f0faadbace6d78366da21932897d281f6bf010304f5915289cf308aef350509",
+  "scene_text_sha256": "36495ab0f859cc363e75e75c6fc5a5bf4e514e8f9c7d79f06bec6fc721c7ccd0",
+  "scene_text": "The Council Chamber closed around Julian like a fist. Elena at the head of the table, Marcus still standing with anger in his shoulders, Lyra by the archive stair, Kaelen descended from the observatory with starlight still trapped in his sleeves, and Isolde posted at the inner doors—five peers, five angles, no unguarded exit. The young treasurer's nervousness had burned away into something brittle. He looked from the Obsidian Signet to the ledgers, then to the faces that had once deferred to his sums. 'You have made a conspiracy of shadows,' he whispered, 'but shadows cannot testify.'\n\nBefore anyone could cross the floor, Julian drew a slim alchemical vial from his sleeve—amber glass, waxed stopper, a memory-erasing draught prepared for exactly such a corner. Elena saw the motion and called his name; Marcus lunged, too late. Julian thumbed the stopper free and drank the whole measure in one bitter swallow. The Council Chamber erupted, chairs scraping, guards surging forward, but the draught worked with cruel speed. Julian's eyes went wide, then empty, then wide again with a different terror. He staggered against the table, blinking at the Obsidian Signet as if he had never seen it.\n\nThe ten-years-ago winter siege pact—its secret clauses, its bribes, its buried dead—had been scoured from him in a single breath. He looked at Elena, then at Marcus, and asked in a small, bewildered voice why the Council Chamber was so cold, and why everyone was staring at him as though he had risen from a grave. Marcus's fury faltered; Elena's calm turned to stone. Lyra stepped close and caught Julian's wrist, feeling for a pulse and finding only a frightened boy where the treasurer had been. The conspiracy had lost its witness, but the Signet remained, black and patient on the table, and the five peers understood that the final lie had cost Julian everything he no longer knew. Outside, the courtyard bells began to ring the dawn, and in the Council Chamber no one moved to answer them.",
+  "usage": {
+    "prompt_tokens": 7123,
+    "completion_tokens": 1058,
+    "total_tokens": 8181,
+    "cached_prompt_tokens": 1152,
+    "reasoning_tokens": 576,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 5215.247,
+    "cost_estimate": {
+      "input_cost_usd": 0.000836,
+      "cached_input_cost_usd": 1.6e-05,
+      "output_cost_usd": 0.000296,
+      "total_cost_usd": 0.001148,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "shocked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_draught_erasure",
+        "reason": "Drank the memory-erasing draught and stares blankly at the Signet, emptied of the past."
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "determined"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_draught_erasure",
+        "reason": "Her calm turns to stone as the witness is lost but the Signet remains."
+      },
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "shocked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_draught_erasure",
+        "reason": "His fury falters at the sight of the emptied treasurer."
+      }
+    ],
+    "edges": [],
+    "episodes": [
+      {
+        "episode_id": "ep_draught_erasure",
+        "timeline_id": "main",
+        "step": 18,
+        "predicate": "erasure",
+        "summary": "Cornered in the Council Chamber by five peers, Julian drinks a memory-erasing draught from an amber vial before Marcus can stop him; the ten-years-ago winter siege pact is scoured from his mind, leaving a bewildered boy where the treasurer had been.",
+        "participants": {
+          "char_julian": "actor",
+          "char_elena": "witness",
+          "char_marcus": "intervener",
+          "char_lyra": "witness",
+          "char_kaelen": "witness",
+          "char_isolde": "witness",
+          "item_signet": "instrument"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_marcus",
+          "char_lyra",
+          "char_kaelen",
+          "char_isolde",
+          "char_julian"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 9.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [
+      {
+        "episode_id": "ep_flashback_astral_concordat",
+        "entity_id": "char_julian",
+        "epistemic": "forgotten",
+        "believed_summary": null
+      }
+    ],
+    "is_flashback": false,
+    "story_time": "dawn",
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

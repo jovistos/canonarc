@@ -1,0 +1,178 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_giles",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_cellar",
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [
+        {
+          "alias": "the veiled locksmith",
+          "entity_id": "char_giles",
+          "kind": "disguise",
+          "known_to": [
+            "char_vane",
+            "char_thorne"
+          ],
+          "persona_name": "Locksmith",
+          "valid_from_step": 0,
+          "valid_to_step": null
+        }
+      ],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_cellar_unmasking_05",
+      "reason": null
+    },
+    {
+      "entity_id": "char_thorne",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_study",
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_cellar_unmasking_05",
+      "reason": null
+    },
+    {
+      "entity_id": "char_cora",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_study",
+        "mood": "indignant"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_study_lie_06",
+      "reason": null
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_giles",
+      "target_id": "char_thorne",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "commanding",
+        "trust": -0.9
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_cellar_unmasking_05",
+      "reason": null
+    },
+    {
+      "source_id": "char_cora",
+      "target_id": "char_thorne",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "disdainful",
+        "trust": -0.8
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_study_lie_06",
+      "reason": null
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_cellar_unmasking_05",
+      "timeline_id": "main",
+      "step": 5,
+      "predicate": "confrontation",
+      "summary": "Giles unmasks himself as the veiled locksmith in the cellar and commands Thorne to hand over the false recipes under threat of arrest.",
+      "participants": {
+        "char_giles": "actor",
+        "char_thorne": "target"
+      },
+      "witnesses": [
+        "char_giles",
+        "char_thorne"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_cellar",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 5.0,
+      "metadata": {},
+      "match_score": 0.0
+    },
+    {
+      "episode_id": "ep_study_lie_06",
+      "timeline_id": "main",
+      "step": 5,
+      "predicate": "confrontation",
+      "summary": "Thorne returns to the study and lies about driving off raiders in the cellar; Cora responds with disdain, rejecting his story.",
+      "participants": {
+        "char_thorne": "actor",
+        "char_cora": "target",
+        "char_vane": "observer",
+        "char_mina": "observer"
+      },
+      "witnesses": [
+        "char_thorne",
+        "char_cora",
+        "char_vane",
+        "char_mina"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_study",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 5.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_study_key_transfer_03",
+      "entity_id": "char_cora",
+      "epistemic": "deceived",
+      "believed_summary": "Thorne went to the cellar to drive off northern raiders who were trying to force the grate."
+    },
+    {
+      "episode_id": "ep_study_key_transfer_03",
+      "entity_id": "char_vane",
+      "epistemic": "deceived",
+      "believed_summary": "Thorne went to the cellar to drive off northern raiders who were trying to force the grate."
+    },
+    {
+      "episode_id": "ep_study_key_transfer_03",
+      "entity_id": "char_mina",
+      "epistemic": "deceived",
+      "believed_summary": "Thorne went to the cellar to drive off northern raiders who were trying to force the grate."
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

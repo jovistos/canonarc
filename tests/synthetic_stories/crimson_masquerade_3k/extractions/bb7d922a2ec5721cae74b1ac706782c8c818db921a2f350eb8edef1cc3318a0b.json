@@ -1,0 +1,161 @@
+{
+  "cache_key": "bb7d922a2ec5721cae74b1ac706782c8c818db921a2f350eb8edef1cc3318a0b",
+  "model": "qwen/qwen3.8-27b",
+  "created_at": "2026-11-19T21:16:11.364046+00:00",
+  "prompt_sha256": "5a71ec09602d1a18f8559fb491975264274977689ab7e707ae5d05244ee1e6d4",
+  "scene_text_sha256": "d6d2784d38895e6bbeda4b9aac67ac717259d4b31d13956cc989a940a9d913cb",
+  "scene_text": "The tapestry swung aside and Lyra entered the Council Chamber with the Obsidian Signet held high in her gloved hand. Water dripped from her cloak onto the mosaic floor, and the black stone caught the candlelight like a captive piece of night. For a heartbeat no one breathed. Julian went very still. Marcus turned from the balcony doors, his frown deepening as Lyra crossed to the table and set the signet down between the ledgers. In a low, steady voice, she told the old general everything: the theft, the false charters, the confrontation Elena had begun the moment he had stepped out into the rain.\n\nMarcus listened without interrupting, but his jaw tightened as the truth assembled itself. When Lyra finished, he rounded on Julian with the full indignation of a soldier who had been lied to in his own command room. “Kako se usuđuješ da obmanjuješ vojni savet dok držimo dokaze u rukama!” he barked. The words rang against the velvet and the glass. Julian, cornered at the table with Elena on one side and Marcus on the other, looked from the signet to the ledgers and back again, his face working through panic, calculation, and something colder beneath.\n\nThen Julian’s hand went to his coat and emerged with a small crystal vial. Elena lunged, but he was quicker than his trembling had suggested. He wrenched the stopper free and swallowed the draught in one convulsive motion. The memory-erasing damper hit him like a blow to the skull. His eyes went wide, then blank, then bewildered. The winter pact ten years ago—the snow, the seals, the trust, the historic signing, the whole flashback of that naive_trusting season—curdled and vanished from his mind, leaving only a hollow room and strangers staring at him.\n\nHe blinked at the Obsidian Signet as if he had never seen it before. The vial rolled across the table and came to rest against a ledger. Marcus’s indignation turned to disgust; Elena’s fury hardened into resolve. Lyra stood with her hood thrown back, the truth finally spoken, while the candles burned low around the four of them. Outside, the rain swept the Windy Balcony, and the Crimson Masquerade closed its final scene.",
+  "usage": {
+    "prompt_tokens": 6389,
+    "completion_tokens": 766,
+    "total_tokens": 7155,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 16588.07,
+    "cost_estimate": {
+      "input_cost_usd": 0.000894,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.000214,
+      "total_cost_usd": 0.001109,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_lyra",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_council"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step6_revelation",
+        "reason": "Lyra enters the Council Chamber from the vault/balcony area to reveal the truth."
+      },
+      {
+        "entity_id": "char_marcus",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_council",
+          "mood": "indignant"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step6_revelation",
+        "reason": "Marcus returns from the balcony and becomes indignant upon learning he was lied to."
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "shocked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step6_revelation",
+        "reason": "Julian's mood shifts from panic/calculation to shock/blankness after drinking the memory-erasing draught."
+      },
+      {
+        "entity_id": "char_elena",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "determined"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step6_revelation",
+        "reason": "Elena's fury hardens into resolve as the truth is revealed and Julian is incapacitated."
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_marcus",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "register": "ti",
+          "tone": "furious",
+          "trust": -0.9
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_step6_revelation",
+        "reason": "Marcus confronts Julian with indignation, using informal/accusatory language ('Kako se usuđuješ...')."
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_step6_revelation",
+        "timeline_id": "main",
+        "step": 6,
+        "predicate": "revelation",
+        "summary": "Lyra enters the Council Chamber, reveals the truth of the theft to Marcus, and Julian drinks a memory-erasing draught, losing his memory of the past ten years.",
+        "participants": {
+          "char_lyra": "actor",
+          "char_marcus": "listener",
+          "char_julian": "target",
+          "char_elena": "witness",
+          "item_signet": "instrument"
+        },
+        "witnesses": [
+          "char_lyra",
+          "char_marcus",
+          "char_julian",
+          "char_elena"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 9.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [
+      {
+        "episode_id": "ep_step4_flashback",
+        "entity_id": "char_julian",
+        "epistemic": "forgotten",
+        "believed_summary": null
+      }
+    ],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

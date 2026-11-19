@@ -1,0 +1,38 @@
+{
+  "entities": [],
+  "edges": [],
+  "episodes": [
+    {
+      "episode_id": "ep_1",
+      "timeline_id": "main",
+      "step": 1,
+      "predicate": "item_transfer",
+      "summary": "Lyra delivered sealed depeches from the northern border to Marcus in the Council Chamber.",
+      "participants": {
+        "char_lyra": "courier",
+        "char_marcus": "recipient"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_julian",
+        "char_marcus",
+        "char_lyra"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 5.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

@@ -1,0 +1,79 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_015",
+      "reason": "Julian's memory was wiped, returning him to a state of panicked confusion and terror."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_julian",
+      "target_id": "item_signet",
+      "relation_type": "possesses",
+      "state": {
+        "status": "concealed"
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_015",
+      "reason": "Julian still holds the Signet physically, though his memory of its significance is gone."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_016",
+      "timeline_id": "main",
+      "step": 18,
+      "predicate": "revelation",
+      "summary": "Julian consumes a memory-erasing draught in the Council Chamber, wiping his knowledge of the conspiracy and leaving him as a bewildered stranger who no longer recognizes the Signet or the gravity of the situation.",
+      "participants": {
+        "char_julian": "actor",
+        "item_signet": "instrument"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_isolde",
+        "char_kaelen",
+        "char_lyra",
+        "char_marcus"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {
+        "effect": "memory_wipe",
+        "target_memory": "conspiracy_details"
+      },
+      "match_score": 0.0
+    }
+  ],
+  "inform": [
+    {
+      "episode_id": "ep_016",
+      "entity_id": "char_julian",
+      "epistemic": "forgotten",
+      "believed_summary": null
+    }
+  ],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

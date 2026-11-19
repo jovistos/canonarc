@@ -1,0 +1,107 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "location_id": "loc_balcony",
+        "mood": "restless"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": null,
+      "reason": "Rose abruptly complaining of the close, hot chamber and stepped out onto the Windy Balcony."
+    },
+    {
+      "entity_id": "char_elena",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "furious"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_elena_confronts_julian",
+      "reason": "Her calm mask peeled away into cold fury as she confronted Julian."
+    },
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_elena_confronts_julian",
+      "reason": "His face drained as Elena accused him of the theft and he gripped the table."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_elena",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "furious",
+        "trust": -0.8
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_elena_confronts_julian",
+      "reason": "Elena dropped her composure and accused Julian in harsh informal register, calling him a traitor."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_elena_confronts_julian",
+      "timeline_id": "main",
+      "step": 2,
+      "predicate": "confrontation",
+      "summary": "Elena furiously accused Julian of stealing the Obsidian Signet from the chamber the previous night, calling him a traitor; Julian stammered a thin denial while gripping the table.",
+      "participants": {
+        "char_elena": "accuser",
+        "char_julian": "accused",
+        "item_signet": "subject"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_julian",
+        "char_lyra"
+      ],
+      "known_by": {
+        "char_elena": "direct",
+        "char_julian": "direct",
+        "char_lyra": "direct"
+      },
+      "believed_summaries": {},
+      "location_id": "loc_chamber_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 7.0,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

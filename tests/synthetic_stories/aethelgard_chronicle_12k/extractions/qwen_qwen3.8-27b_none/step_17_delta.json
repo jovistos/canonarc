@@ -1,0 +1,106 @@
+{
+  "entities": [
+    {
+      "entity_id": "char_marcus",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "furious"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step17_confrontation",
+      "reason": "Marcus's confidence hardened into indignation and fury upon learning Julian embezzled the siege fund."
+    },
+    {
+      "entity_id": "char_julian",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "panicked"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step17_confrontation",
+      "reason": "Julian flinched and his breathing grew thin and quick as the evidence of his fraud was laid out."
+    },
+    {
+      "entity_id": "char_lyra",
+      "canonical_name": null,
+      "kind": null,
+      "base_attributes": {},
+      "state": {
+        "mood": "determined"
+      },
+      "private_state": {},
+      "merge_state": true,
+      "add_aliases": [],
+      "remove_aliases": [],
+      "remove": false,
+      "caused_by_episode_id": "ep_step17_confrontation",
+      "reason": "Lyra spoke without ornament and laid out the evidence with the composure of a judge who had already read the sentence."
+    }
+  ],
+  "edges": [
+    {
+      "source_id": "char_marcus",
+      "target_id": "char_julian",
+      "relation_type": "stance",
+      "state": {
+        "register": "ti",
+        "tone": "furious",
+        "trust": -0.9
+      },
+      "merge": true,
+      "remove": false,
+      "caused_by_episode_id": "ep_step17_confrontation",
+      "reason": "Marcus barks at Julian in Serbian, dropping formal register to express disgust and fury over the betrayal."
+    }
+  ],
+  "episodes": [
+    {
+      "episode_id": "ep_step17_confrontation",
+      "timeline_id": "main",
+      "step": 17,
+      "predicate": "confrontation",
+      "summary": "Lyra reveals that Julian embezzled the siege fund and forged evidence of foreign sabotage, causing Marcus to erupt in fury and demand Julian answer before the council.",
+      "participants": {
+        "char_lyra": "accuser",
+        "char_julian": "accused",
+        "char_marcus": "witness",
+        "char_elena": "witness"
+      },
+      "witnesses": [
+        "char_elena",
+        "char_isolde",
+        "char_kaelen",
+        "char_julian",
+        "char_lyra",
+        "char_marcus"
+      ],
+      "known_by": {},
+      "believed_summaries": {},
+      "location_id": "loc_council",
+      "story_time": null,
+      "chapter_id": null,
+      "scene_id": null,
+      "consolidated_from": [],
+      "salience": 8.5,
+      "metadata": {},
+      "match_score": 0.0
+    }
+  ],
+  "inform": [],
+  "is_flashback": false,
+  "story_time": null,
+  "chapter_id": null,
+  "scene_id": null
+}

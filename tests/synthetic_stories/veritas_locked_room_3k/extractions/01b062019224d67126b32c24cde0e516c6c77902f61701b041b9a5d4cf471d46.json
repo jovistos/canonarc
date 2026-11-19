@@ -1,0 +1,137 @@
+{
+  "cache_key": "01b062019224d67126b32c24cde0e516c6c77902f61701b041b9a5d4cf471d46",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T21:03:31.114323+00:00",
+  "prompt_sha256": "9e56ae1c0a929327d2759f9a705ebc1edf615664ee8e406b561c4e9d6d304731",
+  "scene_text_sha256": "65733a890e92526b76f7ecbd8a59eaf7b543b83534d0c8d1629823896d877224",
+  "scene_text": "The silence that followed Vane's announcement stretched thin and brittle. Cora's composure, though practiced, began to fray at the edges under the relentless ticking of the grandfather clock. She rose from her velvet armchair with a sharp rustle of black silk, her jaw set in a line of aristocratic impatience. \"I have endured quite enough of this morbid stalemate,\" she declared, smoothing her gloves. Without waiting for permission from the chief inspector, Cora swept out of the Mahogany Study and ascended the grand staircase toward the Portrait Gallery, seeking the cold, drafty solitude of her ancestors' painted gazes.\n\nThe moment the heavy door clicked shut behind her, the atmosphere in the study fractured. Vane's calm veneer vanished entirely, replaced by a cold, focused fury that seemed to draw all the air from the room. He rounded the mahogany desk in three brisk strides, blocking Thorne's path to the hearth. The physician stumbled backward, his heel catching on the edge of the Persian rug, his face draining of color until it matched his starched collar.\n\n\"You thought the rain would wash away your tracks, didn't you?\" Vane's voice dropped to a low, dangerous growl as he leaned in, his eyes locked onto the trembling doctor. Thorne clutched his medical satchel to his chest like a shield, stammering incoherently about misread symptoms and late-night rounds. Vane slammed his palm onto the desk, rattling the inkwell and the brass-mounted magnifying glass. \"Prestani sa tim bednim lažima, doktore, jer znam da si sinoć ukrao mesingani ključ iz kabineta!\"\n\nThorne's breath hitched in his throat, a ragged, panicked sound. He looked wildly toward the veiled locksmith for some sign of intervention, but the cloaked figure remained motionless near the bookshelves, watching the confrontation unfold. Trapped between the chief inspector's accusing glare and the damning toxicology report lying open on the desk, Thorne realized that his carefully constructed alibi had collapsed.",
+  "usage": {
+    "prompt_tokens": 3996,
+    "completion_tokens": 1123,
+    "total_tokens": 5119,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 666,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 5355.414,
+    "cost_estimate": {
+      "input_cost_usd": 0.000559,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.000314,
+      "total_cost_usd": 0.000874,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_cora",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_gallery",
+          "mood": "restless"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step1_opening_briefing",
+        "reason": "Cora leaves the Mahogany Study for the Portrait Gallery, restless after the briefing."
+      },
+      {
+        "entity_id": "char_vane",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "furious"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step2_secret_confrontation",
+        "reason": "Vane's calm veneer vanishes as he confronts Thorne."
+      },
+      {
+        "entity_id": "char_thorne",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "panicked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_step2_secret_confrontation",
+        "reason": "Thorne is trapped by Vane's accusation and the toxicology report."
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_vane",
+        "target_id": "char_thorne",
+        "relation_type": "accusation",
+        "state": {
+          "emotion": "furious",
+          "accusation": "theft_of_brass_ledger_key"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_step2_secret_confrontation",
+        "reason": "Vane directly accuses Thorne of stealing the brass ledger key."
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_step2_secret_confrontation",
+        "timeline_id": "main",
+        "step": 2,
+        "predicate": "confrontation",
+        "summary": "After Cora leaves for the Portrait Gallery, Vane furiously confronts Thorne in the Mahogany Study, accusing him of stealing the brass ledger key; Thorne panics as his alibi collapses.",
+        "participants": {
+          "char_vane": "actor",
+          "char_thorne": "target",
+          "char_giles": "observer"
+        },
+        "witnesses": [
+          "char_giles"
+        ],
+        "known_by": {
+          "char_giles": "direct"
+        },
+        "believed_summaries": {},
+        "location_id": "loc_study",
+        "story_time": null,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 8.0,
+        "metadata": {
+          "accusation": "theft_of_brass_ledger_key",
+          "cora_present": false
+        },
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

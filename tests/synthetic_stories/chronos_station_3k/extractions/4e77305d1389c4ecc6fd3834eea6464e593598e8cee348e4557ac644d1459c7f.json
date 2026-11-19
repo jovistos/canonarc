@@ -1,0 +1,140 @@
+{
+  "cache_key": "4e77305d1389c4ecc6fd3834eea6464e593598e8cee348e4557ac644d1459c7f",
+  "model": "qwen/qwen3.5-9b",
+  "created_at": "2026-11-19T19:58:25.533942+00:00",
+  "prompt_sha256": "101df4dc38ef6cdb14d43a31a3ebbe389a86defff9ce8385aa89b28e42c4a915",
+  "scene_text_sha256": "bc1552d1947563922787cb3487e7171b8948d56311be85d85837e9fd5fae6629",
+  "scene_text": "The rear passage doors opened, and Lyra walked into the Council Chamber with the Obsidian Signet held high. The black stone caught the chamber lights and seemed to drink them. Julian's face went bloodless. Marcus turned from the table, his concern sharpening into alertness as Lyra crossed the deck and set the signet down between them with a deliberate click. All four of them were together now beneath the gas giant's amber gaze: Elena, Marcus, Julian, and Lyra.\n\nLyra did not waste words. She told Marcus the full truth of the earlier confrontation: Julian's theft of the signet, his desperate handoff, his flight into the vault, and the false tale he had carried back up the stairs. Marcus listened without interrupting, but his posture changed by degrees, the veteran commander's confidence hardening into something sterner. When Lyra finished, he turned on Julian. \"Kako se usuđuješ da obmanjuješ vojni savet dok držimo dokaze u rukama!\" The bark of his voice rebounded from the curved ceiling. Julian shrank back against the table, cornered, his eyes darting from Marcus to Elena to Lyra and finding no shelter in any of them.\n\nElena said nothing. She did not need to. The fury she had preserved through the long dusk was now fully visible, and it was colder than the vault below. Julian's hands fumbled at his coat, then found the small vial he had hidden in an inner seam, a memory-erasing draught prepared for exactly such an emergency. He uncorked it and swallowed before anyone could stop him. The damper worked quickly, a dim pulse behind his eyes, a slackening of the face.\n\nJulian blinked, swayed, and looked around the Council Chamber as though waking from a dream. The ten-years-ago flashback event, the winter crisis, the pact signing, the trust Elena had once placed in him, all of it vanished from his memory in a single dissolving stroke. He stared at the Obsidian Signet on the table and did not know why his hands were shaking. Marcus drew a sharp breath; Lyra's determined expression turned grim; Elena watched the young treasurer become a stranger to his own guilt. Above them, the gas giant rolled on, indifferent, while the Council Chamber filled with the terrible quiet of a truth that could no longer be remembered.",
+  "usage": {
+    "prompt_tokens": 6177,
+    "completion_tokens": 585,
+    "total_tokens": 6762,
+    "cached_prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 8987.224,
+    "cost_estimate": {
+      "input_cost_usd": 0.000865,
+      "cached_input_cost_usd": 0.0,
+      "output_cost_usd": 0.000164,
+      "total_cost_usd": 0.001029,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "location_id": "loc_council"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [
+          {
+            "alias": "the young treasurer",
+            "entity_id": "char_julian",
+            "kind": "disguise",
+            "known_to": [
+              "char_elena",
+              "char_marcus",
+              "char_lyra"
+            ],
+            "persona_name": "Julian",
+            "valid_from_step": 0,
+            "valid_to_step": null
+          }
+        ],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_vault_confrontation_03",
+        "reason": null
+      },
+      {
+        "entity_id": "char_julian",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "shocked"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_council_inspection_01",
+        "reason": null
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_marcus",
+        "target_id": "char_julian",
+        "relation_type": "stance",
+        "state": {
+          "register": "ti",
+          "tone": "commanding",
+          "trust": -0.9
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_council_inspection_01",
+        "reason": null
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_council_revelation_04",
+        "timeline_id": "main",
+        "step": 6,
+        "predicate": "revelation",
+        "summary": "Lyra reveals Julian's theft and flight to the Council Chamber; Julian consumes a memory-erasing draught, wiping his memory of the pact signing.",
+        "participants": {
+          "char_lyra": "actor",
+          "char_julian": "target",
+          "char_elena": "witness",
+          "char_marcus": "witness"
+        },
+        "witnesses": [
+          "char_elena",
+          "char_marcus",
+          "char_lyra"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": "loc_council",
+        "story_time": 0,
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 9.5,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [
+      {
+        "episode_id": "ep_flashback_signing_pact",
+        "entity_id": "char_julian",
+        "epistemic": "forgotten",
+        "believed_summary": null
+      }
+    ],
+    "is_flashback": false,
+    "story_time": null,
+    "chapter_id": null,
+    "scene_id": null
+  }
+}

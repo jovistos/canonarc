@@ -45,6 +45,9 @@ CREATE TABLE IF NOT EXISTS graph_revisions (
 CREATE INDEX IF NOT EXISTS idx_revisions_lookup
     ON graph_revisions(timeline_id, record_type, subject_key, step DESC, revision_id DESC);
 
+CREATE INDEX IF NOT EXISTS idx_revisions_timeline_step
+    ON graph_revisions(timeline_id, step DESC);
+
 CREATE INDEX IF NOT EXISTS idx_revisions_edge_type
     ON graph_revisions(timeline_id, record_type, relation_type, source_id, target_id);
 
@@ -97,6 +100,9 @@ CREATE TABLE IF NOT EXISTS episode_epistemics (
 CREATE INDEX IF NOT EXISTS idx_episode_epistemics_lookup
     ON episode_epistemics(timeline_id, episode_id, step DESC);
 
+CREATE INDEX IF NOT EXISTS idx_episode_epistemics_timeline_step
+    ON episode_epistemics(timeline_id, step DESC);
+
 CREATE VIRTUAL TABLE IF NOT EXISTS episodes_fts USING fts5(
     timeline_id UNINDEXED,
     episode_id UNINDEXED,
@@ -104,19 +110,19 @@ CREATE VIRTUAL TABLE IF NOT EXISTS episodes_fts USING fts5(
 );
 
 CREATE TRIGGER IF NOT EXISTS episodes_ai AFTER INSERT ON episodes BEGIN
-    DELETE FROM episodes_fts WHERE timeline_id = NEW.timeline_id AND episode_id = NEW.episode_id;
-    INSERT INTO episodes_fts(timeline_id, episode_id, summary)
-    VALUES (NEW.timeline_id, NEW.episode_id, NEW.summary);
+    DELETE FROM episodes_fts WHERE rowid = NEW.rowid;
+    INSERT INTO episodes_fts(rowid, timeline_id, episode_id, summary)
+    VALUES (NEW.rowid, NEW.timeline_id, NEW.episode_id, NEW.summary);
 END;
 
 CREATE TRIGGER IF NOT EXISTS episodes_ad AFTER DELETE ON episodes BEGIN
-    DELETE FROM episodes_fts WHERE timeline_id = OLD.timeline_id AND episode_id = OLD.episode_id;
+    DELETE FROM episodes_fts WHERE rowid = OLD.rowid;
 END;
 
 CREATE TRIGGER IF NOT EXISTS episodes_au AFTER UPDATE OF summary ON episodes BEGIN
-    DELETE FROM episodes_fts WHERE timeline_id = OLD.timeline_id AND episode_id = OLD.episode_id;
-    INSERT INTO episodes_fts(timeline_id, episode_id, summary)
-    VALUES (NEW.timeline_id, NEW.episode_id, NEW.summary);
+    DELETE FROM episodes_fts WHERE rowid = OLD.rowid;
+    INSERT INTO episodes_fts(rowid, timeline_id, episode_id, summary)
+    VALUES (NEW.rowid, NEW.timeline_id, NEW.episode_id, NEW.summary);
 END;
 
 CREATE TABLE IF NOT EXISTS store_metadata (
@@ -427,8 +433,8 @@ class CausalStore:
             # Backfill FTS5 index for legacy databases created before episodes_fts existed
             if not self.conn.execute("SELECT 1 FROM episodes_fts LIMIT 1").fetchone():
                 self.conn.execute(
-                    "INSERT INTO episodes_fts(timeline_id, episode_id, summary) "
-                    "SELECT timeline_id, episode_id, summary FROM episodes"
+                    "INSERT INTO episodes_fts(rowid, timeline_id, episode_id, summary) "
+                    "SELECT rowid, timeline_id, episode_id, summary FROM episodes"
                 )
             # Ensure default 'main' timeline exists
             cursor = self.conn.cursor()

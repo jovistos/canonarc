@@ -1,0 +1,99 @@
+{
+  "cache_key": "1efc127f80e0fd10fe16c79b4c08b103e742acef2202ced6b639475ddd930fe6",
+  "model": "deepseek-flash",
+  "created_at": "2026-11-19T21:02:56.575483+00:00",
+  "prompt_sha256": "bcb50898381057ec29cfe9ea45533d0a19e24b93c45c184705f701ef42b02a0a",
+  "scene_text_sha256": "00518d4b4b27d0dfda65e084ca756f06a05da3b5330340adb4b6f329670d7b4c",
+  "scene_text": "As the rain continued to drum against the study windows, Vane's gaze drifted to the unlit hearth, and his mind slipped backward through the years. Ten years ago, the winter had been merciless, blanketing the city in grey slush and choking the alleys with coal smoke and fever. During that brutal epidemic, the charity hospital on the east side had been little more than a crowded warehouse of coughing, shivering souls, lit by flickering tallow candles and smelling sharply of carbolic acid and wet wool.\n\nBack then, Vane had been a younger, more idealistic investigator, assigned to look into the sudden, unexplained deaths of three wardens who had fallen ill within a single week. He remembered standing in that exact same sort of cramped, drafty office, watching Thorne work with tireless, quiet dedication. Thorne had been the only physician willing to remain on the night shift when the other doctors fled to the countryside, his spectacles perpetually fogged from the steam of boiling instruments.\n\nVane had trusted Thorne implicitly in those dark months. When Thorne had signed the death certificates attributing the wardens' demise to rapid pneumonia, Vane had not questioned a single stroke of the pen. He had even defended the physician's methods before the hospital board, praising Thorne's steady nerves and selfless devotion to the dying. It had never once crossed Vane's mind that the very man who tended the feverish might also be the one quietly administering something far more final.\n\nNow, standing in the Mahogany Study a decade later, the memory tasted bitter as ash. Every polite nod, every reassuring word Thorne had spoken during that winter inquest now looked entirely different in the harsh light of the toxicology report. Vane's jaw tightened as he realized how long the doctor had hidden behind his nervous, unassuming manner.",
+  "usage": {
+    "prompt_tokens": 5680,
+    "completion_tokens": 2012,
+    "total_tokens": 7692,
+    "cached_prompt_tokens": 1152,
+    "reasoning_tokens": 1672,
+    "api_calls": 1,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "retry_count": 0,
+    "validation_errors": 0,
+    "latency_ms": 9623.769,
+    "cost_estimate": {
+      "input_cost_usd": 0.000634,
+      "cached_input_cost_usd": 1.6e-05,
+      "output_cost_usd": 0.000563,
+      "total_cost_usd": 0.001213,
+      "rates_per_1m_usd": {
+        "input_uncached": 0.14,
+        "input_cached": 0.014,
+        "output": 0.28
+      }
+    }
+  },
+  "delta": {
+    "entities": [
+      {
+        "entity_id": "char_vane",
+        "canonical_name": null,
+        "kind": null,
+        "base_attributes": {},
+        "state": {
+          "mood": "indignant"
+        },
+        "private_state": {},
+        "merge_state": true,
+        "add_aliases": [],
+        "remove_aliases": [],
+        "remove": false,
+        "caused_by_episode_id": "ep_vane_flashback_epidemic",
+        "reason": null
+      }
+    ],
+    "edges": [
+      {
+        "source_id": "char_vane",
+        "target_id": "char_thorne",
+        "relation_type": "stance",
+        "state": {
+          "trust": -0.9,
+          "tone": "stern"
+        },
+        "merge": true,
+        "remove": false,
+        "caused_by_episode_id": "ep_vane_flashback_epidemic",
+        "reason": null
+      }
+    ],
+    "episodes": [
+      {
+        "episode_id": "ep_vane_flashback_epidemic",
+        "timeline_id": "main",
+        "step": 4,
+        "predicate": "flashback",
+        "summary": "Ten years ago during a brutal epidemic, Vane trusted Dr. Thorne, who signed death certificates attributing three wardens' deaths to pneumonia; Vane now realizes Thorne may have poisoned them.",
+        "participants": {
+          "char_vane": "investigator",
+          "char_thorne": "physician"
+        },
+        "witnesses": [
+          "char_vane",
+          "char_thorne"
+        ],
+        "known_by": {},
+        "believed_summaries": {},
+        "location_id": null,
+        "story_time": "10_years_ago",
+        "chapter_id": null,
+        "scene_id": null,
+        "consolidated_from": [],
+        "salience": 7.0,
+        "metadata": {},
+        "match_score": 0.0
+      }
+    ],
+    "inform": [],
+    "is_flashback": true,
+    "story_time": "10_years_ago",
+    "chapter_id": null,
+    "scene_id": null
+  }
+}
