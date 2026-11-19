@@ -27,8 +27,10 @@ from .episodic import (
 from .extractors import (
     CachedDeltaExtractor,
     CallableExtractor,
+    MODEL_PRICING_PER_1M_USD,
     OpenAICompatibleExtractor,
     TokenUsage,
+    get_model_pricing_per_1m_usd,
     load_dotenv,
     resolve_lmstudio_model,
 )
@@ -88,6 +90,7 @@ __all__ = [
     "InformDelta",
     "IngestionGate",
     "InteractiveFictionPreset",
+    "MODEL_PRICING_PER_1M_USD",
     "MemoryStore",
     "MentionResolver",
     "CanonArcEngine",
@@ -110,6 +113,7 @@ __all__ = [
     "VoiceExemplar",
     "embed_texts_batch",
     "get_embedder_info",
+    "get_model_pricing_per_1m_usd",
     "load_dotenv",
     "resolve_lmstudio_model",
 ]

@@ -84,6 +84,66 @@ def load_dotenv(
     return loaded
 
 
+MODEL_PRICING_PER_1M_USD: dict[str, tuple[float, float, float]] = {
+    # (input_uncached_per_1m, input_cached_per_1m, output_per_1m)
+    "deepseek-flash": (0.14, 0.014, 0.28),
+    "deepseek-chat": (0.14, 0.014, 0.28),
+    "deepseek-v3": (0.14, 0.014, 0.28),
+    "deepseek-reasoner": (0.55, 0.14, 2.19),
+    "deepseek-r1": (0.55, 0.14, 2.19),
+    "gemini-4-hydrogen": (0.10, 0.025, 0.40),
+    "gemini-2.5-flash": (0.10, 0.025, 0.40),
+    "gemini-2.0-flash": (0.10, 0.025, 0.40),
+    "gemini-2.5-pro": (1.25, 0.3125, 10.00),
+    "gpt-4o-mini": (0.15, 0.075, 0.60),
+    "gpt-4o": (2.50, 1.25, 10.00),
+    "rule-based-non-llm": (0.0, 0.0, 0.0),
+    "deterministic_compiler": (0.0, 0.0, 0.0),
+    "local-model": (0.0, 0.0, 0.0),
+}
+
+_LOCAL_OR_FREE_MODEL_PREFIXES: tuple[str, ...] = (
+    "qwen/",
+    "qwen-",
+    "llama",
+    "meta-llama/",
+    "gemma",
+    "mistral",
+    "phi-",
+    "local",
+    "lmstudio",
+    "ollama",
+    "rule-based",
+    "deterministic",
+    "sim-",
+    "tier1-",
+    "tier2-",
+    "tier3-",
+    "tier4-",
+    "cached-test",
+)
+
+
+def get_model_pricing_per_1m_usd(model: str | None = None) -> tuple[float, float, float]:
+    """Returns (input_uncached, input_cached, output) USD rates per 1M tokens for a given model."""
+    if not model:
+        return (0.14, 0.014, 0.28)
+    clean = model.strip().lower()
+    if clean in MODEL_PRICING_PER_1M_USD:
+        return MODEL_PRICING_PER_1M_USD[clean]
+    if any(clean.startswith(pref) for pref in _LOCAL_OR_FREE_MODEL_PREFIXES) or "@" in clean:
+        return (0.0, 0.0, 0.0)
+    if "gemini" in clean and ("flash" in clean or "hydrogen" in clean):
+        return (0.10, 0.025, 0.40)
+    if "gemini" in clean:
+        return (1.25, 0.3125, 10.00)
+    if "deepseek" in clean:
+        return (0.14, 0.014, 0.28)
+    if "gpt-4o-mini" in clean:
+        return (0.15, 0.075, 0.60)
+    return (0.14, 0.014, 0.28)
+
+
 @dataclass
 class TokenUsage:
     """Tracks token counts, caching metrics, retries, latency, and estimated API cost."""
@@ -116,15 +176,21 @@ class TokenUsage:
     def estimate_cost_usd(
         self,
         *,
-        input_price_per_1m: float = 0.14,
-        cached_input_price_per_1m: float = 0.014,
-        output_price_per_1m: float = 0.28,
+        model: str | None = None,
+        input_price_per_1m: float | None = None,
+        cached_input_price_per_1m: float | None = None,
+        output_price_per_1m: float | None = None,
     ) -> dict[str, Any]:
-        """Estimates USD price from token counts (defaults to DeepSeek Flash/Chat tier pricing per 1M tokens)."""
+        """Estimates USD price from token counts and model pricing registry."""
+        default_in, default_cached, default_out = get_model_pricing_per_1m_usd(model)
+        eff_in = default_in if input_price_per_1m is None else input_price_per_1m
+        eff_cached = default_cached if cached_input_price_per_1m is None else cached_input_price_per_1m
+        eff_out = default_out if output_price_per_1m is None else output_price_per_1m
+
         uncached_prompt = max(0, self.prompt_tokens - self.cached_prompt_tokens)
-        input_cost = (uncached_prompt / 1_000_000.0) * input_price_per_1m
-        cached_cost = (self.cached_prompt_tokens / 1_000_000.0) * cached_input_price_per_1m
-        output_cost = (self.completion_tokens / 1_000_000.0) * output_price_per_1m
+        input_cost = (uncached_prompt / 1_000_000.0) * eff_in
+        cached_cost = (self.cached_prompt_tokens / 1_000_000.0) * eff_cached
+        output_cost = (self.completion_tokens / 1_000_000.0) * eff_out
         total_cost = input_cost + cached_cost + output_cost
         return {
             "input_cost_usd": round(input_cost, 6),
@@ -132,13 +198,13 @@ class TokenUsage:
             "output_cost_usd": round(output_cost, 6),
             "total_cost_usd": round(total_cost, 6),
             "rates_per_1m_usd": {
-                "input_uncached": input_price_per_1m,
-                "input_cached": cached_input_price_per_1m,
-                "output": output_price_per_1m,
+                "input_uncached": eff_in,
+                "input_cached": eff_cached,
+                "output": eff_out,
             },
         }
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self, *, model: str | None = None) -> dict[str, Any]:
         return {
             "prompt_tokens": self.prompt_tokens,
             "completion_tokens": self.completion_tokens,
@@ -151,7 +217,7 @@ class TokenUsage:
             "retry_count": self.retry_count,
             "validation_errors": self.validation_errors,
             "latency_ms": round(self.latency_ms, 3),
-            "cost_estimate": self.estimate_cost_usd(),
+            "cost_estimate": self.estimate_cost_usd(model=model),
         }
 
     @classmethod
@@ -544,7 +610,11 @@ class OpenAICompatibleExtractor:
                     body_dict.pop("response_format", None)
                     body, elapsed_ms = _send(body_dict)
                     break
-                if exc.code in transient_codes and http_attempt + 1 < max_http_attempts:
+                if (
+                    exc.code in transient_codes
+                    and http_attempt + 1 < max_http_attempts
+                    and "limit: 0" not in err_text
+                ):
                     time.sleep(2.0 * (2 ** http_attempt))
                     continue
                 raise RuntimeError(
