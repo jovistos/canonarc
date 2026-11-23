@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/tutorial-and-study-book.md"><strong>Study Book & Deep Tutorial</strong></a> &bull;
+  <a href="docs/handbook.md"><strong>Handbook</strong></a> &bull;
   <a href="docs/architecture.md">Architecture</a> &bull;
   <a href="docs/epistemics-and-pov.md">Epistemics & POV</a> &bull;
   <a href="docs/time-travel.md">Time Travel</a> &bull;
@@ -25,6 +25,7 @@
   <a href="docs/presets.md">Presets</a> &bull;
   <a href="docs/benchmarks.md">Benchmarks</a> &bull;
   <a href="examples/README.md">Examples</a> &bull;
+  <a href="examples/02_literary_translation.ipynb">Literary Translation</a> &bull;
   <a href="docs/api-reference.md">API Reference</a>
 </p>
 
@@ -309,12 +310,12 @@ with engine.step_transaction(step=85, text=scene_text, pov_entity_ids=["char_art
 
 ## Interactive Example Notebooks
 
-Self-contained, offline-runnable Jupyter notebooks in [`examples/`](examples/README.md) walk through each primary domain:
+Self-contained Jupyter notebooks in [`examples/`](examples/README.md) walk through each primary domain:
 
 | Notebook | Domain | Preset | Key Capabilities Demonstrated |
 | :--- | :--- | :--- | :--- |
 | [`01_interactive_fiction_and_rpg.ipynb`](examples/01_interactive_fiction_and_rpg.ipynb) | Interactive Fiction, Visual Novels & RPGs | `InteractiveFictionPreset` | Tiers 1–6, 1-hop alias coreference, 2-stage anti-drift `IngestionGate`, `prior_state` trajectory, dramatic irony (`\| ignorant:`), `branch()`, `diff_timelines()`, `rollback_to()`, `export_snapshot()` |
-| [`02_literary_and_game_localization.ipynb`](examples/02_literary_and_game_localization.ipynb) | Literary & Video Game Localization | `TranslationPreset` | Tier 1 locked grammar/exonyms (`target_name`, `gender`, `declension`), asymmetric dyadic T–V register (`Vi` vs. `ti`), multi-party voice anchoring, flashback-safe ingestion (`is_flashback=True`) |
+| [`02_literary_translation.ipynb`](examples/02_literary_translation.ipynb) | Long-Form Literary Translation | `TranslationPreset` | Pure-English A/B comparison, transactional `step_transaction()` pipeline, verified `Vi`→`ti` register propagation, automated Tier 5 Voice Bank harvesting & anti-drift gating, flashback safety, linguistic glosses & QA audit |
 | [`03_multi_agent_simulation.ipynb`](examples/03_multi_agent_simulation.ipynb) | Multi-Agent Autonomous Simulations | `SimulationPreset` | Custom `SchemaPolicy` & `EpisodicScoringPolicy`, per-tick directed affinity edges, partial observability (`pov_entity_ids`), secondhand gossip (`InformDelta`), `consolidate_episodes()` |
 | [`04_mystery_and_social_deduction.ipynb`](examples/04_mystery_and_social_deduction.ipynb) | Mystery, Espionage & Social Deduction | `InteractiveFictionPreset` | Disguise & persona masking (`AliasRecord.known_to` → `masked:<id>`), `facade` vs. hidden `stance` edges, `private_state` redaction, `deceived` beliefs (`believed_summary` vector isolation), disguise piercing |
 
@@ -349,7 +350,7 @@ canonarc history story_save.sqlite char_arthur --timeline main
 
 ## Documentation
 
-- [**Comprehensive Tutorial & Study Book**](docs/tutorial-and-study-book.md): Masterclass guide covering ontology, motivation, recursive CTE lineage, anti-drift gates, episodic recall, and end-to-end examples.
+- [**The `canonarc` Handbook**](docs/handbook.md): Comprehensive tutorial & architectural study book covering ontology, motivation, recursive CTE lineage, anti-drift gates, epistemic POV projection, live LLM extraction, and end-to-end examples.
 - [**Architecture Guide**](docs/architecture.md): Deep dive into the 6-tier state superset, SQLite schema, and windowed recursive CTE.
 - [**Epistemic State, Disguises & POV Projection**](docs/epistemics-and-pov.md): Guide to anti-metagaming, `"direct"` / `"told"` / `"deceived"` / `"forgotten"` modes, scoped disguises (`known_to`), and `facade` vs. `stance` edges.
 - [**Causal Time Travel**](docs/time-travel.md): Lineage trees, copy-on-write branching, atomic rollback, non-linear flashbacks, and save-slot exports.

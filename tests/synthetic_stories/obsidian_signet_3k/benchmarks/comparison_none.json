@@ -2,6 +2,7 @@
   "story_slug": "obsidian_signet_3k",
   "story_title": "The Obsidian Signet Conspiracy (Extended 3K Edition)",
   "guidance_mode": "none",
+  "n_trials": 1,
   "models": [
     {
       "model_id": "gemini-4-hydrogen",
@@ -11,6 +12,7 @@
       "step_delta_pass_rate": 1.0,
       "cumulative_state_pass_rate": 1.0,
       "overall_quality_score": 0.9925,
+      "trial_stats": {},
       "metrics": {
         "model_id": "gemini-4-hydrogen",
         "guidance_mode": "none",
@@ -41,6 +43,7 @@
           "location_delta_f1": 1.0,
           "room_occupancy_jaccard": 1.0,
           "room_occupancy_exact_rate": 1.0,
+          "character_location_accuracy": 1.0,
           "mood_exact_accuracy": 1.0,
           "mood_soft_accuracy": 1.0,
           "mood_delta_f1": 1.0,
@@ -51,6 +54,7 @@
           "edge_delta_recall": 1.0,
           "edge_delta_f1": 1.0,
           "edge_register_accuracy": 1.0,
+          "voice_register_accuracy": 1.0,
           "causal_link_accuracy": 0.75
         },
         "schema_and_id_hygiene": {
@@ -77,6 +81,7 @@
             "step": 1,
             "room_occupancy_jaccard": 1.0,
             "room_occupancy_exact": true,
+            "character_location_accuracy": 1.0,
             "mood_exact_rate": 1.0,
             "mood_soft_rate": 1.0,
             "location_delta": {
@@ -93,6 +98,10 @@
               "tp": 0,
               "fp": 0,
               "fn": 0
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 4,
@@ -131,6 +140,7 @@
             "step": 2,
             "room_occupancy_jaccard": 1.0,
             "room_occupancy_exact": true,
+            "character_location_accuracy": 1.0,
             "mood_exact_rate": 1.0,
             "mood_soft_rate": 1.0,
             "location_delta": {
@@ -147,6 +157,10 @@
               "tp": 1,
               "fp": 0,
               "fn": 0
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 3,
@@ -185,6 +199,7 @@
             "step": 3,
             "room_occupancy_jaccard": 1.0,
             "room_occupancy_exact": true,
+            "character_location_accuracy": 1.0,
             "mood_exact_rate": 1.0,
             "mood_soft_rate": 1.0,
             "location_delta": {
@@ -201,6 +216,10 @@
               "tp": 1,
               "fp": 0,
               "fn": 0
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 3,
@@ -239,6 +258,7 @@
             "step": 4,
             "room_occupancy_jaccard": 1.0,
             "room_occupancy_exact": true,
+            "character_location_accuracy": 1.0,
             "mood_exact_rate": 1.0,
             "mood_soft_rate": 1.0,
             "location_delta": {
@@ -255,6 +275,10 @@
               "tp": 0,
               "fp": 0,
               "fn": 0
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 2,
@@ -293,6 +317,7 @@
             "step": 5,
             "room_occupancy_jaccard": 1.0,
             "room_occupancy_exact": true,
+            "character_location_accuracy": 1.0,
             "mood_exact_rate": 1.0,
             "mood_soft_rate": 1.0,
             "location_delta": {
@@ -309,6 +334,10 @@
               "tp": 1,
               "fp": 0,
               "fn": 0
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 2,
@@ -347,6 +376,7 @@
             "step": 6,
             "room_occupancy_jaccard": 1.0,
             "room_occupancy_exact": true,
+            "character_location_accuracy": 1.0,
             "mood_exact_rate": 1.0,
             "mood_soft_rate": 1.0,
             "location_delta": {
@@ -363,6 +393,10 @@
               "tp": 1,
               "fp": 0,
               "fn": 0
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 0,
@@ -432,6 +466,7 @@
       "step_delta_pass_rate": 0.75,
       "cumulative_state_pass_rate": 0.8571,
       "overall_quality_score": 0.8777,
+      "trial_stats": {},
       "metrics": {
         "model_id": "deepseek-flash",
         "guidance_mode": "none",
@@ -462,6 +497,7 @@
           "location_delta_f1": 1.0,
           "room_occupancy_jaccard": 1.0,
           "room_occupancy_exact_rate": 1.0,
+          "character_location_accuracy": 1.0,
           "mood_exact_accuracy": 0.75,
           "mood_soft_accuracy": 0.75,
           "mood_delta_f1": 0.7143,
@@ -472,6 +508,7 @@
           "edge_delta_recall": 1.0,
           "edge_delta_f1": 0.6667,
           "edge_register_accuracy": 1.0,
+          "voice_register_accuracy": 1.0,
           "causal_link_accuracy": 0.75
         },
         "schema_and_id_hygiene": {
@@ -498,6 +535,7 @@
             "step": 1,
             "room_occupancy_jaccard": 1.0,
             "room_occupancy_exact": true,
+            "character_location_accuracy": 1.0,
             "mood_exact_rate": 0.75,
             "mood_soft_rate": 0.75,
             "location_delta": {
@@ -514,6 +552,10 @@
               "tp": 0,
               "fp": 0,
               "fn": 0
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 4,
@@ -552,6 +594,7 @@
             "step": 2,
             "room_occupancy_jaccard": 1.0,
             "room_occupancy_exact": true,
+            "character_location_accuracy": 1.0,
             "mood_exact_rate": 1.0,
             "mood_soft_rate": 1.0,
             "location_delta": {
@@ -568,6 +611,10 @@
               "tp": 1,
               "fp": 0,
               "fn": 0
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 3,
@@ -606,6 +653,7 @@
             "step": 3,
             "room_occupancy_jaccard": 1.0,
             "room_occupancy_exact": true,
+            "character_location_accuracy": 1.0,
             "mood_exact_rate": 0.5,
             "mood_soft_rate": 0.5,
             "location_delta": {
@@ -622,6 +670,10 @@
               "tp": 1,
               "fp": 2,
               "fn": 0
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 3,
@@ -660,6 +712,7 @@
             "step": 4,
             "room_occupancy_jaccard": 1.0,
             "room_occupancy_exact": true,
+            "character_location_accuracy": 1.0,
             "mood_exact_rate": 0.5,
             "mood_soft_rate": 0.5,
             "location_delta": {
@@ -676,6 +729,10 @@
               "tp": 0,
               "fp": 0,
               "fn": 0
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 2,
@@ -714,6 +771,7 @@
             "step": 5,
             "room_occupancy_jaccard": 1.0,
             "room_occupancy_exact": true,
+            "character_location_accuracy": 1.0,
             "mood_exact_rate": 0.75,
             "mood_soft_rate": 0.75,
             "location_delta": {
@@ -730,6 +788,10 @@
               "tp": 1,
               "fp": 2,
               "fn": 0
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 2,
@@ -768,6 +830,7 @@
             "step": 6,
             "room_occupancy_jaccard": 1.0,
             "room_occupancy_exact": true,
+            "character_location_accuracy": 1.0,
             "mood_exact_rate": 1.0,
             "mood_soft_rate": 1.0,
             "location_delta": {
@@ -784,6 +847,10 @@
               "tp": 1,
               "fp": 0,
               "fn": 0
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 0,
@@ -853,6 +920,7 @@
       "step_delta_pass_rate": 0.75,
       "cumulative_state_pass_rate": 0.8571,
       "overall_quality_score": 0.7711,
+      "trial_stats": {},
       "metrics": {
         "model_id": "qwen/qwen3.8-27b",
         "guidance_mode": "none",
@@ -883,6 +951,7 @@
           "location_delta_f1": 0.9091,
           "room_occupancy_jaccard": 0.8565,
           "room_occupancy_exact_rate": 0.6667,
+          "character_location_accuracy": 0.8565,
           "mood_exact_accuracy": 0.9167,
           "mood_soft_accuracy": 0.9167,
           "mood_delta_f1": 0.9091,
@@ -893,6 +962,7 @@
           "edge_delta_recall": 0.75,
           "edge_delta_f1": 0.6667,
           "edge_register_accuracy": 0.6667,
+          "voice_register_accuracy": 0.6667,
           "causal_link_accuracy": 0.625
         },
         "schema_and_id_hygiene": {
@@ -919,6 +989,7 @@
             "step": 1,
             "room_occupancy_jaccard": 1.0,
             "room_occupancy_exact": true,
+            "character_location_accuracy": 1.0,
             "mood_exact_rate": 1.0,
             "mood_soft_rate": 1.0,
             "location_delta": {
@@ -935,6 +1006,10 @@
               "tp": 0,
               "fp": 0,
               "fn": 0
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 4,
@@ -973,6 +1048,7 @@
             "step": 2,
             "room_occupancy_jaccard": 1.0,
             "room_occupancy_exact": true,
+            "character_location_accuracy": 1.0,
             "mood_exact_rate": 1.0,
             "mood_soft_rate": 1.0,
             "location_delta": {
@@ -989,6 +1065,10 @@
               "tp": 1,
               "fp": 0,
               "fn": 0
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 3,
@@ -1027,6 +1107,7 @@
             "step": 3,
             "room_occupancy_jaccard": 1.0,
             "room_occupancy_exact": true,
+            "character_location_accuracy": 1.0,
             "mood_exact_rate": 0.75,
             "mood_soft_rate": 0.75,
             "location_delta": {
@@ -1043,6 +1124,10 @@
               "tp": 1,
               "fp": 0,
               "fn": 0
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 3,
@@ -1081,6 +1166,7 @@
             "step": 4,
             "room_occupancy_jaccard": 1.0,
             "room_occupancy_exact": true,
+            "character_location_accuracy": 1.0,
             "mood_exact_rate": 0.75,
             "mood_soft_rate": 0.75,
             "location_delta": {
@@ -1097,6 +1183,10 @@
               "tp": 0,
               "fp": 0,
               "fn": 0
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 2,
@@ -1135,6 +1225,7 @@
             "step": 5,
             "room_occupancy_jaccard": 0.5556,
             "room_occupancy_exact": false,
+            "character_location_accuracy": 0.5,
             "mood_exact_rate": 1.0,
             "mood_soft_rate": 1.0,
             "location_delta": {
@@ -1151,6 +1242,10 @@
               "tp": 0,
               "fp": 1,
               "fn": 1
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 2,
@@ -1189,6 +1284,7 @@
             "step": 6,
             "room_occupancy_jaccard": 0.5833,
             "room_occupancy_exact": false,
+            "character_location_accuracy": 0.5,
             "mood_exact_rate": 1.0,
             "mood_soft_rate": 1.0,
             "location_delta": {
@@ -1205,6 +1301,10 @@
               "tp": 1,
               "fp": 1,
               "fn": 0
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 0,
@@ -1274,6 +1374,7 @@
       "step_delta_pass_rate": 0.625,
       "cumulative_state_pass_rate": 0.8571,
       "overall_quality_score": 0.7154,
+      "trial_stats": {},
       "metrics": {
         "model_id": "qwen/qwen3.5-9b",
         "guidance_mode": "none",
@@ -1304,6 +1405,7 @@
           "location_delta_f1": 0.6667,
           "room_occupancy_jaccard": 0.8889,
           "room_occupancy_exact_rate": 0.8333,
+          "character_location_accuracy": 0.8889,
           "mood_exact_accuracy": 0.8333,
           "mood_soft_accuracy": 0.8333,
           "mood_delta_f1": 0.5714,
@@ -1314,6 +1416,7 @@
           "edge_delta_recall": 0.25,
           "edge_delta_f1": 0.2222,
           "edge_register_accuracy": 0.3333,
+          "voice_register_accuracy": 0.3333,
           "causal_link_accuracy": 0.0
         },
         "schema_and_id_hygiene": {
@@ -1340,6 +1443,7 @@
             "step": 1,
             "room_occupancy_jaccard": 1.0,
             "room_occupancy_exact": true,
+            "character_location_accuracy": 1.0,
             "mood_exact_rate": 1.0,
             "mood_soft_rate": 1.0,
             "location_delta": {
@@ -1356,6 +1460,10 @@
               "tp": 0,
               "fp": 1,
               "fn": 0
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 4,
@@ -1394,6 +1502,7 @@
             "step": 2,
             "room_occupancy_jaccard": 1.0,
             "room_occupancy_exact": true,
+            "character_location_accuracy": 1.0,
             "mood_exact_rate": 1.0,
             "mood_soft_rate": 1.0,
             "location_delta": {
@@ -1410,6 +1519,10 @@
               "tp": 1,
               "fp": 0,
               "fn": 0
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 1,
@@ -1448,6 +1561,7 @@
             "step": 3,
             "room_occupancy_jaccard": 1.0,
             "room_occupancy_exact": true,
+            "character_location_accuracy": 1.0,
             "mood_exact_rate": 1.0,
             "mood_soft_rate": 1.0,
             "location_delta": {
@@ -1464,6 +1578,10 @@
               "tp": 0,
               "fp": 1,
               "fn": 1
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 1,
@@ -1502,6 +1620,7 @@
             "step": 4,
             "room_occupancy_jaccard": 1.0,
             "room_occupancy_exact": true,
+            "character_location_accuracy": 1.0,
             "mood_exact_rate": 1.0,
             "mood_soft_rate": 1.0,
             "location_delta": {
@@ -1518,6 +1637,10 @@
               "tp": 0,
               "fp": 0,
               "fn": 0
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 1,
@@ -1556,6 +1679,7 @@
             "step": 5,
             "room_occupancy_jaccard": 1.0,
             "room_occupancy_exact": true,
+            "character_location_accuracy": 1.0,
             "mood_exact_rate": 0.5,
             "mood_soft_rate": 0.5,
             "location_delta": {
@@ -1572,6 +1696,10 @@
               "tp": 0,
               "fp": 1,
               "fn": 1
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 2,
@@ -1610,6 +1738,7 @@
             "step": 6,
             "room_occupancy_jaccard": 0.3333,
             "room_occupancy_exact": false,
+            "character_location_accuracy": 0.25,
             "mood_exact_rate": 0.5,
             "mood_soft_rate": 0.5,
             "location_delta": {
@@ -1626,6 +1755,10 @@
               "tp": 0,
               "fp": 1,
               "fn": 1
+            },
+            "voice_register": {
+              "matches": 0,
+              "total": 0
             },
             "witness": {
               "tp": 0,

@@ -73,8 +73,8 @@ class OfflineNgramEmbedder:
     """Zero-dependency offline character + word n-gram signed feature hashing embedder.
 
     Uses Weinberger signed feature hashing with deterministic CRC32 across words,
-    individual CJK units, and character 3-grams so unrelated tokens have zero expected
-    collision bias.
+    individual CJK units, adjacent CJK character bigrams, and character 3-grams
+    so unrelated tokens have zero expected collision bias.
     """
 
     def __init__(self, dim: int = 128) -> None:
@@ -92,6 +92,15 @@ class OfflineNgramEmbedder:
             sign = 1.0 if (h & 1) else -1.0
             idx = (h >> 1) % self.dim
             vec[idx] += sign * 1.0
+
+        # Adjacent CJK character bigrams (captures 2-character CJK compounds)
+        for i in range(len(clean) - 1):
+            c1, c2 = clean[i], clean[i + 1]
+            if _CJK_CHAR_RE.match(c1) and _CJK_CHAR_RE.match(c2):
+                h = zlib.crc32((c1 + c2).encode("utf-8"))
+                sign = 1.0 if (h & 1) else -1.0
+                idx = (h >> 1) % self.dim
+                vec[idx] += sign * 1.0
 
         # Character 3-grams
         for i in range(len(clean) - 2):
