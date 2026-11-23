@@ -343,8 +343,8 @@ class TimelineSession:
     def consolidate_episodes(self, step: int, **kwargs: Any) -> EpisodeRecord | None:
         return self.engine.consolidate_episodes(step, timeline_id=self.timeline_id, **kwargs)
 
-    def rollback_to(self, step: int) -> int:
-        return self.engine.rollback_to(step, timeline_id=self.timeline_id)
+    def rollback_to(self, step: int, *, force: bool = False) -> int:
+        return self.engine.rollback_to(step, timeline_id=self.timeline_id, force=force)
 
     def branch(
         self,
@@ -1531,9 +1531,15 @@ class CanonArcEngine:
 
     # --- Time-Travel Operations ---
 
-    def rollback_to(self, step: int, *, timeline_id: str | None = None) -> int:
+    def rollback_to(
+        self,
+        step: int,
+        *,
+        timeline_id: str | None = None,
+        force: bool = False,
+    ) -> int:
         tl = timeline_id or self.active_timeline
-        deleted = self.store.rollback_to(step, timeline_id=tl)
+        deleted = self.store.rollback_to(step, timeline_id=tl, force=force)
         for hook in self._hooks:
             hook.on_rollback(step, tl, deleted)
         return deleted

@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS graph_revisions (
     timeline_id  TEXT NOT NULL REFERENCES timelines(timeline_id),
     step         INTEGER NOT NULL,
     record_type  TEXT NOT NULL, -- 'entity' | 'edge' | 'alias'
-    subject_key  TEXT NOT NULL, -- 'char_arthur' | 'char_arthur:stance->char_merlin' | 'the old wizard'
+    subject_key  TEXT NOT NULL, -- 'char_arthur' | 'char_arthur:stance->char_merlin' | 'char_merlin:the old wizard'
     relation_type TEXT,         -- predicate for 'edge' (e.g. 'stance', 'kinship'); NULL for 'entity'/'alias'
     source_id    TEXT,          -- entity_id for 'entity'/'alias'; source_id for 'edge'
     target_id    TEXT,          -- target_id for 'edge'

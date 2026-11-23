@@ -282,4 +282,11 @@ def test_branch_isolation_rollback_guard_snapshot_and_state_key_deletion():
         assert len(snap_ctx.voice_exemplars) == 1
         assert snap_ctx.entities[0].valid_from_step == 2
         snap_engine.close()
+
+    # Passing force=True on TimelineSession and CanonArcEngine overrides the branch conflict guard
+    main_session = engine.session("main")
+    with pytest.raises(TimelineBranchConflictError):
+        main_session.rollback_to(1)
+    assert main_session.rollback_to(1, force=True) >= 1
+    assert engine.rollback_to(0, timeline_id="main", force=True) >= 0
     engine.close()
