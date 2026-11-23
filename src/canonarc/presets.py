@@ -171,10 +171,17 @@ class TranslationPreset:
     @staticmethod
     def _format_edge_line(edge: DirectedEdgeRecord) -> str:
         if edge.relation_type in ("stance", "facade") or ("register" in edge.state or "tone" in edge.state):
-            reg = edge.state.get("register", "")
-            tone = edge.state.get("tone", "")
+            parts: list[str] = []
+            if edge.state.get("register"):
+                parts.append(f"register={edge.state['register']}")
+            if edge.state.get("tone"):
+                parts.append(f"tone={edge.state['tone']}")
+            for k, v in edge.state.items():
+                if k not in ("register", "tone") and v not in (None, ""):
+                    parts.append(f"{k}='{v}'" if isinstance(v, str) else f"{k}={v}")
             tag = " [facade]" if edge.relation_type == "facade" else ""
-            return f"- {edge.source_id} → {edge.target_id}{tag}: register={reg}, tone={tone}"
+            detail = ", ".join(parts) if parts else "active"
+            return f"- {edge.source_id} → {edge.target_id}{tag}: {detail}"
         pairs = ", ".join(f"{k}='{v}'" if isinstance(v, str) else f"{k}={v}" for k, v in edge.state.items())
         return f"- {edge.source_id} → {edge.target_id} [{edge.relation_type}]: {pairs}"
 
@@ -232,8 +239,31 @@ class TranslationPreset:
 
     def extraction_instructions(self) -> str:
         return (
-            "Extract any shifts in character mood, grammatical register (formal/informal), "
-            "newly revealed character aliases, or key narrative episodes produced in this translated chunk."
+            "Analyze the literary prose chunk and emit a strict StepDelta JSON diff for localization consistency:\n"
+            "1. **Entities (`entities`) — Reuse Existing IDs & Delta Discipline**:\n"
+            "   - ALWAYS reuse existing canonical `entity_id`s from the known entities/aliases list. "
+            "NEVER invent a new entity for an epithet, title, or disguise that already aliases an existing character "
+            "(for example, if 'hooded courier' aliases `char_lyra`, emit updates on `char_lyra`, NOT a new `char_courier`).\n"
+            "   - Emit an `EntityDelta` ONLY when `mood`, `location_id`, or `add_aliases` changed in this chunk.\n"
+            "   - Set `state['mood']` to a concise lowercase word or short phrase (e.g., `'calm'`, `'furious'`, `'panicked'`, `'suspicious'`, `'grief'`).\n"
+            "   - When a disguised character unmasks to someone, emit `add_aliases` with `kind='disguise'` and updated `known_to`.\n"
+            "2. **Edges (`edges`) — Binding T–V Register & Tone on `relation_type='stance'`**:\n"
+            "   - Whenever a speaker's grammatical address register (e.g., formal `'Vi'` vs. informal `'ti'`) or interpersonal tone shifts "
+            "toward an addressee (such as an angry accusation, unmasking, or furious reprimand), emit "
+            "`EdgeDelta(source_id='<speaker_id>', target_id='<addressee_id>', relation_type='stance', "
+            "state={'register': '<Vi|ti|formal|informal>', 'tone': '<concise_tone>'}, caused_by_episode_id='<ep_id>')`.\n"
+            "   - ALWAYS use `relation_type='stance'` and ALWAYS include `'register'` and `'tone'` keys for interpersonal register shifts "
+            "(do not hide register shifts under ad-hoc relation types like `'accusation'` or omit `'register'`).\n"
+            "3. **Episodes (`episodes`) — Concise Plot Beats & Strict Witness Scoping**:\n"
+            "   - Emit 1–2 primary `EpisodeRecord`s for the major plot beats in the chunk.\n"
+            "   - Only include characters physically present in the room during the beat in `participants`/`witnesses` "
+            "(exclude anyone who already stepped outside, e.g., onto a balcony; include silent/disguised observers inside the room using their canonical `entity_id`).\n"
+            "4. **Flashbacks (`is_flashback=True`)**:\n"
+            "   - If the chunk depicts a memory or flashback to an earlier time (e.g., ten years ago), set `is_flashback=True` "
+            "and `story_time` on the `StepDelta` so present-day character moods and T–V registers are preserved.\n"
+            "5. **Epistemic Transitions (`inform` / `InformDelta`)**:\n"
+            "   - Do NOT emit `InformDelta` with `epistemic='direct'` (direct witnesses belong in `episode.witnesses`).\n"
+            "   - Use `epistemic='deceived'` (with `believed_summary`), `'told'`, or `'forgotten'` when characters lie about, reveal, or lose memory of an earlier episode."
         )
 
 
