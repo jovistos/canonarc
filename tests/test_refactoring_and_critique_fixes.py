@@ -203,6 +203,13 @@ def test_offline_embedder_cjk_tokenization_and_signed_hashing():
     assert sim_same > 0.99
     assert sim_diff < 0.25
 
+    # Adjacent CJK bigrams distinguish reversed 2-char compounds and respect boundaries
+    v_kingdom = emb.embed_text("王国")
+    v_king = emb.embed_text("国王")
+    v_spaced = emb.embed_text("王 国")
+    assert float(np.dot(v_kingdom, v_king)) < 0.85
+    assert not np.allclose(v_kingdom, v_spaced)
+
 
 def test_cte_same_step_branch_override_and_snapshot_revision_count(tmp_path):
     """Same-step branch overrides do not leak into prior_state or inflate revision_count,
