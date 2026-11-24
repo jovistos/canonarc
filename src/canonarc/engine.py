@@ -214,6 +214,7 @@ class TimelineSession:
         story_time: int | float | str | None = None,
         chapter_id: str | None = None,
         scene_id: str | None = None,
+        voice_constraints: dict[str, str] | None = None,
     ) -> StepContext:
         return self.engine.retrieve_context(
             step,
@@ -232,6 +233,7 @@ class TimelineSession:
             story_time=story_time,
             chapter_id=chapter_id,
             scene_id=scene_id,
+            voice_constraints=voice_constraints,
         )
 
     def step_transaction(
@@ -622,6 +624,7 @@ class CanonArcEngine:
         story_time: int | float | str | None = None,
         chapter_id: str | None = None,
         scene_id: str | None = None,
+        voice_constraints: dict[str, str] | None = None,
     ) -> StepContext:
         tl = timeline_id or self.active_timeline
         policy = self._policy
@@ -779,13 +782,13 @@ class CanonArcEngine:
                         pov_known_episode_ids = {
                             ep.episode_id
                             for ep, _ in fallback_lineage_episodes
-                            if pov_set.issubset(ep.known_by.keys())
+                            if all(ep.known_by.get(pid) in ("direct", "told") for pid in pov_set)
                         }
                     else:
                         pov_known_episode_ids = {
                             ep.episode_id
                             for ep, _ in fallback_lineage_episodes
-                            if pov_set & set(ep.known_by.keys())
+                            if any(ep.known_by.get(pid) in ("direct", "told") for pid in pov_set)
                         }
 
         projected_entities, projected_edges = self._project_pov_state(
@@ -837,6 +840,7 @@ class CanonArcEngine:
                     resolved_mentions=resolved_mentions,
                     text=text,
                     policy=policy,
+                    voice_constraints=voice_constraints,
                 )
 
                 candidates = self.store.get_lineage_voice_exemplars(tl, cutoff_step, real_speaker_id)
@@ -860,6 +864,11 @@ class CanonArcEngine:
                     policy=policy,
                     top_k=top_k_voice,
                 )
+                if is_masked_speaker:
+                    ranked = [
+                        ex.model_copy(update={"speaker_id": speaker.entity_id})
+                        for ex in ranked
+                    ]
                 voice_exemplars.extend(ranked)
 
         # 5. Tier 6 Episodic Memory retrieval
@@ -936,8 +945,12 @@ class CanonArcEngine:
         resolved_mentions: Sequence[ResolvedMention],
         text: str,
         policy: SchemaPolicy = DEFAULT_SCHEMA_POLICY,
+        voice_constraints: dict[str, str] | None = None,
     ) -> list[tuple[str | None, dict[str, str]]]:
         """Resolves ordered (addressee_id, constraints) dyadic voice targets for a speaker."""
+        extra_constraints = {
+            k: str(v) for k, v in (voice_constraints or {}).items() if str(v).strip()
+        }
         outgoing = [
             e
             for e in edges
@@ -945,7 +958,7 @@ class CanonArcEngine:
             and (not is_masked_speaker or e.relation_type == policy.facade_relation)
         ]
         if not outgoing:
-            return [(None, {})]
+            return [(None, dict(extra_constraints))]
 
         in_scene_edges = [
             e
@@ -985,6 +998,8 @@ class CanonArcEngine:
                     if e.state.get(ck):
                         merged_constraints[ck] = str(e.state[ck])
                 max_step = max(max_step, e.valid_from_step)
+            if extra_constraints:
+                merged_constraints.update(extra_constraints)
 
             sort_key = (mention_pos.get(target_id, 2_000_000), -max_step, target_id)
             resolved_targets.append((sort_key, target_id, merged_constraints))
@@ -1404,7 +1419,7 @@ class CanonArcEngine:
         active_entities = self.store.get_all_active_entities(tl, cutoff_step)
         active_aliases = self.store.get_all_active_aliases(tl, cutoff_step)
         speaker_entities = [
-            e for e in active_entities if e.kind not in ("location", "artifact", "term")
+            e for e in active_entities if e.kind not in ("location", "artifact", "item", "term")
         ]
         speaker_entity_ids = {e.entity_id for e in speaker_entities}
         speaker_aliases = [
@@ -1713,18 +1728,17 @@ class CanonArcEngine:
             norm_known_by = {_norm_id(k): v for k, v in ep.known_by.items()}
             norm_believed = {_norm_id(k): v for k, v in ep.believed_summaries.items()}
             norm_loc = _norm_id(ep.location_id) if ep.location_id else None
-            norm_episodes.append(
-                ep.model_copy(
-                    update={
-                        "episode_id": new_id,
-                        "participants": norm_participants,
-                        "witnesses": norm_witnesses,
-                        "known_by": norm_known_by,
-                        "believed_summaries": norm_believed,
-                        "location_id": norm_loc,
-                    }
-                )
-            )
+            ep_updates: dict[str, Any] = {
+                "episode_id": new_id,
+                "participants": norm_participants,
+                "witnesses": norm_witnesses,
+                "known_by": norm_known_by,
+                "believed_summaries": norm_believed,
+                "location_id": norm_loc,
+            }
+            if step is not None:
+                ep_updates["step"] = step
+            norm_episodes.append(ep.model_copy(update=ep_updates))
 
         def _norm_entity_state(state_dict: dict[str, Any]) -> dict[str, Any]:
             if not state_dict:

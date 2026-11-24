@@ -213,3 +213,91 @@ def test_voice_bank_register_fallback_note_and_disable():
         top_k=2,
     )
     assert strict_ranked == []
+
+
+def test_retrieve_context_voice_constraints_channel_filtering():
+    """Scene-level voice_constraints filter Tier 5 exemplars via SchemaPolicy hard_filter_keys."""
+    from canonarc import CanonArcEngine, EdgeDelta, EntityRecord, SchemaPolicy, SimulationPreset, StepDelta
+
+    policy = SchemaPolicy(
+        hard_filter_keys=("channel",),
+        soft_boost_weights={"stance": 0.20, "urgency": 0.15},
+        fallback_on_empty_hard_filter=True,
+    )
+    engine = CanonArcEngine(":memory:", preset=SimulationPreset(policy=policy))
+    engine.register_entity(EntityRecord(entity_id="agent_alice", canonical_name="Alice"), step=0)
+    engine.register_entity(EntityRecord(entity_id="agent_bob", canonical_name="Bob"), step=0)
+    engine.commit_step(
+        step=1,
+        delta=StepDelta(
+            edges=[
+                EdgeDelta(
+                    source_id="agent_alice",
+                    target_id="agent_bob",
+                    state={"affinity": 0.7, "stance": "cooperative"},
+                )
+            ]
+        ),
+        exemplars=[
+            VoiceExemplar(
+                step=1,
+                speaker_id="agent_alice",
+                text="Med-1 to all stations: storm barometer is dropping fast, secure your thermal seals now.",
+                metadata={"channel": "radio", "stance": "cooperative", "urgency": "high"},
+                quality_score=9.2,
+            ),
+            VoiceExemplar(
+                step=1,
+                speaker_id="agent_alice",
+                text="Sit down and let me check those frostbitten fingers before you head back.",
+                metadata={"channel": "face_to_face", "stance": "cooperative", "urgency": "low"},
+                quality_score=9.0,
+            ),
+        ],
+    )
+
+    radio_ctx = engine.retrieve_context(
+        step=2,
+        mentions=["Alice", "Bob"],
+        voice_constraints={"channel": "radio", "urgency": "high"},
+    )
+    assert len(radio_ctx.voice_exemplars) == 1
+    assert radio_ctx.voice_exemplars[0].metadata["channel"] == "radio"
+
+    f2f_ctx = engine.session("main").retrieve_context(
+        step=2,
+        mentions=["Alice", "Bob"],
+        voice_constraints={"channel": "face_to_face", "urgency": "low"},
+    )
+    assert len(f2f_ctx.voice_exemplars) == 1
+    assert f2f_ctx.voice_exemplars[0].metadata["channel"] == "face_to_face"
+
+    # Also works when speaker has no outgoing edges
+    engine.register_entity(EntityRecord(entity_id="agent_solo", canonical_name="Solo"), step=1)
+    engine.index_voice_exemplars(
+        step=2,
+        exemplars=[
+            VoiceExemplar(
+                step=2,
+                speaker_id="agent_solo",
+                text="Solo beacon online on emergency radio frequency alpha.",
+                metadata={"channel": "radio"},
+                quality_score=9.0,
+            ),
+            VoiceExemplar(
+                step=2,
+                speaker_id="agent_solo",
+                text="Keep your voice down inside the corridor.",
+                metadata={"channel": "face_to_face"},
+                quality_score=9.0,
+            ),
+        ],
+    )
+    solo_ctx = engine.retrieve_context(
+        step=3,
+        mentions=["Solo"],
+        voice_constraints={"channel": "radio"},
+    )
+    assert len(solo_ctx.voice_exemplars) == 1
+    assert solo_ctx.voice_exemplars[0].metadata["channel"] == "radio"
+    engine.close()
