@@ -214,6 +214,7 @@ class TimelineSession:
         story_time: int | float | str | None = None,
         chapter_id: str | None = None,
         scene_id: str | None = None,
+        voice_constraints: dict[str, str] | None = None,
     ) -> StepContext:
         return self.engine.retrieve_context(
             step,
@@ -232,6 +233,7 @@ class TimelineSession:
             story_time=story_time,
             chapter_id=chapter_id,
             scene_id=scene_id,
+            voice_constraints=voice_constraints,
         )
 
     def step_transaction(
@@ -622,6 +624,7 @@ class CanonArcEngine:
         story_time: int | float | str | None = None,
         chapter_id: str | None = None,
         scene_id: str | None = None,
+        voice_constraints: dict[str, str] | None = None,
     ) -> StepContext:
         tl = timeline_id or self.active_timeline
         policy = self._policy
@@ -837,6 +840,7 @@ class CanonArcEngine:
                     resolved_mentions=resolved_mentions,
                     text=text,
                     policy=policy,
+                    voice_constraints=voice_constraints,
                 )
 
                 candidates = self.store.get_lineage_voice_exemplars(tl, cutoff_step, real_speaker_id)
@@ -941,8 +945,12 @@ class CanonArcEngine:
         resolved_mentions: Sequence[ResolvedMention],
         text: str,
         policy: SchemaPolicy = DEFAULT_SCHEMA_POLICY,
+        voice_constraints: dict[str, str] | None = None,
     ) -> list[tuple[str | None, dict[str, str]]]:
         """Resolves ordered (addressee_id, constraints) dyadic voice targets for a speaker."""
+        extra_constraints = {
+            k: str(v) for k, v in (voice_constraints or {}).items() if str(v).strip()
+        }
         outgoing = [
             e
             for e in edges
@@ -950,7 +958,7 @@ class CanonArcEngine:
             and (not is_masked_speaker or e.relation_type == policy.facade_relation)
         ]
         if not outgoing:
-            return [(None, {})]
+            return [(None, dict(extra_constraints))]
 
         in_scene_edges = [
             e
@@ -990,6 +998,8 @@ class CanonArcEngine:
                     if e.state.get(ck):
                         merged_constraints[ck] = str(e.state[ck])
                 max_step = max(max_step, e.valid_from_step)
+            if extra_constraints:
+                merged_constraints.update(extra_constraints)
 
             sort_key = (mention_pos.get(target_id, 2_000_000), -max_step, target_id)
             resolved_targets.append((sort_key, target_id, merged_constraints))
