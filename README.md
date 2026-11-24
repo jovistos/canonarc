@@ -367,7 +367,7 @@ canonarc history story_save.sqlite char_arthur --timeline main
 Contributions, bug reports, and new domain presets or adapters are welcome! To set up a local development environment:
 
 ```bash
-git clone https://github.com/canonarc/canonarc.git
+git clone https://github.com/jovistos/canonarc.git
 cd canonarc
 pip install -e ".[dev]"
 

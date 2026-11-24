@@ -55,10 +55,10 @@ notebooks = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/canonarc/canonarc"
-Repository = "https://github.com/canonarc/canonarc"
-Documentation = "https://github.com/canonarc/canonarc/tree/main/docs"
-Issues = "https://github.com/canonarc/canonarc/issues"
+Homepage = "https://github.com/jovistos/canonarc"
+Repository = "https://github.com/jovistos/canonarc"
+Documentation = "https://github.com/jovistos/canonarc/tree/main/docs"
+Issues = "https://github.com/jovistos/canonarc/issues"
 
 [project.scripts]
 canonarc = "canonarc.cli:main"
