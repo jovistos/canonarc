@@ -114,13 +114,23 @@ class DefaultEpisodeRanker:
             # Resolve POV-projected summary before semantic scoring so deceived observers
             # match against their believed_summary rather than the hidden ground truth.
             effective_summary = ep.summary
+            is_deceived_view = False
             if pov_set:
                 matched_povs = sorted(pid for pid in pov_set if pid in ep.known_by)
                 if matched_povs and all(
                     ep.known_by[pid] == "deceived" and pid in ep.believed_summaries
                     for pid in matched_povs
                 ):
+                    believed_vals = {ep.believed_summaries[pid] for pid in matched_povs}
+                    if pov_mode == "all" and len(believed_vals) > 1:
+                        continue
                     effective_summary = ep.believed_summaries[matched_povs[0]]
+                    is_deceived_view = True
+                elif pov_mode == "all" and any(
+                    ep.known_by[pid] == "deceived" for pid in matched_povs
+                ):
+                    # Mixed deceived + direct/told POVs do not share ground-truth common ground
+                    continue
 
             # 2. Causal provenance pin
             provenance_bonus = (
@@ -173,6 +183,8 @@ class DefaultEpisodeRanker:
             )
             ep_copy = ep.model_copy()
             ep_copy.summary = effective_summary
+            if is_deceived_view:
+                ep_copy.location_id = None
             ep_copy.match_score = round(total_score, 4)
             scored.append((total_score, ep.step, ep_copy))
 

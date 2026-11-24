@@ -336,3 +336,153 @@ def test_facade_vs_private_stance_voice_selection_and_irony_prompt():
     # TranslationPreset also preserves epistemic boundaries
     trans_prompt = TranslationPreset().format_prompt_context(ctx_omni)
     assert "ignorant: char_percival" in trans_prompt
+
+
+def test_deceived_provenance_redaction_and_multipov_all_isolation():
+    """Tests that deceived observers do not see ground-truth causal reasons or location_id,
+    and that pov_mode='all' with mixed deceived + direct POVs leaks neither summary nor reason."""
+    engine = CanonArcEngine(":memory:")
+    for eid, name in [
+        ("char_clara", "Clara"),
+        ("char_mira", "Mira"),
+        ("char_vance", "Lord Vance"),
+        ("loc_vault", "Royal Vault"),
+    ]:
+        kind = "location" if eid.startswith("loc_") else "character"
+        engine.register_entity(EntityRecord(entity_id=eid, kind=kind, canonical_name=name), step=0)
+
+    engine.commit_step(
+        step=10,
+        delta=StepDelta(
+            episodes=[
+                EpisodeRecord(
+                    episode_id="ep_vault_theft",
+                    predicate="theft",
+                    summary="Lord Vance picked the vault lock while Mira kept watch.",
+                    participants={"char_vance": "thief", "char_mira": "lookout"},
+                    witnesses=["char_vance", "char_mira"],
+                    location_id="loc_vault",
+                    salience=9.5,
+                )
+            ],
+            entities=[
+                EntityDelta(
+                    entity_id="char_mira",
+                    state={"mood": "tense"},
+                    caused_by_episode_id="ep_vault_theft",
+                    reason="Kept watch while Vance picked the vault lock",
+                )
+            ],
+        ),
+    )
+    engine.inform_entity(
+        step=12,
+        episode_id="ep_vault_theft",
+        entity_id="char_clara",
+        epistemic="deceived",
+        believed_summary="The archivist misplaced the cipher in the library.",
+    )
+
+    # Single deceived POV: sees believed_summary, location_id cleared, and Mira's ground-truth reason redacted
+    ctx_clara = engine.retrieve_context(
+        step=15,
+        text="Clara spoke with Mira about the misplaced cipher.",
+        mentions=["Clara", "Mira"],
+        pov_entity_ids=["char_clara"],
+    )
+    mira_clara = next(e for e in ctx_clara.entities if e.entity_id == "char_mira")
+    assert mira_clara.reason is None
+    assert mira_clara.caused_by_episode_id is None
+    assert len(ctx_clara.episodes) == 1
+    assert ctx_clara.episodes[0].summary == "The archivist misplaced the cipher in the library."
+    assert ctx_clara.episodes[0].location_id is None
+
+    # Multi-POV 'all' (Clara deceived + Mira direct): neither ground-truth summary nor reason may leak
+    ctx_all = engine.retrieve_context(
+        step=15,
+        text="Clara and Mira spoke in the ballroom.",
+        mentions=["Clara", "Mira"],
+        pov_entity_ids=["char_clara", "char_mira"],
+        pov_mode="all",
+    )
+    mira_all = next(e for e in ctx_all.entities if e.entity_id == "char_mira")
+    assert mira_all.reason is None
+    assert mira_all.caused_by_episode_id is None
+    assert ctx_all.episodes == []
+    fmt_all = engine.format_context(ctx_all)
+    assert "picked the vault lock" not in fmt_all
+    assert "Lord Vance" not in fmt_all
+
+
+def test_masked_speaker_voice_exemplar_speaker_id_and_status_rendering():
+    """Tests that masked speakers have masked:<id> on returned VoiceExemplars and
+    InteractiveFictionPreset renders status differences under belief_state."""
+    engine = CanonArcEngine(":memory:")
+    engine.register_entity(EntityRecord(entity_id="char_clara", canonical_name="Clara"), step=0)
+    engine.register_entity(
+        EntityRecord(
+            entity_id="char_vance",
+            canonical_name="Lord Vance",
+            state={"mood": "poised", "disguise": "The Velvet Courier"},
+        ),
+        aliases=[
+            AliasRecord(
+                alias="The Velvet Courier",
+                entity_id="char_vance",
+                kind="disguise",
+                known_to=["char_vance"],
+                persona_name="The Velvet Courier",
+            )
+        ],
+        step=0,
+    )
+    engine.register_entity(
+        EntityRecord(
+            entity_id="char_henrik",
+            canonical_name="Archivist Henrik",
+            state={"mood": "focused", "status": "incapacitated"},
+        ),
+        step=0,
+    )
+    engine.commit_step(
+        step=5,
+        delta=StepDelta(
+            edges=[
+                EdgeDelta(
+                    source_id="char_clara",
+                    target_id="char_henrik",
+                    relation_type="belief_state",
+                    state={"status": "alive"},
+                )
+            ]
+        ),
+        exemplars=[
+            VoiceExemplar(
+                step=5,
+                speaker_id="char_vance",
+                addressee_id="char_clara",
+                text="A masquerade thrives on mystery, Detective.",
+                metadata={"persona": "The Velvet Courier", "register": "formal", "tone": "charming"},
+                quality_score=9.5,
+            )
+        ],
+    )
+
+    ctx_clara = engine.retrieve_context(
+        step=10,
+        text="Clara greeted The Velvet Courier and asked about Archivist Henrik.",
+        pov_entity_ids=["char_clara"],
+        top_k_voice=1,
+    )
+    assert len(ctx_clara.voice_exemplars) == 1
+    assert ctx_clara.voice_exemplars[0].speaker_id == "masked:char_vance"
+    fmt_clara = engine.format_context(ctx_clara)
+    assert "char_vance" not in fmt_clara.replace("masked:char_vance", "")
+    assert "status: alive" in fmt_clara
+
+    ctx_gm = engine.retrieve_context(
+        step=10,
+        text="Clara greeted The Velvet Courier and asked about Archivist Henrik.",
+        pov_entity_ids=None,
+    )
+    assert "status: incapacitated" in engine.format_context(ctx_gm)

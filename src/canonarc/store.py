@@ -1371,13 +1371,13 @@ class CausalStore:
             params["pov_count"] = len(pov_list)
             outer_select = (
                 "SELECT episode_id FROM latest_epistemics "
-                "WHERE ep_rn = 1 AND epistemic NOT IN ('forgotten', 'suppressed') "
+                "WHERE ep_rn = 1 AND epistemic NOT IN ('forgotten', 'suppressed', 'deceived') "
                 "GROUP BY episode_id HAVING COUNT(DISTINCT entity_id) = :pov_count"
             )
         else:
             outer_select = (
                 "SELECT DISTINCT episode_id FROM latest_epistemics "
-                "WHERE ep_rn = 1 AND epistemic NOT IN ('forgotten', 'suppressed')"
+                "WHERE ep_rn = 1 AND epistemic NOT IN ('forgotten', 'suppressed', 'deceived')"
             )
 
         query = (
