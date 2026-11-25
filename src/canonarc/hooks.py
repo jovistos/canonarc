@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Literal, Protocol, Sequence
+from collections.abc import Sequence
+from typing import Any, Literal, Protocol
 
 from .models import EpisodeRecord, StepDelta, TimelineInfo, VoiceExemplar
 

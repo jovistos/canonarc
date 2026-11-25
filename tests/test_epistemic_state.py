@@ -1,10 +1,10 @@
 from canonarc import (
     AliasRecord,
+    CanonArcEngine,
     EdgeDelta,
     EntityDelta,
     EntityRecord,
     EpisodeRecord,
-    CanonArcEngine,
     StepDelta,
     TranslationPreset,
     VoiceExemplar,

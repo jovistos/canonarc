@@ -6,11 +6,11 @@ import pytest
 
 from canonarc import (
     AliasRecord,
+    CanonArcEngine,
     EdgeDelta,
     EntityDelta,
     EntityRecord,
     EpisodeRecord,
-    CanonArcEngine,
     StepDelta,
     VoiceExemplar,
 )
@@ -22,12 +22,11 @@ def test_sqlite_pragmas_and_foreign_keys():
     store = CausalStore(":memory:")
     fk_on = store.conn.execute("PRAGMA foreign_keys;").fetchone()[0]
     assert fk_on == 1
-    with pytest.raises(sqlite3.IntegrityError):
-        with store.conn:
-            store.conn.execute(
-                "INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, is_tombstone, payload) "
-                "VALUES ('nonexistent_tl', 1, 'entity', 'e1', 0, '{}')"
-            )
+    with pytest.raises(sqlite3.IntegrityError), store.conn:
+        store.conn.execute(
+            "INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, is_tombstone, payload) "
+            "VALUES ('nonexistent_tl', 1, 'entity', 'e1', 0, '{}')"
+        )
     store.close()
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -215,9 +214,8 @@ def test_step_transaction_preserves_data_on_exception_and_guards_branches():
         delta=StepDelta(entities=[EntityDelta(entity_id="char_a", state={"hp": 5})]),
     )
 
-    with pytest.raises(RuntimeError, match="LLM timeout"):
-        with engine.step_transaction(step=5, rerun_clean=True):
-            raise RuntimeError("LLM timeout")
+    with pytest.raises(RuntimeError, match="LLM timeout"), engine.step_transaction(step=5, rerun_clean=True):
+        raise RuntimeError("LLM timeout")
 
     # Step 5 data must still be intact!
     alice = engine.store.get_active_entity("char_a", timeline_id="main", cutoff_step=5)
@@ -226,9 +224,8 @@ def test_step_transaction_preserves_data_on_exception_and_guards_branches():
 
     # Child branch guard still triggers on __enter__
     engine.branch(at_step=5, name="child")
-    with pytest.raises(TimelineBranchConflictError):
-        with engine.step_transaction(step=5, rerun_clean=True):
-            pass
+    with pytest.raises(TimelineBranchConflictError), engine.step_transaction(step=5, rerun_clean=True):
+        pass
     engine.close()
 
 
@@ -389,9 +386,11 @@ def test_step_transaction_atomic_rollback_on_commit_failure(monkeypatch):
 
     monkeypatch.setattr(engine, "commit_step", _boom)
 
-    with pytest.raises(RuntimeError, match="Simulated DB write failure"):
-        with engine.step_transaction(step=5, rerun_clean=True) as tx:
-            tx.commit(delta=StepDelta(entities=[EntityDelta(entity_id="char_a", state={"hp": 99})]))
+    with (
+        pytest.raises(RuntimeError, match="Simulated DB write failure"),
+        engine.step_transaction(step=5, rerun_clean=True) as tx,
+    ):
+        tx.commit(delta=StepDelta(entities=[EntityDelta(entity_id="char_a", state={"hp": 99})]))
 
     alice = engine.store.get_active_entity("char_a", timeline_id="main", cutoff_step=5)
     assert alice is not None

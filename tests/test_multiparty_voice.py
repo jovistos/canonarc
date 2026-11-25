@@ -1,7 +1,7 @@
 from canonarc import (
+    CanonArcEngine,
     EdgeDelta,
     EntityRecord,
-    CanonArcEngine,
     StepDelta,
     VoiceExemplar,
 )

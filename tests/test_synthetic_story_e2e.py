@@ -1,17 +1,10 @@
 from __future__ import annotations
 
-from pathlib import Path
 import os
-import pytest
+from pathlib import Path
+from typing import Self
 
-from canonarc import (
-    CachedDeltaExtractor,
-    OpenAICompatibleExtractor,
-    StepDelta,
-    TokenUsage,
-    load_dotenv,
-    resolve_lmstudio_model,
-)
+import pytest
 from synthetic_story_harness import (
     BlueprintOracleExtractor,
     DeterministicStoryCompiler,
@@ -28,6 +21,15 @@ from synthetic_story_library import (
     StoryLibraryManager,
     moods_soft_match,
     validate_story_prose_contract,
+)
+
+from canonarc import (
+    CachedDeltaExtractor,
+    OpenAICompatibleExtractor,
+    StepDelta,
+    TokenUsage,
+    load_dotenv,
+    resolve_lmstudio_model,
 )
 
 
@@ -443,7 +445,6 @@ def test_lmstudio_default_model_discovery_and_extractor(monkeypatch: pytest.Monk
     """Verifies OpenAICompatibleExtractor.from_lmstudio() auto-selects the currently loaded model
     from LM Studio (/api/v0/models state=='loaded') without requiring a model argument.
     """
-    import io
     import json
     import urllib.request
 
@@ -473,13 +474,13 @@ def test_lmstudio_default_model_discovery_and_extractor(monkeypatch: pytest.Monk
         def read(self) -> bytes:
             return self._bytes
 
-        def __enter__(self) -> _FakeResp:
+        def __enter__(self) -> Self:
             return self
 
         def __exit__(self, *args: object) -> None:
             pass
 
-    def _fake_urlopen(req: urllib.request.Request, timeout: float = 5.0) -> _FakeResp:  # noqa: ARG001
+    def _fake_urlopen(req: urllib.request.Request, timeout: float = 5.0) -> _FakeResp:
         if req.full_url.endswith("/api/v0/models"):
             return _FakeResp(fake_v0_models)
         if req.full_url.endswith("/chat/completions"):

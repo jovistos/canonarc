@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Callable, Literal, Sequence
+from typing import Any, Literal
 
 from canonarc import (
     AliasRecord,
+    CanonArcEngine,
     DialogueCandidate,
     EdgeDelta,
     EntityDelta,
@@ -14,7 +16,6 @@ from canonarc import (
     EpisodeRecord,
     InformDelta,
     InteractiveFictionPreset,
-    CanonArcEngine,
     StepDelta,
     VoiceExemplar,
 )
@@ -24,7 +25,6 @@ from canonarc.extractors import (
     OpenAICompatibleExtractor,
     _strip_json_fences,
 )
-
 
 # ============================================================================
 # 1. Starting Synthetic Parameters (Ground-Truth Seed Specification)
@@ -1160,7 +1160,7 @@ class LLMStoryClosedLoopHarness:
             "Return JSON with key 'chunks', where each item has 'step', 'location_id', and 'text'."
         )
 
-    def _default_simulated_llm_writer(self, prompt: str) -> str:  # noqa: ARG002
+    def _default_simulated_llm_writer(self, prompt: str) -> str:
         """Simulates an LLM story writer returning Markdown-fenced JSON chunks."""
         compiled = self.compiler.compile_chunks()
         payload = {
@@ -1179,7 +1179,7 @@ class LLMStoryClosedLoopHarness:
         }
         return f"```json\n{json.dumps(payload, indent=2)}\n```"
 
-    def _default_simulated_llm_extractor(self, prompt: str, schema: dict[str, Any]) -> str:  # noqa: ARG002
+    def _default_simulated_llm_extractor(self, prompt: str, schema: dict[str, Any]) -> str:
         """Simulates a realistic LLM JSON extractor:
         - Uses canonical names ("Elena", "Marcus", "Julian") instead of internal IDs to test normalize_delta()
         - Wraps output in ```json ... ``` code fences to test fence stripping

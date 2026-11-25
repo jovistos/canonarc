@@ -11,10 +11,10 @@ from .embedders import (
     get_embedder_info,
 )
 from .engine import (
+    CanonArcEngine,
     DefaultLexicalResolver,
     DeltaExtractor,
     MentionResolver,
-    CanonArcEngine,
     StepTransaction,
     TimelineSession,
 )
@@ -25,9 +25,9 @@ from .episodic import (
     EpisodicScoringPolicy,
 )
 from .extractors import (
+    MODEL_PRICING_PER_1M_USD,
     CachedDeltaExtractor,
     CallableExtractor,
-    MODEL_PRICING_PER_1M_USD,
     OpenAICompatibleExtractor,
     TokenUsage,
     get_model_pricing_per_1m_usd,
@@ -63,14 +63,16 @@ from .store import CausalStore, MemoryStore, TimelineBranchConflictError
 from .voice import IngestionGate, VoiceBank
 
 __all__ = [
+    "DEFAULT_EPISODIC_POLICY",
+    "DEFAULT_SCHEMA_POLICY",
+    "MODEL_PRICING_PER_1M_USD",
     "AliasRecord",
     "BaseEngineHooks",
     "CachedDeltaExtractor",
     "CallableEmbedder",
     "CallableExtractor",
+    "CanonArcEngine",
     "CausalStore",
-    "DEFAULT_EPISODIC_POLICY",
-    "DEFAULT_SCHEMA_POLICY",
     "DefaultEpisodeRanker",
     "DefaultLexicalResolver",
     "DeltaExtractor",
@@ -90,10 +92,8 @@ __all__ = [
     "InformDelta",
     "IngestionGate",
     "InteractiveFictionPreset",
-    "MODEL_PRICING_PER_1M_USD",
     "MemoryStore",
     "MentionResolver",
-    "CanonArcEngine",
     "OfflineNgramEmbedder",
     "OllamaEmbedder",
     "OpenAICompatibleEmbedder",

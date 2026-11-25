@@ -5,28 +5,11 @@ import hashlib
 import json
 import os
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Literal, Sequence
+from typing import Any, ClassVar, Literal
 
-from canonarc import (
-    AliasRecord,
-    CachedDeltaExtractor,
-    DialogueCandidate,
-    EdgeDelta,
-    EntityDelta,
-    EntityRecord,
-    EpisodeRecord,
-    InformDelta,
-    InteractiveFictionPreset,
-    CanonArcEngine,
-    OpenAICompatibleExtractor,
-    StepDelta,
-    TokenUsage,
-    VoiceExemplar,
-    load_dotenv,
-)
-from canonarc.extractors import _strip_json_fences
 from synthetic_story_harness import (
     ArtifactSeed,
     CharacterSeed,
@@ -36,6 +19,25 @@ from synthetic_story_harness import (
     SyntheticChunkSpec,
     SynthStoryParams,
 )
+
+from canonarc import (
+    AliasRecord,
+    CachedDeltaExtractor,
+    CanonArcEngine,
+    DialogueCandidate,
+    EdgeDelta,
+    EntityDelta,
+    EntityRecord,
+    EpisodeRecord,
+    InformDelta,
+    InteractiveFictionPreset,
+    OpenAICompatibleExtractor,
+    StepDelta,
+    TokenUsage,
+    VoiceExemplar,
+    load_dotenv,
+)
+from canonarc.extractors import _strip_json_fences
 
 DEFAULT_STORIES_ROOT = Path(__file__).resolve().parent / "synthetic_stories"
 
@@ -198,7 +200,7 @@ def estimate_text_tokens(text: str) -> int:
     """Estimates BPE token count for prose + punctuation (~1.33 tokens per word + punctuation)."""
     words = re.findall(r"\w+", text)
     punct = re.findall(r"[^\w\s]", text)
-    return int(round(len(words) * 1.28 + len(punct) * 0.45))
+    return round(len(words) * 1.28 + len(punct) * 0.45)
 
 
 @dataclass
@@ -395,7 +397,7 @@ class StepExtractionMetrics:
             step=int(data.get("step", 0)),
             room_occupancy_jaccard=float(data.get("room_occupancy_jaccard", 1.0)),
             room_occupancy_exact=bool(data.get("room_occupancy_exact", True)),
-            character_location_matches=int(round(char_loc_acc * tot_chars)),
+            character_location_matches=round(char_loc_acc * tot_chars),
             character_location_total=tot_chars,
             mood_exact_matches=exact_m,
             mood_soft_matches=soft_m,
@@ -1469,7 +1471,6 @@ def _build_veritas_locked_room_3k_blueprint() -> LongStoryBlueprint:
     ep_unmask = "ep_step5_disguise_unmasked"
 
     q_open_1 = "Molim vas da pažljivo pregledate ove toksikološke nalaze pre nego što policija zapečati imanje."
-    q_open_2 = "Ponizno vam donosim otiske brava sa istočnog krila koji zahtevaju vašu hitnu inspekciju."
     q_confront = "Prestani sa tim bednim lažima, doktore, jer znam da si sinoć ukrao mesingani ključ iz kabineta!"
     q_handoff = "Take this cursed key and hide it deep inside the stone cellar before the constables arrive!"
     q_unmask = "Predaj mi sve lažne recepte odmah, Torne, ili ćeš do zore biti u okružnom zatvoru!"
@@ -3974,7 +3975,7 @@ class StoryLibraryManager:
                 title=blueprint.title,
                 genre=blueprint.genre,
                 model="deterministic_compiler",
-                created_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                created_at=datetime.datetime.now(datetime.UTC).isoformat(),
                 story_dir=subfolder,
                 params=blueprint.params,
                 chunks=compiled_chunks,
@@ -4049,7 +4050,7 @@ class StoryLibraryManager:
             title=blueprint.title,
             genre=blueprint.genre,
             model=active_client.model,
-            created_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            created_at=datetime.datetime.now(datetime.UTC).isoformat(),
             story_dir=subfolder,
             params=blueprint.params,
             chunks=compiled_chunks,
@@ -4089,7 +4090,7 @@ class StoryLibraryManager:
             title="The Obsidian Signet Conspiracy (10x40w Micro-Chunk Baseline)",
             genre="Deterministic Micro-Chunk Baseline",
             model="deterministic_compiler",
-            created_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            created_at=datetime.datetime.now(datetime.UTC).isoformat(),
             story_dir=subfolder,
             params=params,
             chunks=chunks,
@@ -4251,8 +4252,10 @@ class StoryLibraryManager:
             f"- **Created At**: `{story.created_at}`",
             f"- **Total Story Chunks**: `{len(story.chunks)}`",
             f"- **Total Story Words**: `{story.total_words:,}` words",
-            f"- **Total Story Prose Tokens (est.)**: `~{story.total_estimated_tokens:,}` tokens "
-            f"(avg `~{round(story.total_estimated_tokens / max(1, len(story.chunks)))}` tokens/chunk)",
+            (
+                f"- **Total Story Prose Tokens (est.)**: `~{story.total_estimated_tokens:,}` tokens "
+                f"(avg `~{round(story.total_estimated_tokens / max(1, len(story.chunks)))}` tokens/chunk)"
+            ),
             "",
             "---",
             "",
@@ -4314,8 +4317,10 @@ class StoryLibraryManager:
             md_lines.extend(
                 [
                     f"### Chunk {c.step}: {b_title}",
-                    f"*Scene: `{c.scene_id}` | Chapter: `{c.chapter_id}` | Location: `{c.location_id}` | "
-                    f"Time: `{c.story_time}` | Length: {wc} words (~{tc} tokens)*",
+                    (
+                        f"*Scene: `{c.scene_id}` | Chapter: `{c.chapter_id}` | Location: `{c.location_id}` | "
+                        f"Time: `{c.story_time}` | Length: {wc} words (~{tc} tokens)*"
+                    ),
                     "",
                     c.text,
                     "",
@@ -4363,8 +4368,10 @@ class StoryLibraryManager:
         readme = [
             "# Saved Synthetic Stories & Token Usage Catalog",
             "",
-            "Each subfolder contains a saved synthetic benchmark story (`story.json` + inspectable `story.md`), "
-            "its token usage & price estimate report (`usage_report.json`), and its content-addressed LLM extraction cache (`extractions/`).",
+            (
+                "Each subfolder contains a saved synthetic benchmark story (`story.json` + inspectable `story.md`), "
+                "its token usage & price estimate report (`usage_report.json`), and its content-addressed LLM extraction cache (`extractions/`)."
+            ),
             "",
             "| Story Subfolder | Title | Chunks | Story Words | Story Prose Tokens | Generation API Tokens | Extraction API Tokens | Total API Tokens | Est. Total Cost (USD) |",
             "| :--- | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
@@ -4548,7 +4555,7 @@ class StoryLibraryManager:
             )
 
         lines = [
-            "### Active World Registry (as of Step {} — Use Exact IDs Below):".format(cutoff_step),
+            f"### Active World Registry (as of Step {cutoff_step} — Use Exact IDs Below):",
             "**Registered Locations (`location_id` values)**:",
             *(locs or ["(none)"]),
             "**Registered Artifacts (`artifact_id` values)**:",
@@ -4748,7 +4755,7 @@ class StoryLibraryManager:
                         cumulative_state_checks_passed=cs_passed,
                         cumulative_state_checks_total=cs_total,
                     )
-            except Exception:  # noqa: BLE001
+            except Exception:  # noqa: BLE001, S110
                 pass
 
         engine = CanonArcEngine(":memory:", preset=preset)
@@ -5505,12 +5512,12 @@ class ExtractionBenchmarkScorer:
         exp_moves = {
             (ed.entity_id, str(ed.state["location_id"]))
             for ed in oracle.entities
-            if "location_id" in ed.state and ed.state["location_id"]
+            if ed.state.get("location_id")
         }
         act_moves = {
             (ed.entity_id, str(ed.state["location_id"]))
             for ed in committed_delta.entities
-            if "location_id" in ed.state and ed.state["location_id"]
+            if ed.state.get("location_id")
         }
         sm.location_delta_tp = len(exp_moves & act_moves)
         sm.location_delta_fn = len(exp_moves - act_moves)
@@ -5524,12 +5531,12 @@ class ExtractionBenchmarkScorer:
             exp_mood_changes = {
                 ed.entity_id: str(ed.state["mood"])
                 for ed in oracle.entities
-                if "mood" in ed.state and ed.state["mood"]
+                if ed.state.get("mood")
             }
             act_mood_changes = {
                 ed.entity_id: str(ed.state["mood"])
                 for ed in committed_delta.entities
-                if "mood" in ed.state and ed.state["mood"]
+                if ed.state.get("mood")
             }
             for cid, exp_m in exp_mood_changes.items():
                 allowed = chunk.acceptable_moods.get(cid)
@@ -5993,7 +6000,7 @@ class SimulatedModelTierExtractor:
         self.last_usage: TokenUsage = TokenUsage()
         self.total_usage: TokenUsage = TokenUsage()
 
-    def extract_delta(self, prompt: str, scene_text: str) -> StepDelta:  # noqa: ARG002
+    def extract_delta(self, prompt: str, scene_text: str) -> StepDelta:
         spec = self._by_text.get(scene_text.strip())
         if spec is None:
             return StepDelta()
@@ -6119,7 +6126,7 @@ class NoOpBaselineExtractor:
         self.last_usage: TokenUsage = TokenUsage()
         self.total_usage: TokenUsage = TokenUsage()
 
-    def extract_delta(self, prompt: str, scene_text: str) -> StepDelta:  # noqa: ARG002
+    def extract_delta(self, prompt: str, scene_text: str) -> StepDelta:
         usage = TokenUsage(api_calls=0, latency_ms=0.0)
         self.last_usage = usage
         self.total_usage.add(usage)
@@ -6150,7 +6157,7 @@ class RuleBasedNarrativeExtractor:
         "went to",
         "retreated",
     )
-    _MOOD_KEYWORDS: dict[str, tuple[str, ...]] = {
+    _MOOD_KEYWORDS: ClassVar[dict[str, tuple[str, ...]]] = {
         "furious": ("furious", "fury", "rage", "wrath"),
         "panicked": ("panicked", "panic", "trembling", "terrified", "frantic", "desperate"),
         "restless": ("restless", "irritated", "stifling", "uneasy"),
@@ -6190,7 +6197,7 @@ class RuleBasedNarrativeExtractor:
             if s.startswith("**Characters' Current Room"):
                 section = "char"
                 continue
-            if s.startswith("**Prior Plot Episodes") or s.startswith("**Complete Timeline Episode"):
+            if s.startswith(("**Prior Plot Episodes", "**Complete Timeline Episode")):
                 section = "ep"
                 continue
 
@@ -6377,20 +6384,22 @@ class RuleBasedNarrativeExtractor:
                         )
                         break
 
-        if not inform or predicate in ("confrontation", "item_transfer", "revelation", "flashback", "briefing"):
+        if (
+            not inform
+            or predicate in ("confrontation", "item_transfer", "revelation", "flashback", "briefing")
+        ) and not (len(inform) >= 2 and predicate == "scene_event"):
             # Only emit episode if not purely an inform-only climax
-            if not (len(inform) >= 2 and predicate == "scene_event"):
-                episodes.append(
-                    EpisodeRecord(
-                        episode_id=ep_id,
-                        predicate=predicate,
-                        summary=sentences[0][:160] if sentences else scene_text[:160],
-                        participants={cid: "participant" for cid in mentioned_chars[:2]},
-                        witnesses=mentioned_chars,
-                        story_time=story_time,
-                        salience=7.0,
-                    )
+            episodes.append(
+                EpisodeRecord(
+                    episode_id=ep_id,
+                    predicate=predicate,
+                    summary=sentences[0][:160] if sentences else scene_text[:160],
+                    participants={cid: "participant" for cid in mentioned_chars[:2]},
+                    witnesses=mentioned_chars,
+                    story_time=story_time,
+                    salience=7.0,
                 )
+            )
 
         entities = [
             EntityDelta(entity_id=cid, state=st, caused_by_episode_id=ep_id if episodes else None)

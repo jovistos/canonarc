@@ -4,7 +4,8 @@ import json
 import re
 import urllib.request
 import zlib
-from typing import Any, Callable, Protocol, Sequence
+from collections.abc import Callable, Sequence
+from typing import Any, Protocol
 
 import numpy as np
 

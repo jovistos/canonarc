@@ -3,10 +3,10 @@ from __future__ import annotations
 from canonarc import (
     AliasRecord,
     CallableExtractor,
+    CanonArcEngine,
     EdgeDelta,
     EntityDelta,
     EntityRecord,
-    CanonArcEngine,
     StepDelta,
 )
 
@@ -157,7 +157,7 @@ def test_build_extraction_prompt_and_step_transaction_fence_read_only_halo() -> 
 
         captured_prompts: list[str] = []
 
-        def _fake_llm(prompt: str, schema: dict) -> StepDelta:  # noqa: ARG001
+        def _fake_llm(prompt: str, schema: dict) -> StepDelta:
             captured_prompts.append(prompt)
             return StepDelta(
                 entities=[EntityDelta(entity_id="char_elena", state={"mood": "furious"})]

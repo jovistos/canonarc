@@ -1,5 +1,5 @@
-from canonarc.voice import IngestionGate, OfflineNgramEmbedder, VoiceBank
 from canonarc.models import VoiceExemplar
+from canonarc.voice import IngestionGate, OfflineNgramEmbedder, VoiceBank
 
 
 def test_anti_drift_gate():
@@ -132,7 +132,7 @@ def test_cjk_ingestion_gate_and_boilerplate_rejection():
 
 def test_dialogue_candidate_speaker_attribution_and_indexing():
     """extract_dialogue_candidates attributes speaker_id/addressee_id and bridges to index_voice_exemplars."""
-    from canonarc import EntityRecord, CanonArcEngine
+    from canonarc import CanonArcEngine, EntityRecord
 
     engine = CanonArcEngine(":memory:")
     engine.register_entity(EntityRecord(entity_id="char_merlin", canonical_name="Merlin"), step=0)
@@ -217,7 +217,14 @@ def test_voice_bank_register_fallback_note_and_disable():
 
 def test_retrieve_context_voice_constraints_channel_filtering():
     """Scene-level voice_constraints filter Tier 5 exemplars via SchemaPolicy hard_filter_keys."""
-    from canonarc import CanonArcEngine, EdgeDelta, EntityRecord, SchemaPolicy, SimulationPreset, StepDelta
+    from canonarc import (
+        CanonArcEngine,
+        EdgeDelta,
+        EntityRecord,
+        SchemaPolicy,
+        SimulationPreset,
+        StepDelta,
+    )
 
     policy = SchemaPolicy(
         hard_filter_keys=("channel",),

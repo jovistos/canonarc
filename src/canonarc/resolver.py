@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import re
-from typing import Literal, Protocol, Sequence
+from collections.abc import Sequence
+from typing import Literal, Protocol
 
 from rapidfuzz import fuzz, process
 
@@ -199,14 +200,14 @@ class DefaultLexicalResolver:
                         ]
                     if not sub_wins:
                         continue
-                    match = process.extractOne(
+                    fuzzy_match = process.extractOne(
                         phrase,
                         sub_wins,
                         scorer=fuzz.WRatio,
                         score_cutoff=self.fuzzy_threshold,
                     )
-                    if match is not None:
-                        best_window, score, _ = match
+                    if fuzzy_match is not None:
+                        best_window, score, _ = fuzzy_match
                         _add(
                             best_window,
                             ent_id,

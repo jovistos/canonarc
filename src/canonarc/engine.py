@@ -7,10 +7,10 @@ import json
 import re
 import uuid
 import warnings
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from contextlib import AbstractContextManager
 from pathlib import Path
-from typing import Any, Literal, Sequence
+from typing import Any, Literal, Self
 
 from .embedders import (
     Embedder,
@@ -35,7 +35,12 @@ from .models import (
     TimelineInfo,
     VoiceExemplar,
 )
-from .presets import DEFAULT_SCHEMA_POLICY, DomainPreset, InteractiveFictionPreset, SchemaPolicy
+from .presets import (
+    DEFAULT_SCHEMA_POLICY,
+    DomainPreset,
+    InteractiveFictionPreset,
+    SchemaPolicy,
+)
 from .resolver import DefaultLexicalResolver, MentionResolver
 from .store import CausalStore, MemoryStore, TimelineBranchConflictError
 from .voice import IngestionGate, VoiceBank
@@ -83,7 +88,7 @@ class StepTransaction:
         self._staged_episodes: list[EpisodeRecord] = []
         self._bypass_gate = False
 
-    def __enter__(self) -> StepTransaction:
+    def __enter__(self) -> Self:
         if self.rerun_clean:
             for tl in self.engine.list_timelines():
                 if (
@@ -161,7 +166,7 @@ class StepTransaction:
         self.commit(normalized, exemplars=exemplars, episodes=episodes, bypass_gate=bypass_gate)
         return normalized
 
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+    def __exit__(self, exc_type: object, exc_val: object, exc_tb: object) -> None:
         if exc_type is None:
             with self.engine._store_transaction():
                 if self.rerun_clean:
@@ -211,7 +216,7 @@ class TimelineSession:
         location_id: str | None = None,
         inclusive: bool = False,
         fallback_on_empty_mentions: Literal["all", "pov_only", "none"] = "pov_only",
-        story_time: int | float | str | None = None,
+        story_time: float | str | None = None,
         chapter_id: str | None = None,
         scene_id: str | None = None,
         voice_constraints: dict[str, str] | None = None,
@@ -502,7 +507,7 @@ class CanonArcEngine:
         if not callable(set_meta) or not callable(get_meta):
             self._embedder_verified = True
             return
-        dim = int(len(vectors[0]))
+        dim = len(vectors[0])
         if dim <= 0:
             return
         stored_id, stored_dim = get_meta()
@@ -535,7 +540,13 @@ class CanonArcEngine:
         upd_ep = getattr(self.store, "update_episode_embeddings", None)
         upd_vo = getattr(self.store, "update_voice_embeddings", None)
         set_meta = getattr(self.store, "set_embedding_metadata", None)
-        if not all(callable(fn) for fn in (list_ep, list_vo, upd_ep, upd_vo, set_meta)):
+        if not (
+            callable(list_ep)
+            and callable(list_vo)
+            and callable(upd_ep)
+            and callable(upd_vo)
+            and callable(set_meta)
+        ):
             raise NotImplementedError("Active store backend does not support reindex_embeddings().")
 
         ep_rows: list[tuple[str, str, str]] = list_ep()
@@ -548,7 +559,7 @@ class CanonArcEngine:
             chunk = ep_rows[i : i + step_size]
             vecs = embed_texts_batch(self.voice_bank.embedder, [r[2] for r in chunk])
             if vecs and detected_dim is None:
-                detected_dim = int(len(vecs[0]))
+                detected_dim = len(vecs[0])
             for (tl, eid, _), vec in zip(chunk, vecs):
                 ep_updates.append((tl, eid, vec.tobytes()))
 
@@ -557,7 +568,7 @@ class CanonArcEngine:
             chunk = vo_rows[i : i + step_size]
             vecs = embed_texts_batch(self.voice_bank.embedder, [r[2] for r in chunk])
             if vecs and detected_dim is None:
-                detected_dim = int(len(vecs[0]))
+                detected_dim = len(vecs[0])
             for (tl, xid, _), vec in zip(chunk, vecs):
                 vo_updates.append((tl, xid, vec.tobytes()))
 
@@ -565,7 +576,7 @@ class CanonArcEngine:
         final_dim = detected_dim or known_dim
         if final_dim is None:
             probe = self.voice_bank.embedder.embed_text("probe")
-            final_dim = int(len(probe))
+            final_dim = len(probe)
 
         with self._store_transaction():
             n_ep = upd_ep(ep_updates)
@@ -574,10 +585,10 @@ class CanonArcEngine:
         self._embedder_verified = True
         return {"episodes": n_ep, "voice_exemplars": n_vo}
 
-    def __enter__(self) -> CanonArcEngine:
+    def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+    def __exit__(self, exc_type: object, exc_val: object, exc_tb: object) -> None:
         self.close()
 
     # --- Tier 1 Seeding ---
@@ -621,7 +632,7 @@ class CanonArcEngine:
         inclusive: bool = False,
         timeline_id: str | None = None,
         fallback_on_empty_mentions: Literal["all", "pov_only", "none"] = "pov_only",
-        story_time: int | float | str | None = None,
+        story_time: float | str | None = None,
         chapter_id: str | None = None,
         scene_id: str | None = None,
         voice_constraints: dict[str, str] | None = None,
@@ -1099,17 +1110,18 @@ class CanonArcEngine:
                 and edge.relation_type in policy.edge_layer_order
                 and edge.relation_type != policy.facade_relation
                 and not is_self_edge
+                and (edge.source_id, edge.target_id) in facade_pairs
             ):
-                if (edge.source_id, edge.target_id) in facade_pairs:
-                    continue
+                continue
             edge_copy = edge.model_copy(deep=True)
-            if pov_set and not is_self_edge:
-                if (
-                    edge_copy.caused_by_episode_id
-                    and edge_copy.caused_by_episode_id not in pov_known_episode_ids
-                ):
-                    edge_copy.caused_by_episode_id = None
-                    edge_copy.reason = None
+            if (
+                pov_set
+                and not is_self_edge
+                and edge_copy.caused_by_episode_id
+                and edge_copy.caused_by_episode_id not in pov_known_episode_ids
+            ):
+                edge_copy.caused_by_episode_id = None
+                edge_copy.reason = None
             projected_edges.append(edge_copy)
 
         return projected_entities, projected_edges
@@ -1718,7 +1730,7 @@ class CanonArcEngine:
                 new_id = old_id
             else:
                 digest = hashlib.sha256(
-                    f"{tl}:{step if step is not None else 0}:{idx}:{ep.predicate}:{ep.summary}".encode("utf-8")
+                    f"{tl}:{step if step is not None else 0}:{idx}:{ep.predicate}:{ep.summary}".encode()
                 ).hexdigest()[:8]
                 new_id = f"ep_{step if step is not None else 0}_{digest}"
             if old_id:

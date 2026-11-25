@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Literal, Protocol, Sequence
+from typing import Literal, Protocol
 
 import numpy as np
 

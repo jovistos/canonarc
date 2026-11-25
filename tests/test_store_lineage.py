@@ -1,7 +1,8 @@
 import tempfile
 from pathlib import Path
+
+from canonarc.models import EdgeDelta, EntityDelta, EntityRecord, StepDelta
 from canonarc.store import CausalStore
-from canonarc.models import EntityRecord, StepDelta, EdgeDelta, EntityDelta
 
 
 def test_lineage_resolution_and_branching():

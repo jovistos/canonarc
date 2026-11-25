@@ -8,9 +8,10 @@ import re
 import time
 import urllib.error
 import urllib.request
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Protocol
+from typing import Any, Protocol
 
 from .models import StepDelta
 
@@ -335,7 +336,7 @@ def resolve_lmstudio_model(
     3. Returns `"local-model"` if the server is not reachable yet.
     """
     clean_base = base_url.rstrip("/")
-    host_root = clean_base[:-3] if clean_base.endswith("/v1") else clean_base
+    host_root = clean_base.removesuffix("/v1")
 
     # 1. Try LM Studio native /api/v0/models to detect which model has state == "loaded"
     try:
@@ -358,7 +359,7 @@ def resolve_lmstudio_model(
         ]
         if non_emb_v0:
             return non_emb_v0[0]
-    except Exception:  # noqa: BLE001
+    except Exception:  # noqa: BLE001, S110
         pass
 
     # 2. Fallback to standard OpenAI-compatible /v1/models
@@ -374,7 +375,7 @@ def resolve_lmstudio_model(
         ]
         if candidates:
             return candidates[0]
-    except Exception:  # noqa: BLE001
+    except Exception:  # noqa: BLE001, S110
         pass
 
     return "local-model"
@@ -602,7 +603,7 @@ class OpenAICompatibleExtractor:
                 err_text = ""
                 try:
                     err_text = exc.read().decode("utf-8", errors="replace")
-                except Exception:  # noqa: BLE001
+                except Exception:  # noqa: BLE001, S110
                     pass
                 # LM Studio rejects {"type": "json_object"}; automatically fallback without response_format
                 if exc.code == 400 and "response_format" in body_dict and "response_format" in err_text:
@@ -632,7 +633,7 @@ class OpenAICompatibleExtractor:
         content = str(choices[0].get("message", {}).get("content", ""))
         return content, usage
 
-    def _call_api(self, prompt: str, schema: dict[str, Any]) -> str:  # noqa: ARG002
+    def _call_api(self, prompt: str, schema: dict[str, Any]) -> str:
         content, _ = self.call_json_api(prompt)
         return content
 
@@ -715,7 +716,7 @@ class CachedDeltaExtractor:
                     }
                 )
                 return delta
-            except Exception:  # noqa: BLE001
+            except Exception:  # noqa: BLE001, S110
                 # If cache file is corrupted or schema-incompatible, fall through and re-extract
                 pass
 
@@ -767,7 +768,7 @@ class CachedDeltaExtractor:
         record = {
             "cache_key": cache_key,
             "model": self.model_id,
-            "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "created_at": datetime.datetime.now(datetime.UTC).isoformat(),
             "prompt_sha256": hashlib.sha256(prompt.strip().encode("utf-8")).hexdigest(),
             "scene_text_sha256": hashlib.sha256(scene_text.strip().encode("utf-8")).hexdigest(),
             "scene_text": scene_text,

@@ -3,7 +3,9 @@ from __future__ import annotations
 import math
 import re
 import uuid
-from typing import Any, Callable, Literal, Sequence
+from collections.abc import Callable, Sequence
+from itertools import pairwise
+from typing import Any, Literal
 
 import numpy as np
 
@@ -122,7 +124,7 @@ class IngestionGate:
                 unique_units = set(units)
                 root_ttr = len(unique_units) / math.sqrt(unit_count)
                 lexical_diversity = len(unique_units) / unit_count
-                bigrams = set(zip(units, units[1:]))
+                bigrams = set(pairwise(units))
                 bigram_diversity = len(bigrams) / max(1, unit_count - 1)
 
                 if is_cjk:
@@ -387,11 +389,11 @@ class VoiceBank:
 
 __all__ = [
     "DIALOGUE_PATTERNS",
+    "_CJK_CHAR_RE",
+    "_TOKEN_UNIT_RE",
     "Embedder",
     "IngestionGate",
     "OfflineNgramEmbedder",
     "VoiceBank",
-    "_CJK_CHAR_RE",
-    "_TOKEN_UNIT_RE",
     "_tokenize_units",
 ]

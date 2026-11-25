@@ -77,7 +77,7 @@ class InteractiveFictionPreset:
         return line
 
     def format_prompt_context(self, ctx: StepContext) -> str:
-        lines: list[str] = ["### Active Scene Narrative Context (Step: {})".format(ctx.step)]
+        lines: list[str] = [f"### Active Scene Narrative Context (Step: {ctx.step})"]
 
         if ctx.entities:
             lines.append("\n#### Characters Present & State:")

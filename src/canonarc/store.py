@@ -6,9 +6,9 @@ import re
 import sqlite3
 import threading
 import uuid
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import Any, Literal, Protocol, Sequence
+from typing import Any, Literal, Protocol, Self
 
 from .models import (
     AliasRecord,
@@ -449,10 +449,10 @@ class CausalStore:
         with self._lock:
             self.conn.close()
 
-    def __enter__(self) -> CausalStore:
+    def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+    def __exit__(self, exc_type: object, exc_val: object, exc_tb: object) -> None:
         self.close()
 
     # --- Embedding Provenance & Re-indexing ---
@@ -1685,9 +1685,8 @@ class CausalStore:
                 else:
                     if not (part_set & ep_entities):
                         continue
-            if known_set:
-                if not (known_set & set(ep.known_by.keys())):
-                    continue
+            if known_set and not (known_set & set(ep.known_by.keys())):
+                continue
             results.append(ep)
 
         results.sort(key=lambda e: e.step)

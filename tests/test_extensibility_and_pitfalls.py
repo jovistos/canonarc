@@ -5,13 +5,13 @@ import numpy as np
 import pytest
 
 from canonarc import (
+    CanonArcEngine,
     CausalStore,
     DefaultLexicalResolver,
     EdgeDelta,
     EntityDelta,
     EntityRecord,
     EpisodeRecord,
-    CanonArcEngine,
     OfflineNgramEmbedder,
     ResolvedMention,
     SchemaPolicy,

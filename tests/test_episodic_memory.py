@@ -2,12 +2,12 @@ import tempfile
 from pathlib import Path
 
 from canonarc import (
+    CanonArcEngine,
     EdgeDelta,
     EntityDelta,
     EntityRecord,
     EpisodeRecord,
     InformDelta,
-    CanonArcEngine,
     StepDelta,
 )
 
