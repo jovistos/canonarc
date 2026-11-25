@@ -154,13 +154,20 @@ class StepTransaction:
             raise ValueError("No DeltaExtractor provided to StepTransaction or CanonArcEngine.")
         effective_prev = self.prev_text if prev_text is None else prev_text
         effective_next = self.next_text if next_text is None else next_text
-        prompt = self.engine.build_extraction_prompt(
+        system_prompt, user_prompt = self.engine.build_extraction_messages(
             self.context,
             scene_text,
             prev_text=effective_prev,
             next_text=effective_next,
         )
-        raw_delta = active_extractor.extract_delta(prompt, scene_text)
+        extract_messages = getattr(active_extractor, "extract_delta_messages", None)
+        if callable(extract_messages):
+            raw_delta = extract_messages(system_prompt, user_prompt, scene_text)
+        else:
+            raw_delta = active_extractor.extract_delta(
+                f"{system_prompt}\n\n{user_prompt}",
+                scene_text,
+            )
         self.last_raw_delta = raw_delta
         normalized = self.engine.normalize_delta(raw_delta, step=self.step, timeline_id=self.timeline_id)
         self.commit(normalized, exemplars=exemplars, episodes=episodes, bypass_gate=bypass_gate)
@@ -377,6 +384,23 @@ class TimelineSession:
     def format_context(self, ctx: StepContext) -> str:
         return self.engine.format_context(ctx)
 
+    def build_extraction_messages(
+        self,
+        ctx: StepContext,
+        scene_text: str,
+        *,
+        prev_text: str = "",
+        next_text: str = "",
+        compact_schema: bool = False,
+    ) -> tuple[str, str]:
+        return self.engine.build_extraction_messages(
+            ctx,
+            scene_text,
+            prev_text=prev_text,
+            next_text=next_text,
+            compact_schema=compact_schema,
+        )
+
     def build_extraction_prompt(
         self,
         ctx: StepContext,
@@ -384,9 +408,14 @@ class TimelineSession:
         *,
         prev_text: str = "",
         next_text: str = "",
+        compact_schema: bool = False,
     ) -> str:
         return self.engine.build_extraction_prompt(
-            ctx, scene_text, prev_text=prev_text, next_text=next_text
+            ctx,
+            scene_text,
+            prev_text=prev_text,
+            next_text=next_text,
+            compact_schema=compact_schema,
         )
 
 
@@ -1631,15 +1660,35 @@ class CanonArcEngine:
         """Formats StepContext into prompt text using the active DomainPreset."""
         return self.preset.format_prompt_context(ctx)
 
-    def build_extraction_prompt(
+    def build_extraction_messages(
         self,
         ctx: StepContext,
         scene_text: str,
         *,
         prev_text: str = "",
         next_text: str = "",
-    ) -> str:
-        """Builds a structured extraction prompt combining preset instructions, active IDs, and StepDelta schema."""
+        compact_schema: bool = False,
+    ) -> tuple[str, str]:
+        """Builds prefix-cache-friendly (system_prompt, user_prompt) extraction messages.
+
+        Static content (preset extraction instructions and the StepDelta JSON schema) is placed
+        in ``system_prompt`` so provider prompt caches and local KV caches reuse it across steps,
+        while dynamic per-step context (known entity IDs, recent episodes, halo, and scene text)
+        is placed in ``user_prompt``.
+        """
+        schema_json = (
+            json.dumps(StepDelta.model_json_schema(), separators=(",", ":"))
+            if compact_schema
+            else json.dumps(StepDelta.model_json_schema(), indent=2)
+        )
+        system_prompt = "\n\n".join(
+            [
+                self.preset.extraction_instructions(),
+                "### Target StepDelta JSON Schema:",
+                schema_json,
+            ]
+        )
+
         seen_entity_ids: set[str] = set()
         entity_lines: list[str] = []
         for e in (*ctx.entities, *ctx.related_entities):
@@ -1652,37 +1701,52 @@ class CanonArcEngine:
             for ep in ctx.episodes
             if ep.episode_id
         ]
-        schema_json = json.dumps(StepDelta.model_json_schema(), indent=2)
 
-        parts = [
-            self.preset.extraction_instructions(),
+        user_parts = [
             "### Known Entity IDs (use exact entity_id values, not display names):",
             "\n".join(entity_lines) if entity_lines else "(none)",
         ]
         if episode_lines:
-            parts.append("### Recent Episode IDs (for caused_by_episode_id or InformDelta):")
-            parts.append("\n".join(episode_lines))
-        parts.append("### Target StepDelta JSON Schema:")
-        parts.append(schema_json)
+            user_parts.append("### Recent Episode IDs (for caused_by_episode_id or InformDelta):")
+            user_parts.append("\n".join(episode_lines))
         has_halo = bool(prev_text.strip() or next_text.strip())
         if prev_text.strip():
-            parts.append(
+            user_parts.append(
                 "### Preceding Context (Already Committed — Use ONLY to resolve pronouns like he/she/they; DO NOT re-extract events):"
             )
-            parts.append(prev_text.strip())
+            user_parts.append(prev_text.strip())
         if has_halo:
-            parts.append(
+            user_parts.append(
                 "### Target Scene Chunk (EXTRACT ONLY state changes and episodes occurring in THIS text):"
             )
         else:
-            parts.append("### Scene Text to Extract From:")
-        parts.append(scene_text)
+            user_parts.append("### Scene Text to Extract From:")
+        user_parts.append(scene_text)
         if next_text.strip():
-            parts.append(
+            user_parts.append(
                 "### Following Context (Read-Only Lookahead — Use ONLY to identify speakers/addressees of trailing dialogue; DO NOT extract future events):"
             )
-            parts.append(next_text.strip())
-        return "\n\n".join(parts)
+            user_parts.append(next_text.strip())
+        return system_prompt, "\n\n".join(user_parts)
+
+    def build_extraction_prompt(
+        self,
+        ctx: StepContext,
+        scene_text: str,
+        *,
+        prev_text: str = "",
+        next_text: str = "",
+        compact_schema: bool = False,
+    ) -> str:
+        """Builds a single-string extraction prompt with static rules and schema first for prefix-cache friendliness."""
+        system_prompt, user_prompt = self.build_extraction_messages(
+            ctx,
+            scene_text,
+            prev_text=prev_text,
+            next_text=next_text,
+            compact_schema=compact_schema,
+        )
+        return f"{system_prompt}\n\n{user_prompt}"
 
     def normalize_delta(
         self,
