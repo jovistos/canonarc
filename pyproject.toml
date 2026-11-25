@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "canonarc"
 version = "0.1.0"
-description = "Tier 1-6 Temporal Graph, Episodic Ledger, Voice Bank & Causal Time-Travel Engine for LLMs"
+description = "Branchable, spoiler-free narrative memory & world-state engine for LLM games, interactive fiction, multi-agent simulations, and localization — in a single SQLite file."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -14,16 +14,24 @@ authors = [
     { name = "CanonArc Contributors" },
 ]
 keywords = [
-    "memory",
-    "graph",
-    "vector",
+    "llm",
+    "llm-memory",
+    "agent-memory",
+    "episodic-memory",
+    "temporal-graph",
+    "knowledge-graph",
+    "world-state",
+    "sqlite",
     "time-travel",
     "epistemic",
-    "llm",
+    "narrative",
     "interactive-fiction",
     "visual-novel",
-    "localization",
+    "rpg",
+    "game-ai",
+    "multi-agent",
     "simulation",
+    "localization",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -33,8 +41,11 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Topic :: Database",
     "Topic :: Games/Entertainment :: Role-Playing",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Text Processing :: Linguistic",
     "Typing :: Typed",
 ]
 dependencies = [
