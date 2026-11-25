@@ -633,12 +633,29 @@ class OpenAICompatibleExtractor:
         content = str(choices[0].get("message", {}).get("content", ""))
         return content, usage
 
-    def _call_api(self, prompt: str, schema: dict[str, Any]) -> str:
-        content, _ = self.call_json_api(prompt)
+    def _call_api(
+        self,
+        prompt: str,
+        schema: dict[str, Any],
+        *,
+        system_prompt: str | None = None,
+    ) -> str:
+        content, _ = self.call_json_api(prompt, system_prompt=system_prompt)
         return content
 
-    def extract_delta(self, prompt: str, scene_text: str) -> StepDelta:
-        helper = CallableExtractor(self._call_api, max_retries=self.max_retries)
+    def extract_delta(
+        self,
+        prompt: str,
+        scene_text: str,
+        *,
+        system_prompt: str | None = None,
+    ) -> StepDelta:
+        call_fn = (
+            self._call_api
+            if system_prompt is None
+            else (lambda cur_prompt, schema: self._call_api(cur_prompt, schema, system_prompt=system_prompt))
+        )
+        helper = CallableExtractor(call_fn, max_retries=self.max_retries)
         try:
             delta = helper.extract_delta(prompt, scene_text)
         finally:
@@ -647,6 +664,15 @@ class OpenAICompatibleExtractor:
             self.total_usage.retry_count += helper.last_retries
             self.total_usage.validation_errors += helper.last_validation_errors
         return delta
+
+    def extract_delta_messages(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        scene_text: str,
+    ) -> StepDelta:
+        """Extracts a StepDelta with separate system and user prompts for prefix-cache reuse."""
+        return self.extract_delta(user_prompt, scene_text, system_prompt=system_prompt)
 
 
 class CachedDeltaExtractor:
@@ -681,10 +707,17 @@ class CachedDeltaExtractor:
         self.historical_usage: TokenUsage = TokenUsage()
         self.step_usage_log: list[dict[str, Any]] = []
 
-    def compute_cache_key(self, prompt: str, scene_text: str) -> str:
+    def compute_cache_key(
+        self,
+        prompt: str,
+        scene_text: str,
+        *,
+        system_prompt: str | None = None,
+    ) -> str:
+        effective_system = self.system_prompt if system_prompt is None else system_prompt
         raw_material = (
             f"model={self.model_id}\0"
-            f"system={self.system_prompt}\0"
+            f"system={effective_system}\0"
             f"prompt={prompt.strip()}\0"
             f"scene_text={scene_text.strip()}"
         )
@@ -693,8 +726,23 @@ class CachedDeltaExtractor:
     def _cache_file_path(self, cache_key: str) -> Path:
         return self.cache_dir / f"{cache_key}.json"
 
-    def extract_delta(self, prompt: str, scene_text: str) -> StepDelta:
-        cache_key = self.compute_cache_key(prompt, scene_text)
+    def extract_delta_messages(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        scene_text: str,
+    ) -> StepDelta:
+        """Caches and delegates a split (system_prompt, user_prompt) extraction."""
+        return self.extract_delta(user_prompt, scene_text, system_prompt=system_prompt)
+
+    def extract_delta(
+        self,
+        prompt: str,
+        scene_text: str,
+        *,
+        system_prompt: str | None = None,
+    ) -> StepDelta:
+        cache_key = self.compute_cache_key(prompt, scene_text, system_prompt=system_prompt)
         cache_path = self._cache_file_path(cache_key)
 
         if not self.bypass_cache and cache_path.is_file():
@@ -727,7 +775,14 @@ class CachedDeltaExtractor:
             else None
         )
         t0 = time.perf_counter()
-        delta = self.extractor.extract_delta(prompt, scene_text)
+        if system_prompt is not None:
+            extract_messages = getattr(self.extractor, "extract_delta_messages", None)
+            if callable(extract_messages):
+                delta = extract_messages(system_prompt, prompt, scene_text)
+            else:
+                delta = self.extractor.extract_delta(f"{system_prompt}\n\n{prompt}", scene_text)
+        else:
+            delta = self.extractor.extract_delta(prompt, scene_text)
         wall_ms = (time.perf_counter() - t0) * 1000.0
         if hasattr(self.extractor, "total_usage") and before_total is not None:
             after_total: TokenUsage = self.extractor.total_usage
