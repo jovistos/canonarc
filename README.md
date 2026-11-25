@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/banner.jpg" alt="canonarc — Branchable, spoiler-free narrative memory and world-state engine for LLMs" width="100%" />
+  <img src="https://raw.githubusercontent.com/jovistos/canonarc/main/docs/assets/banner.jpg" alt="canonarc — Branchable, spoiler-free narrative memory and world-state engine for LLMs" width="100%" />
 </p>
 
 <h1 align="center"><code>canonarc</code></h1>
