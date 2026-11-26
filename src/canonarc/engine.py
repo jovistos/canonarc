@@ -12,6 +12,15 @@ from contextlib import AbstractContextManager
 from pathlib import Path
 from typing import Any, Literal, Self
 
+from .bible import (
+    BibleExportFormat,
+    BibleExportResult,
+    BibleSyncMode,
+    BibleSyncReport,
+    export_bible as _export_bible,
+    render_bible as _render_bible,
+    sync_bible as _sync_bible,
+)
 from .embedders import (
     Embedder,
     EmbedderMismatchError,
@@ -505,6 +514,78 @@ class TimelineSession:
 
     def export_snapshot(self, target_path: str | Path, *, at_step: int) -> Path:
         return self.engine.export_snapshot(target_path, at_step=at_step, timeline_id=self.timeline_id)
+
+    def render_bible(
+        self,
+        *,
+        format: BibleExportFormat = "md",
+        at_step: int | None = None,
+        kinds: Sequence[str] | None = None,
+        include_state: bool = False,
+        include_edges: bool = True,
+        include_aliases: bool = True,
+        lang: str | None = None,
+    ) -> tuple[str, BibleExportResult]:
+        return self.engine.render_bible(
+            format=format,
+            at_step=at_step,
+            timeline_id=self.timeline_id,
+            kinds=kinds,
+            include_state=include_state,
+            include_edges=include_edges,
+            include_aliases=include_aliases,
+            lang=lang,
+        )
+
+    def export_bible(
+        self,
+        path: str | Path,
+        *,
+        format: Literal["auto", "csv", "json", "md"] = "auto",
+        at_step: int | None = None,
+        kinds: Sequence[str] | None = None,
+        include_state: bool = False,
+        include_edges: bool = True,
+        include_aliases: bool = True,
+        lang: str | None = None,
+        excel_bom: bool = False,
+    ) -> BibleExportResult:
+        return self.engine.export_bible(
+            path,
+            format=format,
+            at_step=at_step,
+            timeline_id=self.timeline_id,
+            kinds=kinds,
+            include_state=include_state,
+            include_edges=include_edges,
+            include_aliases=include_aliases,
+            lang=lang,
+            excel_bom=excel_bom,
+        )
+
+    def sync_bible(
+        self,
+        path: str | Path,
+        *,
+        format: Literal["auto", "csv", "json"] = "auto",
+        step: int = 0,
+        mode: BibleSyncMode = "upsert",
+        target_lang: str | None = None,
+        auto_inflect: bool = True,
+        dry_run: bool = False,
+        column_map: dict[str, str] | None = None,
+    ) -> BibleSyncReport:
+        return self.engine.sync_bible(
+            path,
+            format=format,
+            step=step,
+            timeline_id=self.timeline_id,
+            mode=mode,
+            target_lang=target_lang,
+            auto_inflect=auto_inflect,
+            dry_run=dry_run,
+            column_map=column_map,
+        )
 
     def normalize_delta(self, delta: StepDelta, *, step: int | None = None) -> StepDelta:
         return self.engine.normalize_delta(delta, step=step, timeline_id=self.timeline_id)
@@ -2023,6 +2104,87 @@ class CanonArcEngine:
     ) -> Path:
         tl = timeline_id or self.active_timeline
         return self.store.export_snapshot(target_path, at_step=at_step, timeline_id=tl)
+
+    def render_bible(
+        self,
+        *,
+        format: BibleExportFormat = "md",
+        at_step: int | None = None,
+        timeline_id: str | None = None,
+        kinds: Sequence[str] | None = None,
+        include_state: bool = False,
+        include_edges: bool = True,
+        include_aliases: bool = True,
+        lang: str | None = None,
+    ) -> tuple[str, BibleExportResult]:
+        """Renders the active Series Bible at `(timeline_id, at_step)` to a CSV, JSON, or Markdown string."""
+        return _render_bible(
+            self,
+            format=format,
+            at_step=at_step,
+            timeline_id=timeline_id,
+            kinds=kinds,
+            include_state=include_state,
+            include_edges=include_edges,
+            include_aliases=include_aliases,
+            lang=lang,
+        )
+
+    def export_bible(
+        self,
+        path: str | Path,
+        *,
+        format: Literal["auto", "csv", "json", "md"] = "auto",
+        at_step: int | None = None,
+        timeline_id: str | None = None,
+        kinds: Sequence[str] | None = None,
+        include_state: bool = False,
+        include_edges: bool = True,
+        include_aliases: bool = True,
+        lang: str | None = None,
+        excel_bom: bool = False,
+    ) -> BibleExportResult:
+        """Exports the active Series Bible at `(timeline_id, at_step)` to CSV, JSON, or Markdown."""
+        return _export_bible(
+            self,
+            path,
+            format=format,
+            at_step=at_step,
+            timeline_id=timeline_id,
+            kinds=kinds,
+            include_state=include_state,
+            include_edges=include_edges,
+            include_aliases=include_aliases,
+            lang=lang,
+            excel_bom=excel_bom,
+        )
+
+    def sync_bible(
+        self,
+        path: str | Path,
+        *,
+        format: Literal["auto", "csv", "json"] = "auto",
+        step: int = 0,
+        timeline_id: str | None = None,
+        mode: BibleSyncMode = "upsert",
+        target_lang: str | None = None,
+        auto_inflect: bool = True,
+        dry_run: bool = False,
+        column_map: dict[str, str] | None = None,
+    ) -> BibleSyncReport:
+        """Syncs a human-editable CSV or JSON Series Bible into the causal store with diff/upsert semantics."""
+        return _sync_bible(
+            self,
+            path,
+            format=format,
+            step=step,
+            timeline_id=timeline_id,
+            mode=mode,
+            target_lang=target_lang,
+            auto_inflect=auto_inflect,
+            dry_run=dry_run,
+            column_map=column_map,
+        )
 
     def format_context(self, ctx: StepContext) -> str:
         """Formats StepContext into prompt text using the active DomainPreset."""
