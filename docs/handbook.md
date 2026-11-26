@@ -1138,6 +1138,14 @@ canonarc diff arthur_study.sqlite main peaceful_council --step 95
 
 # 4. Trace Arthur's full revision trajectory across steps
 canonarc history arthur_study.sqlite char_arthur --timeline main
+
+# 5. Export the Series Bible to Markdown, JSON, or Excel-friendly CSV
+canonarc export arthur_study.sqlite bible.md --timeline main --include-state
+canonarc export arthur_study.sqlite glossary.csv --step 0 --excel-bom
+
+# 6. Preview and sync edits from a CSV or JSON Bible back into the database
+canonarc import arthur_study.sqlite glossary.csv --step 0 --dry-run
+canonarc import arthur_study.sqlite glossary.csv --step 0 --mode upsert
 ```
 
 ---
@@ -1178,7 +1186,8 @@ Benchmarks across 3K–12K synthetic stories ([`docs/benchmarks.md`](benchmarks.
 | **Lifecycle Hooks** | [`src/canonarc/hooks.py`](../src/canonarc/hooks.py) | `EngineHooks`, `BaseEngineHooks` | Observability callbacks for commit, rollback, branch, and Gate 1/2 rejections |
 | **Domain Presets** | [`src/canonarc/presets.py`](../src/canonarc/presets.py) | `DomainPreset`, `SchemaPolicy`, `InteractiveFictionPreset`, `TranslationPreset`, `SimulationPreset` | Domain prompt formatters and policy-driven filter/boost weights |
 | **Engine Facade** | [`src/canonarc/engine.py`](../src/canonarc/engine.py) | `CanonArcEngine`, `StepTransaction`, `TimelineSession` | Unified Tier 1–6 retrieval, POV projection, `normalize_delta`, consolidation, `contextvars` sessions |
-| **CLI Inspector** | [`src/canonarc/cli.py`](../src/canonarc/cli.py) | `canonarc tree / inspect / diff / history` | Terminal & `--json` inspection of `.sqlite` saves |
+| **Series Bible I/O** | [`src/canonarc/bible.py`](../src/canonarc/bible.py) | `export_bible`, `render_bible`, `sync_bible`, `BibleExportResult`, `BibleSyncReport` | Human-editable CSV/JSON/Markdown Bible export and diff-aware upsert/merge/replace sync |
+| **CLI Inspector** | [`src/canonarc/cli.py`](../src/canonarc/cli.py) | `canonarc tree / inspect / diff / history / export / import` | Terminal & `--json` inspection and Series Bible I/O for `.sqlite` saves |
 
 ### 8.4 Hands-On Study Exercises & Next Steps
 

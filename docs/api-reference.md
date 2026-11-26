@@ -29,6 +29,13 @@ Supports Python context management (`with CanonArcEngine("save.sqlite") as engin
 - `register_entity(entity: EntityRecord, aliases: Sequence[str | AliasRecord] = (), step: int = 0, timeline_id: str | None = None) -> None`: Registers an entity and its aliases at `step`.
 - `seed_entities(entities: Sequence[EntityRecord], step: int = 0, timeline_id: str | None = None) -> None`: Batch registers entities.
 
+### Series Bible Import/Export & Sync (`canonarc.bible`)
+- `export_bible(path: str | Path, *, format: Literal["auto", "csv", "json", "md"] = "auto", at_step: int | None = None, timeline_id: str | None = None, kinds: Sequence[str] | None = None, include_state: bool = False, include_edges: bool = True, include_aliases: bool = True, lang: str | None = None, excel_bom: bool = False) -> BibleExportResult`: Exports the active Series Bible at `(timeline_id, at_step)` (defaults to timeline head when `at_step=None`) to JSON (lossless entities + aliases + edges), CSV (spreadsheet-friendly entities + `;`-separated aliases + flattened `base_attributes`), or Markdown (export-only human reference doc).
+- `render_bible(*, format: Literal["csv", "json", "md"] = "md", at_step: int | None = None, timeline_id: str | None = None, kinds: Sequence[str] | None = None, include_state: bool = False, include_edges: bool = True, include_aliases: bool = True, lang: str | None = None) -> tuple[str, BibleExportResult]`: Renders the Series Bible to a string without writing to disk.
+- `sync_bible(path: str | Path, *, format: Literal["auto", "csv", "json"] = "auto", step: int = 0, timeline_id: str | None = None, mode: Literal["upsert", "merge", "replace"] = "upsert", target_lang: str | None = None, auto_inflect: bool = True, dry_run: bool = False, column_map: dict[str, str] | None = None) -> BibleSyncReport`: Diffs a CSV or JSON Series Bible against active state at `(timeline_id, step)` and atomically applies only changed revisions (idempotent re-syncs emit zero revisions). Supports `merge` (non-destructive), `upsert` (default, row-authoritative without tombstoning absent entities), and `replace` (strict mirror with tombstones). Emits warnings for alias collisions, auto-generated IDs, and shadowed revisions when `step < head_step`. Only invokes `inflection_generator` when `target_name`/`target_lang`/`gender`/`declension`/`kind` change.
+
+*(All three methods are also available on `TimelineSession`.)*
+
 ### Retrieval & Query Methods
 - `retrieve_context(step: int, text: str = "", mentions: Sequence[str] = (), top_k_voice: int = 3, top_k_episodes: int = 5, pov_entity_ids: Sequence[str] | None = None, pov_mode: Literal["any", "all"] = "any", edge_types: Sequence[str] | None = None, location_id: str | None = None, inclusive: bool = False, timeline_id: str | None = None, fallback_on_empty_mentions: Literal["all", "pov_only", "none"] = "pov_only", voice_constraints: dict[str, str] | None = None) -> StepContext`: Executes unified Tier 1–6 retrieval at `step`. Co-present scene entities (matched in text/mentions, sharing the active `location_id`, or POV fallback) and edges between them populate `entities` and `active_edges`, while 1-hop off-screen social graph neighbors populate `related_entities` and `background_edges`. Optional `voice_constraints` merge on top of edge-derived attributes for Tier 5 hard-filter/soft-boost ranking (e.g., `{"channel": "radio", "urgency": "high"}`).
 - `query_episodes(cutoff_step: int = 999999999, participants: Sequence[str] = (), match_all_participants: bool = False, predicate: str | None = None, location_id: str | None = None, known_to: Sequence[str] = (), min_salience: float = 0.0, step_range: tuple[int, int] | None = None, timeline_id: str | None = None) -> list[EpisodeRecord]`: Queries episodic ledger by participants, predicate, location, and epistemic visibility.
@@ -206,6 +213,39 @@ class StepContext(BaseModel):
     episodes: list[EpisodeRecord] = []
 ```
 
+### `BibleExportResult` & `BibleSyncReport`
+```python
+class BibleExportResult(BaseModel):
+    path: str | None = None
+    format: Literal["csv", "json", "md"]
+    timeline_id: str
+    at_step: int
+    entity_count: int = 0
+    alias_count: int = 0
+    edge_count: int = 0
+
+class BibleSyncReport(BaseModel):
+    source: str
+    format: Literal["csv", "json"]
+    timeline_id: str
+    step: int
+    mode: Literal["upsert", "merge", "replace"]
+    dry_run: bool = False
+    created_entities: list[str] = []
+    updated_entities: list[str] = []
+    removed_entities: list[str] = []
+    unchanged_entities: list[str] = []
+    added_aliases: list[tuple[str, str]] = []
+    removed_aliases: list[tuple[str, str]] = []
+    created_edges: list[str] = []
+    updated_edges: list[str] = []
+    removed_edges: list[str] = []
+    unchanged_edges: list[str] = []
+    inflections_generated: int = 0
+    warnings: list[str] = []
+    # Properties / helpers: report.has_changes, report.summary()
+```
+
 ---
 
 ## Extension Protocols, Adapters & Policies
@@ -262,4 +302,10 @@ canonarc diff story_save.sqlite timeline_a timeline_b --step 85 [--json]
 
 # Show causal revision trajectory (valid_from..valid_to) for an entity, edge, or alias key
 canonarc history story_save.sqlite char_arthur [--timeline main] [--type entity|edge|alias] [--json]
+
+# Export Series Bible to CSV, JSON, or Markdown (use '-' for stdout)
+canonarc export story_save.sqlite bible.csv [--format auto|csv|json|md] [--timeline main] [--step 0] [--kinds character,term] [--lang sr] [--include-state] [--no-edges] [--no-aliases] [--excel-bom] [--json]
+
+# Sync a CSV or JSON Series Bible into the database (offline; auto_inflect disabled in CLI)
+canonarc import story_save.sqlite bible.csv [--format auto|csv|json] [--timeline main] [--step 0] [--mode upsert|merge|replace] [--target-lang sr] [--column-map SRC=DST] [--dry-run] [--json]
 ```
