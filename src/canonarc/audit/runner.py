@@ -19,6 +19,8 @@ from .models import (
     AuditRule,
     AuditSeverity,
     DuplicateCandidate,
+    StepTextEntry,
+    StepTextProvider,
     _duplicate_candidate_from_issue,
 )
 from .rules_continuity import (
@@ -66,6 +68,8 @@ def build_audit_context(
     target_text: str = "",
     timeline_id: str | None = None,
     lang: str | None = None,
+    load_episodes: bool | None = None,
+    load_episodes_if_edge_refs: bool = False,
 ) -> AuditContext:
     """Constructs a read-only AuditContext snapshot for a single step."""
     tl = timeline_id or engine.active_timeline
@@ -78,10 +82,23 @@ def build_audit_context(
     episodes_at_step: tuple[EpisodeRecord, ...] = ()
     all_episode_ids: frozenset[str] = frozenset()
     if engine._policy.has_tier(6):
-        ep_rows = engine.store.get_lineage_episodes(tl, step)
-        all_eps = [ep for ep, _ in ep_rows]
-        all_episode_ids = frozenset(ep.episode_id for ep in all_eps if ep.episode_id)
-        episodes_at_step = tuple(ep for ep in all_eps if ep.step == step)
+        if load_episodes is None:
+            should_load_episodes = True
+        elif load_episodes:
+            should_load_episodes = True
+        else:
+            should_load_episodes = bool(
+                load_episodes_if_edge_refs
+                and any(
+                    e.caused_by_episode_id and e.caused_by_episode_id.strip()
+                    for e in mutated_edges
+                )
+            )
+        if should_load_episodes:
+            ep_rows = engine.store.get_lineage_episodes(tl, step)
+            all_eps = [ep for ep, _ in ep_rows]
+            all_episode_ids = frozenset(ep.episode_id for ep in all_eps if ep.episode_id)
+            episodes_at_step = tuple(ep for ep in all_eps if ep.step == step)
 
     return AuditContext(
         timeline_id=tl,
@@ -127,6 +144,22 @@ def _select_rules(
     return [r for r in selected if r.required_tiers.issubset(active_tiers)]
 
 
+def _unpack_step_text(entry: StepTextEntry | None) -> tuple[str, str]:
+    if entry is None:
+        return "", ""
+    if isinstance(entry, tuple):
+        return entry[0], entry[1]
+    return "", entry
+
+
+def _episode_loading_flags(active_rules: Sequence[AuditRule]) -> tuple[bool, bool]:
+    needs_episodes = any(6 in r.required_tiers for r in active_rules)
+    needs_edge_ep_refs = any(
+        bool(getattr(r, "check_dangling_episode", False)) for r in active_rules
+    )
+    return needs_episodes, needs_edge_ep_refs
+
+
 def run_audit_step(
     engine: CanonArcEngine,
     step: int,
@@ -142,6 +175,10 @@ def run_audit_step(
 ) -> AuditReport:
     """Runs all applicable AuditRules against a single timeline step."""
     tl = timeline_id or engine.active_timeline
+    active_rules = _select_rules(
+        engine, rules, include_rules=include_rules, exclude_rules=exclude_rules
+    )
+    needs_episodes, needs_edge_ep_refs = _episode_loading_flags(active_rules)
     ctx = build_audit_context(
         engine,
         step,
@@ -149,9 +186,8 @@ def run_audit_step(
         target_text=target_text,
         timeline_id=tl,
         lang=lang,
-    )
-    active_rules = _select_rules(
-        engine, rules, include_rules=include_rules, exclude_rules=exclude_rules
+        load_episodes=needs_episodes,
+        load_episodes_if_edge_refs=needs_edge_ep_refs,
     )
     min_rank = _SEVERITY_RANK[min_severity]
 
@@ -249,14 +285,22 @@ def run_audit_timeline(
     timeline_id: str | None = None,
     from_step: int = 0,
     to_step: int | None = None,
-    texts: Mapping[int, str | tuple[str, str]] | None = None,
+    texts: Mapping[int, StepTextEntry] | None = None,
+    text_provider: StepTextProvider | None = None,
     rules: Sequence[AuditRule] | None = None,
     include_rules: Sequence[str] | None = None,
     exclude_rules: Sequence[str] | None = None,
     min_severity: AuditSeverity = "info",
     lang: str | None = None,
 ) -> AuditReport:
-    """Audits every step in [from_step..to_step] on a timeline and aggregates issues."""
+    """Audits every step in [from_step..to_step] on a timeline and aggregates issues.
+
+    Per-step prose can be supplied either as an in-memory ``texts`` mapping or lazily via
+    ``text_provider(step) -> target_text | (source_text, target_text) | None``.
+    """
+    if texts is not None and text_provider is not None:
+        raise ValueError("Pass either 'texts' or 'text_provider', not both.")
+
     tl = timeline_id or engine.active_timeline
     tl_info = engine.store.get_timeline(tl)
     if tl_info is None:
@@ -272,20 +316,19 @@ def run_audit_timeline(
     active_rules = _select_rules(
         engine, rules, include_rules=include_rules, exclude_rules=exclude_rules
     )
+    needs_episodes, needs_edge_ep_refs = _episode_loading_flags(active_rules)
     min_rank = _SEVERITY_RANK[min_severity]
 
     all_issues: list[AuditIssue] = []
     seen_global_keys: set[tuple[str, str, str | None]] = set()
 
     for s in steps:
-        src = ""
-        tgt = ""
-        if texts and s in texts:
-            entry = texts[s]
-            if isinstance(entry, tuple):
-                src, tgt = entry[0], entry[1]
-            else:
-                tgt = entry
+        if text_provider is not None:
+            src, tgt = _unpack_step_text(text_provider(s))
+        elif texts is not None and s in texts:
+            src, tgt = _unpack_step_text(texts[s])
+        else:
+            src, tgt = "", ""
 
         ctx = build_audit_context(
             engine,
@@ -294,6 +337,8 @@ def run_audit_timeline(
             target_text=tgt,
             timeline_id=tl,
             lang=lang,
+            load_episodes=needs_episodes,
+            load_episodes_if_edge_refs=needs_edge_ep_refs,
         )
         for rule in active_rules:
             for issue in rule.check(ctx):

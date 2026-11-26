@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from canonarc import (
     AliasRecord,
     AuditContext,
@@ -853,3 +855,220 @@ def test_script_consistency_multiscript_and_lang_inference() -> None:
         )
         assert ambiguous.passed
         assert ambiguous.issues == []
+
+
+def test_audit_timeline_text_provider_and_mutual_exclusion() -> None:
+    with _seed_translation_engine() as engine:
+        engine.commit_step(
+            step=1,
+            delta=StepDelta(
+                edges=[
+                    EdgeDelta(
+                        source_id="char_elena",
+                        target_id="char_julian",
+                        state={"register": "ti"},
+                        reason="Shared ordeal.",
+                    )
+                ]
+            ),
+        )
+        engine.commit_step(step=2, delta=StepDelta())
+
+        calls: list[int] = []
+
+        def provider(step: int) -> str | tuple[str, str] | None:
+            calls.append(step)
+            if step == 1:
+                return ("Elena spoke to Julian.", "Elena je govorila Julijanu.")
+            if step == 2:
+                return "Jelena i Julijan su stigli."
+            return None
+
+        sess = engine.session("main")
+        report = sess.audit_timeline(
+            from_step=0,
+            to_step=2,
+            text_provider=provider,
+            include_rules=["exonym_leak"],
+        )
+        assert calls == [0, 1, 2]
+        assert report.steps_audited == [0, 1, 2]
+        assert not report.passed
+        assert len(report.by_code("exonym_leak")) == 1
+        assert report.by_code("exonym_leak")[0].step == 1
+
+        with pytest.raises(ValueError, match="not both"):
+            engine.audit_timeline(
+                texts={1: ("Elena", "Elena")},
+                text_provider=provider,
+            )
+
+
+def test_audit_tier_gated_episode_loading_and_dangling_ref_preserved(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with _seed_translation_engine() as engine:
+        ep_calls = 0
+        orig_get_episodes = engine.store.get_lineage_episodes
+
+        def tracked_get_episodes(*args, **kwargs):
+            nonlocal ep_calls
+            ep_calls += 1
+            return orig_get_episodes(*args, **kwargs)
+
+        monkeypatch.setattr(engine.store, "get_lineage_episodes", tracked_get_episodes)
+
+        # 1. Text-only Tier-1 rule under FULL policy (Tier 6 active) skips episode queries
+        engine.commit_step(step=1, delta=StepDelta())
+        engine.commit_step(step=2, delta=StepDelta())
+        ep_calls = 0
+        report = engine.audit_timeline(
+            from_step=0,
+            to_step=2,
+            text_provider=lambda s: ("Elena smiled.", "Jelena se osmehnula.") if s == 1 else None,
+            include_rules=["exonym_leak", "unexplained_register_flip"],
+        )
+        assert report.passed
+        assert ep_calls == 0
+
+        # 2. Edge mutation with caused_by_episode_id still loads episodes and catches dangling ref
+        engine.commit_step(
+            step=3,
+            delta=StepDelta(
+                edges=[
+                    EdgeDelta(
+                        source_id="char_elena",
+                        target_id="char_julian",
+                        state={"register": "ti"},
+                        caused_by_episode_id="ep_missing_999",
+                    )
+                ]
+            ),
+        )
+        ep_calls = 0
+        dangling_report = engine.audit_step(
+            step=3,
+            include_rules=["unexplained_register_flip"],
+        )
+        assert ep_calls == 1
+        assert len(dangling_report.by_code("dangling_causal_episode")) == 1
+
+        # 3. Custom Tier-6 rule always triggers episode loading
+        seen_ep_counts: list[int] = []
+        ep_rule = CallableAuditRule(
+            "tier6_inspector",
+            lambda ctx: (seen_ep_counts.append(len(ctx.episodes)), [])[1],
+            required_tiers=frozenset({6}),
+        )
+        ep_calls = 0
+        engine.audit_step(step=1, rules=[ep_rule])
+        assert ep_calls == 1
+        assert seen_ep_counts == [0]
+
+
+def test_audit_report_export_formats_and_cli_output(
+    tmp_path: Path, capsys
+) -> None:
+    import csv
+    import io
+
+    db_path = tmp_path / "export_audit.db"
+    with _seed_translation_engine(db_path) as engine:
+        engine.commit_step(
+            step=1,
+            delta=StepDelta(
+                edges=[
+                    EdgeDelta(
+                        source_id="char_elena",
+                        target_id="char_julian",
+                        state={"register": "ti"},
+                    )
+                ]
+            ),
+        )
+        report = engine.audit_timeline(
+            texts={1: ("Elena looked at Julian.", "Elena je pogledala Julijana.")},
+            include_rules=["exonym_leak", "unexplained_register_flip"],
+        )
+
+    # Programmatic render/export: JSON, JSONL, CSV (+ excel_bom)
+    json_str = report.to_json()
+    assert json.loads(json_str)["timeline_id"] == "main"
+    assert len(json.loads(json_str)["issues"]) == 2
+
+    jsonl_lines = [json.loads(line) for line in report.to_jsonl().splitlines() if line.strip()]
+    assert len(jsonl_lines) == 2
+    assert {row["code"] for row in jsonl_lines} == {"exonym_leak", "unexplained_register_flip"}
+
+    csv_rows = list(csv.DictReader(io.StringIO(report.to_csv())))
+    assert len(csv_rows) == 2
+    assert csv_rows[0]["timeline_id"] == "main"
+    assert "entity_ids" in csv_rows[0]
+
+    csv_file = tmp_path / "out" / "qa.csv"
+    report.export(csv_file, excel_bom=True)
+    raw_bytes = csv_file.read_bytes()
+    assert raw_bytes.startswith(b"\xef\xbb\xbf")
+
+    jsonl_file = tmp_path / "out" / "qa.jsonl"
+    report.export(jsonl_file)
+    assert len(jsonl_file.read_text(encoding="utf-8").splitlines()) == 2
+
+    with pytest.raises(ValueError, match="Cannot infer audit export format"):
+        report.export(tmp_path / "qa.unknown")
+
+    # CLI: --output with extension auto-detection + --format jsonl to stdout + conflicting flags
+    pairs_file = tmp_path / "pairs.jsonl"
+    pairs_file.write_text(
+        json.dumps(
+            {
+                "step": 1,
+                "source": "Elena looked at Julian.",
+                "target": "Elena je pogledala Julijana.",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    cli_csv = tmp_path / "cli_report.csv"
+    rc_csv = cli_main(
+        [
+            "audit",
+            str(db_path),
+            "--pairs-jsonl",
+            str(pairs_file),
+            "--output",
+            str(cli_csv),
+            "--excel-bom",
+            "--fail-on",
+            "error",
+        ]
+    )
+    assert rc_csv == 1
+    assert cli_csv.read_bytes().startswith(b"\xef\xbb\xbf")
+    assert "exonym_leak" in cli_csv.read_text(encoding="utf-8-sig")
+
+    rc_jsonl = cli_main(
+        [
+            "audit",
+            str(db_path),
+            "--pairs-jsonl",
+            str(pairs_file),
+            "--format",
+            "jsonl",
+            "--fail-on",
+            "none",
+        ]
+    )
+    assert rc_jsonl == 0
+    stdout_lines = [
+        json.loads(line) for line in capsys.readouterr().out.splitlines() if line.strip()
+    ]
+    assert any(row["code"] == "exonym_leak" for row in stdout_lines)
+
+    rc_conflict = cli_main(
+        ["audit", str(db_path), "--json", "--format", "csv"]
+    )
+    assert rc_conflict == 2
+    assert "cannot be combined" in capsys.readouterr().err

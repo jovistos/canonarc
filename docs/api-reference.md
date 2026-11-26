@@ -46,11 +46,11 @@ Supports Python context management (`with CanonArcEngine("save.sqlite") as engin
 *(All five engine methods — `bootstrap_bible`, `export_bible`, `render_bible`, `sync_bible`, `sync_bible_if_changed` — are also available on `TimelineSession`.)*
 
 ### Pluggable QA & Continuity Audit (`canonarc.audit`)
-- `audit_step(step: int, source_text: str = "", target_text: str = "", *, timeline_id: str | None = None, rules: Sequence[AuditRule] | None = None, include_rules: Sequence[str] | None = None, exclude_rules: Sequence[str] | None = None, min_severity: AuditSeverity = "info", lang: str | None = None) -> AuditReport`: Runs deterministic, zero-LLM continuity and localization QA rules against a single committed step (and optional source/target text pair). Automatically skips rules whose `required_tiers` are disabled by the active `SchemaPolicy`.
-- `audit_timeline(*, timeline_id: str | None = None, from_step: int = 0, to_step: int | None = None, texts: Mapping[int, str | tuple[str, str]] | None = None, rules: Sequence[AuditRule] | None = None, include_rules: Sequence[str] | None = None, exclude_rules: Sequence[str] | None = None, min_severity: AuditSeverity = "info", lang: str | None = None) -> AuditReport`: Audits every step in `[from_step..to_step]` on a timeline, optionally passing per-step `target_text` or `(source_text, target_text)` pairs for text-level rules.
+- `audit_step(step: int, source_text: str = "", target_text: str = "", *, timeline_id: str | None = None, rules: Sequence[AuditRule] | None = None, include_rules: Sequence[str] | None = None, exclude_rules: Sequence[str] | None = None, min_severity: AuditSeverity = "info", lang: str | None = None) -> AuditReport`: Runs deterministic, zero-LLM continuity and localization QA rules against a single committed step (and optional source/target text pair). Automatically skips rules whose `required_tiers` are disabled by the active `SchemaPolicy`, and only loads Tier 6 episodes when an active rule requires Tier 6 or a mutated edge references `caused_by_episode_id`.
+- `audit_timeline(*, timeline_id: str | None = None, from_step: int = 0, to_step: int | None = None, texts: Mapping[int, StepTextEntry] | None = None, text_provider: StepTextProvider | None = None, rules: Sequence[AuditRule] | None = None, include_rules: Sequence[str] | None = None, exclude_rules: Sequence[str] | None = None, min_severity: AuditSeverity = "info", lang: str | None = None) -> AuditReport`: Audits every step in `[from_step..to_step]` on a timeline. Supply per-step `target_text` or `(source_text, target_text)` pairs either via an in-memory `texts` mapping or lazily via a `text_provider(step) -> str | tuple[str, str] | None` callback (mutually exclusive with `texts`).
 - `find_duplicate_candidates(*, at_step: int | None = None, timeline_id: str | None = None, fuzzy_threshold: float = 88.0, same_kind_only: bool = True) -> list[DuplicateCandidate]`: Read-only discovery helper that scans the entire active entity roster at `(timeline_id, at_step)` (defaulting to the timeline's `head_step`; pass `at_step=0` for post-glossary checks) using `NearDuplicateEntityRule(check_all_entities=True)` and returns typed `DuplicateCandidate` records sorted by descending score, ready for review or explicit `merge_entities(cand.duplicate_id, cand.canonical_id)` calls. Also available on `TimelineSession`.
 
-*(Both methods are also available on `TimelineSession`.)*
+*(All three methods are also available on `TimelineSession`.)*
 
 ### Retrieval & Query Methods
 - `retrieve_context(step: int, text: str = "", mentions: Sequence[str] = (), top_k_voice: int | None = None, top_k_episodes: int | None = None, pov_entity_ids: Sequence[str] | None = None, pov_mode: Literal["any", "all"] = "any", edge_types: Sequence[str] | None = None, location_id: str | None = None, inclusive: bool = False, timeline_id: str | None = None, fallback_on_empty_mentions: Literal["all", "pov_only", "none"] = "pov_only", voice_constraints: dict[str, str] | None = None) -> StepContext`: Executes unified retrieval for all active tiers in `SchemaPolicy` at `step` (`top_k_voice` defaults to `3` when Tier 5 is enabled or `0` when disabled; `top_k_episodes` defaults to `5` when Tier 6 is enabled or `0` when disabled). Co-present scene entities (matched in text/mentions, sharing the active `location_id`, or POV fallback) and edges between them populate `entities` and `active_edges`, while 1-hop off-screen social graph neighbors populate `related_entities` and `background_edges`. Optional `voice_constraints` merge on top of edge-derived attributes for Tier 5 hard-filter/soft-boost ranking (e.g., `{"channel": "radio", "urgency": "high"}`).
@@ -372,7 +372,10 @@ class AuditReport(BaseModel):
     # report.info_count, report.has_issues_at_or_above(min_severity),
     # report.by_severity(sev), report.by_code(code), report.duplicate_candidates(min_score=0.0),
     # report.summary(),
-    # report.format_repair_instructions(min_severity="error", max_issues=None, header=..., include_snippets=True)
+    # report.format_repair_instructions(min_severity="error", max_issues=None, header=..., include_snippets=True),
+    # report.to_json(indent=2), report.to_jsonl(), report.to_csv(),
+    # report.render(format="text"|"json"|"jsonl"|"csv", indent=2),
+    # report.export(path, format="auto"|"text"|"json"|"jsonl"|"csv", indent=2, excel_bom=False)
 ```
 
 ### `EntityMergeReport`
@@ -508,7 +511,7 @@ canonarc export story_save.sqlite bible.csv [--format auto|csv|json|md] [--timel
 canonarc import story_save.sqlite bible.csv [--format auto|csv|json] [--timeline main] [--step 0] [--mode upsert|merge|replace] [--target-lang sr] [--column-map SRC=DST] [--ignore-column COL] [--if-changed] [--force] [--dry-run] [--json]
 
 # Run deterministic continuity and localization QA audit rules (exits 1 if --fail-on threshold matched)
-canonarc audit story_save.sqlite [--timeline main] [--step 2 --source s2_en.txt --target s2_sr.txt] [--from-step 0 --to-step 10] [--pairs-jsonl pairs.jsonl] [--rules exonym_leak,near_duplicate_entity] [--exclude-rules ...] [--min-severity info|warning|error] [--fail-on error|warning|none] [--json]
+canonarc audit story_save.sqlite [--timeline main] [--step 2 --source s2_en.txt --target s2_sr.txt] [--from-step 0 --to-step 10] [--pairs-jsonl pairs.jsonl] [--rules exonym_leak,near_duplicate_entity] [--exclude-rules ...] [--min-severity info|warning|error] [--fail-on error|warning|none] [--format auto|text|json|jsonl|csv] [-o report.csv] [--excel-bom] [--json]
 
 # Scan all active entities for near-duplicate merge candidates (read-only; prints ready-to-run merge hints)
 canonarc duplicates story_save.sqlite [--timeline main] [--step N] [--threshold 88.0] [--allow-cross-kind] [--json]

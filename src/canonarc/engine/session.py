@@ -4,7 +4,14 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
-from ..audit import AuditReport, AuditRule, AuditSeverity, DuplicateCandidate
+from ..audit import (
+    AuditReport,
+    AuditRule,
+    AuditSeverity,
+    DuplicateCandidate,
+    StepTextEntry,
+    StepTextProvider,
+)
 from ..bible import (
     DEFAULT_ALLOWED_KINDS,
     BibleBootstrapReport,
@@ -565,7 +572,8 @@ class TimelineSession:
         *,
         from_step: int = 0,
         to_step: int | None = None,
-        texts: Mapping[int, str | tuple[str, str]] | None = None,
+        texts: Mapping[int, StepTextEntry] | None = None,
+        text_provider: StepTextProvider | None = None,
         rules: Sequence[AuditRule] | None = None,
         include_rules: Sequence[str] | None = None,
         exclude_rules: Sequence[str] | None = None,
@@ -577,6 +585,7 @@ class TimelineSession:
             from_step=from_step,
             to_step=to_step,
             texts=texts,
+            text_provider=text_provider,
             rules=rules,
             include_rules=include_rules,
             exclude_rules=exclude_rules,
