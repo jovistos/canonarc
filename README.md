@@ -409,7 +409,7 @@ jupyter lab examples/
 ## Built-In Adapters, Sessions & Lifecycle Hooks
 
 - **Embedders (no extra SDKs required)** (`canonarc.embedders`): `OfflineNgramEmbedder` (with CJK tokenization & signed feature hashing), `CallableEmbedder`, `OpenAICompatibleEmbedder`, and `OllamaEmbedder` with `embed_batch()` and automatic embedder-mismatch detection (`on_embedder_mismatch="warn" | "raise" | "reindex" | "ignore"`).
-- **Extractors (no extra SDKs required)** (`canonarc.extractors`): `CallableExtractor`, `OpenAICompatibleExtractor` (with `.from_lmstudio()`, `.from_gemini()`, `.from_deepseek()`), and content-addressed `CachedDeltaExtractor` with `TokenUsage` cost estimation.
+- **Extractors & Unified JSON Clients (no extra SDKs required)** (`canonarc.extractors`): `JsonCompletionClient`, `CallableExtractor`, `OpenAICompatibleExtractor` (with `.from_lmstudio()`, `.from_gemini()`, `.from_deepseek()`), and content-addressed `CachedDeltaExtractor` with unified `TokenUsage` / `on_usage` accounting across extraction, inflections, and Gate-2 voice scoring.
 - **Tier 6 Episodic Policy & Consolidation** (`canonarc.episodic`): Tunable `EpisodicScoringPolicy`, `DefaultEpisodeRanker`, flashback-safe `StepDelta(is_flashback=True)`, `"forgotten"` / `"suppressed"` epistemic updates, and `engine.consolidate_episodes(...)`.
 - **Concurrency-Safe Sessions & Hooks** (`canonarc.hooks`): Use `with CanonArcEngine("save.sqlite") as engine:`, `engine.session("branch_a")`, `with engine.use_timeline("branch_a"):`, and `BaseEngineHooks` (`on_before_commit`, `on_after_commit`, `on_rollback`, `on_branch`, `on_gate_rejected`).
 

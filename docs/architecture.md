@@ -289,7 +289,7 @@ WHERE rn = 1 AND is_tombstone = 0;
 | `voice.py` | `IngestionGate` & `VoiceBank` (2-stage anti-drift gate and policy-driven exemplar retrieval) |
 | `episodic.py` | `EpisodeRanker`, `DefaultEpisodeRanker`, and `EpisodicScoringPolicy` (Tier 6 hybrid 4-signal scorer) |
 | `resolver.py` | `MentionResolver` & `DefaultLexicalResolver` (word-boundary, fuzzy inflection, alias span matching) |
-| `extractors.py` | `DeltaExtractor`, `CallableExtractor`, and `OpenAICompatibleExtractor` for LLM delta extraction |
+| `extractors.py` | `DeltaExtractor`, `JsonCompletionClient`, `CallableExtractor`, `OpenAICompatibleExtractor`, and `CachedDeltaExtractor` for unified LLM extraction & JSON completions |
 | `hooks.py` | `EngineHooks` & `BaseEngineHooks` lifecycle callbacks (commit, rollback, branch, gate rejection) |
 | `presets.py` | `TierProfile`, `SchemaPolicy`, `InteractiveFictionPreset`, `TranslationPreset`, and `SimulationPreset` |
 | `bible.py` | Lossless CSV/JSON/Markdown Series Bible export and idempotent diff/upsert sync (`export_bible`, `sync_bible`) |
