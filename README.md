@@ -332,6 +332,11 @@ report = engine.audit_step(step=2, source_text=chunk_en, target_text=chunk_sr, l
 if not report.passed:
     print(report.summary())
 
+# Atomically resolve duplicate entities flagged by NearDuplicateEntityRule
+# (promotes names/aliases, tombstones duplicate, migrates edges/voice/episodes)
+merge_report = engine.merge_entities("char_poirot", "char_hercule_poirot")
+print(merge_report.summary())
+
 # Plug in your own custom rule alongside the built-ins
 no_slang = CallableAuditRule(
     "no_slang",
@@ -364,6 +369,7 @@ canonarc history story_save.sqlite char_arthur --timeline main
 canonarc export story_save.sqlite bible.md --step 85 --include-state
 canonarc import story_save.sqlite glossary.csv --step 0 --dry-run
 canonarc audit story_save.sqlite --timeline main --fail-on error
+canonarc merge story_save.sqlite char_poirot char_hercule_poirot --dry-run
 ```
 
 ---
