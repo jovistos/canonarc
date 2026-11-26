@@ -18,6 +18,7 @@ from canonarc import (
     RegisterVocabularyDriftRule,
     SchemaPolicy,
     StepDelta,
+    TargetTermComplianceRule,
     TranslationPreset,
     UnexplainedRegisterFlipRule,
 )
@@ -457,3 +458,226 @@ def test_cli_audit_subcommand_db_only_single_step_and_pairs_jsonl(
     )
     assert rc_none == 0
     assert "Audit [FAIL]" in capsys.readouterr().out
+
+
+def test_target_term_compliance_catches_wrong_spellings_and_allows_inflections() -> None:
+    with CanonArcEngine(":memory:", preset=TranslationPreset()) as engine:
+        engine.register_entity(
+            EntityRecord(
+                entity_id="char_phoebe",
+                canonical_name="Phoebe",
+                base_attributes={"target_name": "Fibi", "target_lang": "sr"},
+            ),
+            aliases=[
+                AliasRecord(alias="Fibin", entity_id="char_phoebe", kind="inflection", lang="sr"),
+                AliasRecord(alias="Fibina", entity_id="char_phoebe", kind="inflection", lang="sr"),
+            ],
+            step=0,
+        )
+        engine.register_entity(
+            EntityRecord(
+                entity_id="char_poirot",
+                canonical_name="Hercule Poirot",
+                base_attributes={"target_name": "Erkil Poaro", "target_lang": "sr"},
+            ),
+            aliases=[
+                AliasRecord(alias="Poirot", entity_id="char_poirot", kind="permanent", lang="en"),
+                AliasRecord(alias="Erkila Poaroa", entity_id="char_poirot", kind="inflection", lang="sr"),
+                AliasRecord(alias="Poaroa", entity_id="char_poirot", kind="inflection", lang="sr"),
+            ],
+            step=0,
+        )
+
+        # 1. Wrong phonetic spellings ("Febi" instead of "Fibi", "Herkul Poaro" instead of "Erkil Poaro") -> error
+        bad = engine.audit_step(
+            step=1,
+            source_text="Phoebe handed the letter to Hercule Poirot.",
+            target_text="Febi je predala pismo inspektoru Herkul Poaro.",
+            lang="sr",
+        )
+        assert not bad.passed
+        assert bad.by_code("exonym_leak") == []
+        mismatches = bad.by_code("target_term_mismatch")
+        assert len(mismatches) == 2
+        by_ent = {m.subject_key: m for m in mismatches}
+        assert by_ent["char_phoebe"].severity == "error"
+        assert by_ent["char_phoebe"].evidence["suspected_variant"] == "Febi"
+        assert by_ent["char_poirot"].severity == "error"
+        assert by_ent["char_poirot"].evidence["suspected_variant"] == "Herkul Poaro"
+
+        # 2. Valid inflected forms pass cleanly
+        clean_inflected = engine.audit_step(
+            step=1,
+            source_text="Phoebe handed the letter to Hercule Poirot.",
+            target_text="Fibin osmeh je umirio Erkila Poaroa.",
+            lang="sr",
+        )
+        assert clean_inflected.passed
+        assert clean_inflected.by_code("target_term_mismatch") == []
+        assert clean_inflected.by_code("target_term_missing") == []
+
+        # 3. Single-word source alias ("Poirot") allows partial target match ("Poaroa")
+        partial_ok = engine.audit_step(
+            step=1,
+            source_text="Poirot raised an eyebrow.",
+            target_text="Nije iznenadilo Poaroa.",
+            lang="sr",
+        )
+        assert partial_ok.passed
+        assert partial_ok.by_code("target_term_missing") == []
+        assert partial_ok.by_code("target_term_mismatch") == []
+
+        # 4. Pure omission / pronominalization emits warning (not error) by default
+        pronoun = engine.audit_step(
+            step=1,
+            source_text="Phoebe smiled softly.",
+            target_text="Ona se tiho nasmejala.",
+            lang="sr",
+        )
+        assert pronoun.passed
+        missing = pronoun.by_code("target_term_missing")
+        assert len(missing) == 1
+        assert missing[0].severity == "warning"
+        assert missing[0].subject_key == "char_phoebe"
+        assert pronoun.by_code("target_term_mismatch") == []
+
+        # 5. Verbatim exonym leak is owned by ExonymLeakRule without double-firing TargetTermComplianceRule
+        verbatim = engine.audit_step(
+            step=1,
+            source_text="Phoebe smiled softly.",
+            target_text="Phoebe se tiho nasmejala.",
+            lang="sr",
+        )
+        assert not verbatim.passed
+        assert len(verbatim.by_code("exonym_leak")) == 1
+        assert verbatim.by_code("target_term_mismatch") == []
+        assert verbatim.by_code("target_term_missing") == []
+
+
+def test_target_term_compliance_opt_out_and_kinds_filter() -> None:
+    with CanonArcEngine(":memory:", preset=TranslationPreset()) as engine:
+        engine.register_entity(
+            EntityRecord(
+                entity_id="char_phoebe",
+                canonical_name="Phoebe",
+                kind="character",
+                base_attributes={"target_name": "Fibi", "allow_omission": True},
+            ),
+            step=0,
+        )
+        engine.register_entity(
+            EntityRecord(
+                entity_id="loc_abbey",
+                canonical_name="Blackwood Abbey",
+                kind="location",
+                base_attributes={"target_name": "Opatija Blekvud"},
+            ),
+            step=0,
+        )
+
+        # allow_omission skips char_phoebe; kinds=("character",) skips loc_abbey
+        report = engine.audit_step(
+            step=1,
+            source_text="Phoebe left Blackwood Abbey.",
+            target_text="Ona je otišla iz manastira.",
+            rules=[TargetTermComplianceRule(kinds=("character",))],
+        )
+        assert report.issues == []
+
+
+def test_tx_audit_draft_pre_commit_retry_loop_and_format_repair_instructions() -> None:
+    with CanonArcEngine(":memory:", preset=TranslationPreset()) as engine:
+        engine.register_entity(
+            EntityRecord(
+                entity_id="char_phoebe",
+                canonical_name="Phoebe",
+                base_attributes={"target_name": "Fibi", "target_lang": "sr"},
+            ),
+            aliases=[
+                AliasRecord(alias="Fibin", entity_id="char_phoebe", kind="inflection", lang="sr"),
+            ],
+            step=0,
+        )
+        engine.register_entity(
+            EntityRecord(
+                entity_id="char_poirot",
+                canonical_name="Hercule Poirot",
+                base_attributes={"target_name": "Erkil Poaro", "target_lang": "sr"},
+            ),
+            step=0,
+        )
+        engine.commit_step(step=0)
+
+        # Simulate a stale prior run at step 1 introducing a bogus entity; rerun_clean=True
+        # must ensure tx.audit_draft() still audits against pre-commit state (step 0)
+        engine.commit_step(
+            step=1,
+            delta=StepDelta(
+                entities=[
+                    EntityDelta(
+                        entity_id="char_stale",
+                        canonical_name="Stale",
+                        base_attributes={"target_name": "Zastareli"},
+                    )
+                ]
+            ),
+        )
+
+        source_chunk = "Phoebe asked Hercule Poirot about the key."
+        with engine.step_transaction(1, text=source_chunk, lang="sr", rerun_clean=True) as tx:
+            # Draft 1: one verbatim leak ("Phoebe") + one wrong transliteration ("Herkul Poaro")
+            draft1 = "Phoebe je pitala inspektora Herkul Poaro za ključ."
+            r1 = tx.audit_draft(draft1)
+            assert not r1.passed
+            assert len(r1.by_code("exonym_leak")) == 1
+            assert len(r1.by_code("target_term_mismatch")) == 1
+            assert "target_term_compliance" in r1.rules_executed
+
+            repair1 = r1.format_repair_instructions()
+            assert "Fibi" in repair1
+            assert "Erkil Poaro" in repair1
+            assert "Herkul Poaro" in repair1
+            assert "[char_phoebe]" in repair1
+            assert "[char_poirot]" in repair1
+
+            # max_issues and include_snippets=False
+            compact = r1.format_repair_instructions(max_issues=1, include_snippets=False)
+            assert compact.count("\n- ") == 1
+            assert "(at:" not in compact
+
+            # Draft 2: fixed translation passes cleanly before commit
+            draft2 = "Fibi je pitala Erkila Poaroa za ključ."
+            r2 = tx.audit_draft(draft2)
+            assert r2.passed
+            assert r2.format_repair_instructions() == ""
+
+            # Draft 3: warning-only omission -> format_repair_instructions() is "" at default min_severity="error",
+            # but populated when min_severity="warning"
+            draft3 = "Ona je pitala Erkila Poaroa za ključ."
+            r3 = tx.audit_draft(draft3)
+            assert r3.passed
+            assert r3.warning_count == 1
+            assert r3.format_repair_instructions() == ""
+            assert "Fibi" in r3.format_repair_instructions(min_severity="warning")
+
+            tx.commit()
+
+
+def test_tx_audit_draft_works_under_lexicon_only_profile() -> None:
+    preset = TranslationPreset(policy=SchemaPolicy.lexicon_only())
+    with CanonArcEngine(":memory:", preset=preset) as engine:
+        engine.register_entity(
+            EntityRecord(
+                entity_id="char_phoebe",
+                canonical_name="Phoebe",
+                base_attributes={"target_name": "Fibi", "target_lang": "sr"},
+            ),
+            step=0,
+        )
+        with engine.step_transaction(1, text="Phoebe opened the gate.", lang="sr") as tx:
+            report = tx.audit_draft("Febi je otvorila kapiju.")
+            assert not report.passed
+            assert len(report.by_code("target_term_mismatch")) == 1
+            assert "unexplained_register_flip" not in report.rules_executed
+            assert "Fibi" in report.format_repair_instructions()
+            tx.commit()
