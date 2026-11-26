@@ -52,6 +52,10 @@ class AliasRecord(BaseModel):
     alias: str = Field(description="Surface string or epithet, e.g. 'the old wizard'")
     entity_id: str = Field(description="Target canonical entity_id, e.g. 'char_merlin'")
     kind: Literal["permanent", "epithet", "disguise", "title"] = "epithet"
+    lang: str | None = Field(
+        default=None,
+        description="Optional ISO/BCP-47 language tag (e.g. 'en', 'sr', 'ru'); None means language-neutral",
+    )
     known_to: list[str] | None = Field(
         default=None,
         description="If set, only these entity_ids resolve this alias to entity_id; None means universally known",
