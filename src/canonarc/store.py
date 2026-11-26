@@ -701,6 +701,47 @@ class CausalStore:
             )
             return c1.rowcount + c2.rowcount + c3.rowcount + c4.rowcount + c5.rowcount
 
+    def delete_steps(
+        self,
+        steps: Sequence[int],
+        *,
+        timeline_id: str,
+        force: bool = False,
+    ) -> int:
+        """Atomically deletes all records owned by `timeline_id` at the specified exact `steps`."""
+        unique_steps = sorted({int(s) for s in steps})
+        if not unique_steps:
+            return 0
+        placeholders = ", ".join("?" for _ in unique_steps)
+        with self.transaction():
+            if not force:
+                min_step = unique_steps[0]
+                conflict = self.conn.execute(
+                    "SELECT timeline_id, fork_step FROM timelines WHERE parent_id = ? AND fork_step >= ?",
+                    (timeline_id, min_step),
+                ).fetchone()
+                if conflict:
+                    raise TimelineBranchConflictError(
+                        f"Cannot delete step(s) {unique_steps} on '{timeline_id}': child branch "
+                        f"'{conflict['timeline_id']}' forked at step {conflict['fork_step']}. "
+                        "Pass force=True to override."
+                    )
+            params: tuple[Any, ...] = (timeline_id, *unique_steps)
+            deleted = 0
+            for table in (
+                "graph_revisions",
+                "voice_exemplars",
+                "episodes",
+                "episode_epistemics",
+                "step_checkpoints",
+            ):
+                cur = self.conn.execute(
+                    f"DELETE FROM {table} WHERE timeline_id = ? AND step IN ({placeholders})",
+                    params,
+                )
+                deleted += cur.rowcount
+            return deleted
+
     def delete_timeline(self, timeline_id: str, *, cascade: bool = False) -> int:
         """Deletes a timeline branch and all of its owned records."""
         if timeline_id == "main":

@@ -24,6 +24,42 @@ class StepCheckpoint(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
+class ResumePlan(BaseModel):
+    """Structured resume and invalidation plan produced by CanonArcEngine.plan_resume."""
+    timeline_id: str = "main"
+    causal: bool = True
+    reusable_steps: list[int] = Field(default_factory=list)
+    pending_steps: list[int] = Field(default_factory=list)
+    missing_steps: list[int] = Field(default_factory=list)
+    stale_steps: list[int] = Field(default_factory=list)
+    invalidated_steps: list[int] = Field(default_factory=list)
+    orphaned_steps: list[int] = Field(default_factory=list)
+    first_stale_step: int | None = None
+    rollback_to_step: int | None = None
+    fork_conflict_step: int | None = None
+    rollback_applied: bool = False
+    deleted_rows: int = 0
+
+    @property
+    def steps_to_purge(self) -> list[int]:
+        """Sorted union of stale, causally invalidated, and orphaned steps whose external outputs should be purged."""
+        return sorted(set(self.stale_steps) | set(self.invalidated_steps) | set(self.orphaned_steps))
+
+    @property
+    def is_up_to_date(self) -> bool:
+        """True when all planned steps are reusable and no rollback or purge is pending."""
+        return not self.pending_steps and self.rollback_to_step is None and not self.orphaned_steps
+
+    @property
+    def needs_rollback(self) -> bool:
+        """True when a database rollback or targeted step purge is required and has not yet been applied."""
+        if self.rollback_applied:
+            return False
+        if self.causal:
+            return self.rollback_to_step is not None
+        return bool(self.stale_steps or self.orphaned_steps)
+
+
 class EntityRecord(BaseModel):
     """Unified Tier 1 (base_attributes) + Tier 3 (rolling state) entity record."""
     entity_id: str = Field(description="Canonical ID, e.g. 'char_arthur'")

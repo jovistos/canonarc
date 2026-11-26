@@ -48,8 +48,32 @@ DELETE FROM step_checkpoints WHERE timeline_id = :tl AND step > :step;
 ```
 Execution takes **< 1ms**, making it suitable for 60 FPS game engine main loops.
 
-### Step Checkpoints & Resumability
+### Step Checkpoints & Causal Resume Planner (`plan_resume`)
 Every `commit_step()` records a lineage-aware row in `step_checkpoints(timeline_id, step, content_hash, metadata_json)`—even for empty-delta steps—so `TimelineInfo.head_step` advances accurately and resumable pipelines can query `engine.is_step_committed(step, content_hash=...)` and `engine.last_committed_step()`. Rolling back with `rollback_to(step)` automatically removes checkpoints at `> step`.
+
+For sequential pipelines (such as book translation or chapter-by-chapter extraction), use `engine.plan_resume(...)` (or `session.plan_resume(...)`) to compute which steps can be skipped and where to rewind in a single query:
+
+```python
+plan = engine.plan_resume(
+    [(chunk.step, chunk.content_hash) for chunk in chunks],
+    metadata_match={"model": "gpt-4.1-mini", "target_lang": "sr"},
+    apply_rollback=True,  # default False for dry-run inspection
+)
+
+# Clean up any external output files for stale/invalidated/orphaned steps
+for stale_step in plan.steps_to_purge:
+    remove_cached_output(stale_step)
+
+pending = set(plan.pending_steps)
+for chunk in chunks:
+    if chunk.step not in pending:
+        continue
+    ...
+```
+
+Behavior adapts automatically to the active `SchemaPolicy` (or can be overridden via `causal=True/False`):
+- **Causal mode (`STATE_ONLY` / `FULL`, i.e. any of Tiers 2, 3, 5, 6 active):** The first missing or mismatched step invalidates the entire suffix (`invalidated_steps`) and sets `rollback_to_step` to the last reusable step (preserving step-0 seed data when step 1 is stale). Clean interruption resumes leave `rollback_to_step = None`; uncheckpointed partial writes are detected via `head_step`; shortened inputs prune `orphaned_steps` unless `prune_tail=False`. On branched timelines, a rollback past `fork_step` is surfaced in `plan.fork_conflict_step` on dry-run and raises `TimelineBranchConflictError` when `apply_rollback=True`.
+- **Non-causal mode (`LEXICON_ONLY`):** Steps are evaluated independently without cascading invalidation. `rollback_to_step` stays `None`, and `apply_rollback=True` purges only the exact stale/orphaned steps via `store.delete_steps()`, leaving all other chunks untouched.
 
 ---
 

@@ -75,6 +75,7 @@ Supports Python context management (`with CanonArcEngine("save.sqlite") as engin
 - `last_committed_step(timeline_id: str | None = None) -> int | None`: Returns the highest checkpointed step along the timeline lineage, or `None` if no step has been committed yet.
 - `get_step_checkpoint(step: int, timeline_id: str | None = None) -> StepCheckpoint | None`: Returns the lineage-resolved `StepCheckpoint` (`timeline_id`, `step`, `content_hash`, `metadata`) for `step`.
 - `list_step_checkpoints(timeline_id: str | None = None, cutoff_step: int | None = None) -> list[StepCheckpoint]`: Returns lineage-resolved checkpoints in ascending step order.
+- `plan_resume(step_hashes: Sequence[tuple[int, str]], *, causal: bool | None = None, metadata_match: Mapping[str, Any] | None = None, timeline_id: str | None = None, apply_rollback: bool = False, force: bool = False, prune_tail: bool = True) -> ResumePlan`: Evaluates an ordered sequence of `(step, content_hash)` pairs against lineage-resolved checkpoints in a single query and returns a `ResumePlan`. Defaults `causal` to `True` when any stateful tier (`2`, `3`, `5`, or `6`) is active (`STATE_ONLY` / `FULL`) and `False` for `LEXICON_ONLY`. In causal mode, the first missing or mismatched step invalidates the suffix and computes `rollback_to_step` (also detecting uncheckpointed writes via `head_step` and orphaned tail steps when `prune_tail=True`). In non-causal mode, steps are evaluated independently and `apply_rollback=True` purges only stale/orphaned steps via `store.delete_steps()`. Also available on `TimelineSession`.
 - `compute_step_hash(text: str, *, model: str | None = None, prompt_version: str | None = None, extra: dict[str, Any] | None = None) -> str`: Top-level helper producing a deterministic SHA-256 hex digest for step resumability checks.
 
 ### Time-Travel Methods
@@ -91,6 +92,28 @@ Supports Python context management (`with CanonArcEngine("save.sqlite") as engin
 ---
 
 ## Core Models
+
+### `ResumePlan`
+```python
+class ResumePlan(BaseModel):
+    timeline_id: str = "main"
+    causal: bool = True
+    reusable_steps: list[int] = []
+    pending_steps: list[int] = []
+    missing_steps: list[int] = []
+    stale_steps: list[int] = []
+    invalidated_steps: list[int] = []
+    orphaned_steps: list[int] = []
+    first_stale_step: int | None = None
+    rollback_to_step: int | None = None
+    fork_conflict_step: int | None = None
+    rollback_applied: bool = False
+    deleted_rows: int = 0
+    # Convenience properties:
+    # .steps_to_purge -> sorted(stale | invalidated | orphaned)
+    # .is_up_to_date  -> not pending_steps and rollback_to_step is None and not orphaned_steps
+    # .needs_rollback -> True when a rollback or targeted purge is pending
+```
 
 ### `EntityRecord`
 ```python
