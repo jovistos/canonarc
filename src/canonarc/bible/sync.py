@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
@@ -212,6 +213,215 @@ def _record_sync_metadata(
     set_meta(_bible_sync_metadata_key(timeline_id, src_path), json.dumps(payload, sort_keys=True))
 
 
+@dataclass(frozen=True)
+class _PlannedEntitySync:
+    entry: _ParsedEntityEntry
+    existing: EntityRecord | None
+    resolved_entity: EntityRecord
+    entity_changed: bool
+    inflection_inputs_changed: bool
+    should_inflect_now: bool
+
+
+def _plan_entity_syncs(
+    engine: CanonArcEngine,
+    parsed: _ParsedBible,
+    eff_active_entities: dict[str, EntityRecord],
+    *,
+    mode: BibleSyncMode,
+    reason_tag: str,
+    target_lang: str | None,
+    auto_inflect: bool,
+    dry_run: bool,
+) -> tuple[list[_PlannedEntitySync], set[str], list[int], list[InflectionRequest]]:
+    planned_entries: list[_PlannedEntitySync] = []
+    incoming_entity_ids: set[str] = set()
+    pending_inflect_indices: list[int] = []
+    pending_inflect_requests: list[InflectionRequest] = []
+
+    for idx, entry in enumerate(parsed.entries):
+        inc = entry.entity
+        eid = inc.entity_id
+        incoming_entity_ids.add(eid)
+        existing = eff_active_entities.get(eid)
+
+        if existing is None:
+            resolved_entity = EntityRecord(
+                entity_id=eid,
+                kind=inc.kind,
+                canonical_name=inc.canonical_name,
+                base_attributes=dict(inc.base_attributes),
+                state=dict(inc.state) if entry.has_state else {},
+                private_state=dict(inc.private_state) if entry.has_private_state else {},
+                reason=reason_tag,
+            )
+            should_inflect_now = auto_inflect and not dry_run
+            planned_entries.append(
+                _PlannedEntitySync(entry, None, resolved_entity, True, True, should_inflect_now)
+            )
+        else:
+            if mode == "merge":
+                new_base = {**existing.base_attributes, **inc.base_attributes}
+                new_state = {**existing.state, **inc.state} if entry.has_state else dict(existing.state)
+                new_priv = (
+                    {**existing.private_state, **inc.private_state}
+                    if entry.has_private_state
+                    else dict(existing.private_state)
+                )
+            else:
+                new_base = dict(inc.base_attributes)
+                new_state = dict(inc.state) if entry.has_state else dict(existing.state)
+                new_priv = dict(inc.private_state) if entry.has_private_state else dict(existing.private_state)
+
+            entity_changed = (
+                inc.kind != existing.kind
+                or inc.canonical_name != existing.canonical_name
+                or new_base != existing.base_attributes
+                or new_state != existing.state
+                or new_priv != existing.private_state
+            )
+            inflection_inputs_changed = any(
+                new_base.get(k) != existing.base_attributes.get(k)
+                for k in _INFLECTION_SENSITIVE_ATTRS
+            ) or (inc.kind != existing.kind)
+
+            resolved_entity = EntityRecord(
+                entity_id=eid,
+                kind=inc.kind,
+                canonical_name=inc.canonical_name,
+                base_attributes=new_base,
+                state=new_state,
+                private_state=new_priv,
+                reason=reason_tag,
+            )
+            should_inflect_now = auto_inflect and inflection_inputs_changed and not dry_run
+            planned_entries.append(
+                _PlannedEntitySync(
+                    entry,
+                    existing,
+                    resolved_entity,
+                    entity_changed,
+                    inflection_inputs_changed,
+                    should_inflect_now,
+                )
+            )
+
+        if should_inflect_now and engine.inflection_generator is not None:
+            req = engine._make_inflection_request(resolved_entity, target_lang=target_lang)
+            if req is not None:
+                pending_inflect_indices.append(idx)
+                pending_inflect_requests.append(req)
+
+    return planned_entries, incoming_entity_ids, pending_inflect_indices, pending_inflect_requests
+
+
+def _emit_entity_sync_deltas(
+    engine: CanonArcEngine,
+    planned_entries: Sequence[_PlannedEntitySync],
+    active_aliases_by_ent: dict[str, dict[str, AliasRecord]],
+    prefetched_forms_by_idx: dict[int, list[str]],
+    *,
+    eff_format: BibleImportFormat,
+    mode: BibleSyncMode,
+    reason_tag: str,
+    target_lang: str | None,
+    report: BibleSyncReport,
+) -> tuple[list[EntityRecord], list[EntityDelta], list[str]]:
+    entities_to_register: list[EntityRecord] = []
+    entity_deltas: list[EntityDelta] = []
+    mutated_entity_ids: list[str] = []
+
+    for idx, plan in enumerate(planned_entries):
+        eid = plan.resolved_entity.entity_id
+
+        if plan.existing is None:
+            desired_aliases = list(plan.entry.aliases)
+            extra_target_aliases = engine._build_target_aliases(
+                plan.resolved_entity,
+                desired_aliases,
+                target_lang=target_lang,
+                auto_inflect=False,
+                prefetched_forms=prefetched_forms_by_idx.get(idx),
+            )
+            if extra_target_aliases:
+                report.inflections_generated += sum(
+                    1 for a in extra_target_aliases if a.kind == "inflection"
+                )
+                desired_aliases.extend(extra_target_aliases)
+
+            report.created_entities.append(eid)
+            for al in desired_aliases:
+                report.added_aliases.append((eid, al.alias))
+            entities_to_register.append(plan.resolved_entity)
+            if desired_aliases:
+                add_aliases_payload: list[str | AliasRecord] = list(desired_aliases)
+                entity_deltas.append(
+                    EntityDelta(entity_id=eid, add_aliases=add_aliases_payload, reason=reason_tag)
+                )
+            continue
+
+        desired_alias_map: dict[str, AliasRecord] = {
+            a.alias.strip().lower(): a for a in plan.entry.aliases
+        }
+        extra_target_aliases = engine._build_target_aliases(
+            plan.resolved_entity,
+            list(desired_alias_map.values()),
+            target_lang=target_lang,
+            auto_inflect=False,
+            prefetched_forms=prefetched_forms_by_idx.get(idx),
+        )
+        if extra_target_aliases:
+            if plan.should_inflect_now:
+                report.inflections_generated += sum(
+                    1 for a in extra_target_aliases if a.kind == "inflection"
+                )
+            for a in extra_target_aliases:
+                desired_alias_map.setdefault(a.alias.strip().lower(), a)
+
+        existing_alias_map = active_aliases_by_ent.get(eid, {})
+        aliases_to_add: list[AliasRecord] = []
+        aliases_to_remove: list[str] = []
+
+        for al_key, al_rec in desired_alias_map.items():
+            cur = existing_alias_map.get(al_key)
+            if cur is None or _alias_signature(cur) != _alias_signature(al_rec):
+                aliases_to_add.append(al_rec)
+                report.added_aliases.append((eid, al_rec.alias))
+
+        if mode in ("upsert", "replace"):
+            for al_key, cur in existing_alias_map.items():
+                if al_key in desired_alias_map:
+                    continue
+                if (
+                    eff_format == "csv"
+                    and not plan.inflection_inputs_changed
+                    and cur.kind == "inflection"
+                ):
+                    continue
+                aliases_to_remove.append(cur.alias)
+                report.removed_aliases.append((eid, cur.alias))
+
+        if plan.entity_changed:
+            report.updated_entities.append(eid)
+            mutated_entity_ids.append(eid)
+            entities_to_register.append(plan.resolved_entity)
+        else:
+            report.unchanged_entities.append(eid)
+
+        if aliases_to_add or aliases_to_remove:
+            add_payload: list[str | AliasRecord] = list(aliases_to_add)
+            entity_deltas.append(
+                EntityDelta(
+                    entity_id=eid,
+                    add_aliases=add_payload,
+                    remove_aliases=aliases_to_remove,
+                    reason=reason_tag,
+                )
+            )
+
+    return entities_to_register, entity_deltas, mutated_entity_ids
+
+
 def _sync_parsed_bible(
     engine: CanonArcEngine,
     parsed: _ParsedBible,
@@ -258,85 +468,24 @@ def _sync_parsed_bible(
         content_hash=content_hash,
         warnings=list(parsed.warnings),
     )
-
     _check_incoming_alias_collisions(parsed, report)
 
-    entities_to_register: list[EntityRecord] = []
-    entity_deltas: list[EntityDelta] = []
-    mutated_entity_ids: list[str] = []
-    incoming_entity_ids: set[str] = set()
+    (
+        planned_entries,
+        incoming_entity_ids,
+        pending_inflect_indices,
+        pending_inflect_requests,
+    ) = _plan_entity_syncs(
+        engine,
+        parsed,
+        eff_active_entities,
+        mode=mode,
+        reason_tag=reason_tag,
+        target_lang=target_lang,
+        auto_inflect=auto_inflect,
+        dry_run=dry_run,
+    )
 
-    # Phase 1: Plan entity updates & collect all inflection requests for batched generation
-    planned_entries: list[tuple[_ParsedEntityEntry, EntityRecord | None, EntityRecord, bool, bool, bool]] = []
-    pending_inflect_indices: list[int] = []
-    pending_inflect_requests: list[InflectionRequest] = []
-
-    for idx, entry in enumerate(parsed.entries):
-        inc = entry.entity
-        eid = inc.entity_id
-        incoming_entity_ids.add(eid)
-        existing = eff_active_entities.get(eid)
-
-        if existing is None:
-            resolved_entity = EntityRecord(
-                entity_id=eid,
-                kind=inc.kind,
-                canonical_name=inc.canonical_name,
-                base_attributes=dict(inc.base_attributes),
-                state=dict(inc.state) if entry.has_state else {},
-                private_state=dict(inc.private_state) if entry.has_private_state else {},
-                reason=reason_tag,
-            )
-            should_inflect_now = auto_inflect and not dry_run
-            planned_entries.append((entry, None, resolved_entity, True, True, should_inflect_now))
-        else:
-            if mode == "merge":
-                new_base = dict(existing.base_attributes)
-                new_base.update(inc.base_attributes)
-                new_state = dict(existing.state)
-                if entry.has_state:
-                    new_state.update(inc.state)
-                new_priv = dict(existing.private_state)
-                if entry.has_private_state:
-                    new_priv.update(inc.private_state)
-            else:
-                new_base = dict(inc.base_attributes)
-                new_state = dict(inc.state) if entry.has_state else dict(existing.state)
-                new_priv = dict(inc.private_state) if entry.has_private_state else dict(existing.private_state)
-
-            entity_changed = (
-                inc.kind != existing.kind
-                or inc.canonical_name != existing.canonical_name
-                or new_base != existing.base_attributes
-                or new_state != existing.state
-                or new_priv != existing.private_state
-            )
-
-            inflection_inputs_changed = any(
-                new_base.get(k) != existing.base_attributes.get(k) for k in _INFLECTION_SENSITIVE_ATTRS
-            ) or (inc.kind != existing.kind)
-
-            resolved_entity = EntityRecord(
-                entity_id=eid,
-                kind=inc.kind,
-                canonical_name=inc.canonical_name,
-                base_attributes=new_base,
-                state=new_state,
-                private_state=new_priv,
-                reason=reason_tag,
-            )
-            should_inflect_now = auto_inflect and inflection_inputs_changed and not dry_run
-            planned_entries.append(
-                (entry, existing, resolved_entity, entity_changed, inflection_inputs_changed, should_inflect_now)
-            )
-
-        if should_inflect_now and engine.inflection_generator is not None:
-            req = engine._make_inflection_request(resolved_entity, target_lang=target_lang)
-            if req is not None:
-                pending_inflect_indices.append(idx)
-                pending_inflect_requests.append(req)
-
-    # Phase 2: Generate all needed inflections in batched calls
     prefetched_forms_by_idx: dict[int, list[str]] = {}
     if pending_inflect_requests and engine.inflection_generator is not None:
         batched_forms = generate_inflections_batch(
@@ -347,100 +496,17 @@ def _sync_parsed_bible(
         for idx, forms in zip(pending_inflect_indices, batched_forms):
             prefetched_forms_by_idx[idx] = forms
 
-    # Phase 3: Diff aliases & emit deltas
-    for idx, (entry, existing, resolved_entity, entity_changed, inflection_inputs_changed, should_inflect_now) in enumerate(
-        planned_entries
-    ):
-        eid = resolved_entity.entity_id
-
-        if existing is None:
-            desired_aliases = list(entry.aliases)
-            extra_target_aliases = engine._build_target_aliases(
-                resolved_entity,
-                desired_aliases,
-                target_lang=target_lang,
-                auto_inflect=False,
-                prefetched_forms=prefetched_forms_by_idx.get(idx),
-            )
-            if extra_target_aliases:
-                report.inflections_generated += sum(
-                    1 for a in extra_target_aliases if a.kind == "inflection"
-                )
-                desired_aliases.extend(extra_target_aliases)
-
-            report.created_entities.append(eid)
-            for al in desired_aliases:
-                report.added_aliases.append((eid, al.alias))
-            entities_to_register.append(resolved_entity)
-            if desired_aliases:
-                add_aliases_payload: list[str | AliasRecord] = list(desired_aliases)
-                entity_deltas.append(
-                    EntityDelta(
-                        entity_id=eid,
-                        add_aliases=add_aliases_payload,
-                        reason=reason_tag,
-                    )
-                )
-            continue
-
-        desired_alias_map: dict[str, AliasRecord] = {
-            a.alias.strip().lower(): a for a in entry.aliases
-        }
-        extra_target_aliases = engine._build_target_aliases(
-            resolved_entity,
-            list(desired_alias_map.values()),
-            target_lang=target_lang,
-            auto_inflect=False,
-            prefetched_forms=prefetched_forms_by_idx.get(idx),
-        )
-        if extra_target_aliases:
-            if should_inflect_now:
-                report.inflections_generated += sum(
-                    1 for a in extra_target_aliases if a.kind == "inflection"
-                )
-            for a in extra_target_aliases:
-                desired_alias_map.setdefault(a.alias.strip().lower(), a)
-
-        existing_alias_map = active_aliases_by_ent.get(eid, {})
-        aliases_to_add: list[AliasRecord] = []
-        aliases_to_remove: list[str] = []
-
-        for al_key, al_rec in desired_alias_map.items():
-            cur = existing_alias_map.get(al_key)
-            if cur is None or _alias_signature(cur) != _alias_signature(al_rec):
-                aliases_to_add.append(al_rec)
-                report.added_aliases.append((eid, al_rec.alias))
-
-        if mode in ("upsert", "replace"):
-            for al_key, cur in existing_alias_map.items():
-                if al_key in desired_alias_map:
-                    continue
-                if (
-                    eff_format == "csv"
-                    and not inflection_inputs_changed
-                    and cur.kind == "inflection"
-                ):
-                    continue
-                aliases_to_remove.append(cur.alias)
-                report.removed_aliases.append((eid, cur.alias))
-
-        if entity_changed:
-            report.updated_entities.append(eid)
-            mutated_entity_ids.append(eid)
-            entities_to_register.append(resolved_entity)
-        else:
-            report.unchanged_entities.append(eid)
-
-        if aliases_to_add or aliases_to_remove:
-            add_payload: list[str | AliasRecord] = list(aliases_to_add)
-            entity_deltas.append(
-                EntityDelta(
-                    entity_id=eid,
-                    add_aliases=add_payload,
-                    remove_aliases=aliases_to_remove,
-                    reason=reason_tag,
-                )
-            )
+    entities_to_register, entity_deltas, mutated_entity_ids = _emit_entity_sync_deltas(
+        engine,
+        planned_entries,
+        active_aliases_by_ent,
+        prefetched_forms_by_idx,
+        eff_format=eff_format,
+        mode=mode,
+        reason_tag=reason_tag,
+        target_lang=target_lang,
+        report=report,
+    )
 
     if mode == "replace":
         for eid in sorted(eff_active_entities.keys()):

@@ -505,6 +505,39 @@ class BibleBuilder:
 
         return entities, updates, section_usage, False
 
+    def _extract_incoming_attributes(self, item: Mapping[str, Any]) -> dict[str, Any]:
+        incoming_attrs: dict[str, Any] = {}
+        raw_nested_attrs = item.get("attributes") or item.get("base_attributes")
+        if isinstance(raw_nested_attrs, dict):
+            for k, v in raw_nested_attrs.items():
+                if v is not None and str(v).strip():
+                    incoming_attrs[str(k).strip()] = v
+
+        for std_key in ("target_name", "target_lang", "gender", "declension", "notes"):
+            val = item.get(std_key)
+            if val is not None and str(val).strip():
+                incoming_attrs[std_key] = str(val).strip()
+
+        for k, v in item.items():
+            if k not in _RESERVED_ENTITY_KEYS and v is not None and str(v).strip():
+                incoming_attrs[str(k).strip()] = v
+
+        if self.target_lang and "target_name" in incoming_attrs:
+            incoming_attrs.setdefault("target_lang", self.target_lang)
+        return incoming_attrs
+
+    @staticmethod
+    def _extract_incoming_aliases(item: Mapping[str, Any]) -> list[str]:
+        raw_aliases_list = item.get("aliases") or []
+        incoming_aliases: list[str] = []
+        if isinstance(raw_aliases_list, list):
+            for al_val in raw_aliases_list:
+                if isinstance(al_val, str) and al_val.strip():
+                    incoming_aliases.append(al_val.strip())
+                elif isinstance(al_val, dict) and str(al_val.get("alias") or "").strip():
+                    incoming_aliases.append(str(al_val["alias"]).strip())
+        return incoming_aliases
+
     def build(
         self,
         sections: Sequence[BibleSection | Mapping[str, Any] | str],
@@ -513,86 +546,19 @@ class BibleBuilder:
         initial_aliases: Sequence[AliasRecord] = (),
     ) -> BibleDraft:
         """Runs the sequential accumulator across sections and returns an inspectable BibleDraft."""
-        entities_by_id: dict[str, EntityRecord] = {}
-        entity_order: list[str] = []
-        aliases_by_entity: dict[str, list[AliasRecord]] = {}
-        alias_keys_by_entity: dict[str, set[str]] = {}
-        name_index: dict[str, list[str]] = {}  # lower(name or alias) -> list[entity_id]
-
-        def _index_name(name: str, eid: str) -> None:
-            key = name.strip().lower()
-            if not key:
-                return
-            owners = name_index.setdefault(key, [])
-            if eid not in owners:
-                owners.append(eid)
-
-        def _add_alias(eid: str, alias_rec: AliasRecord) -> bool:
-            clean = alias_rec.alias.strip()
-            if not clean or self._is_ignored_name(clean):
-                return False
-            low = clean.lower()
-            ent = entities_by_id[eid]
-            if low == ent.canonical_name.strip().lower() and alias_rec.lang is None:
-                return False
-            seen = alias_keys_by_entity.setdefault(eid, set())
-            if low in seen:
-                return False
-            seen.add(low)
-            aliases_by_entity.setdefault(eid, []).append(
-                alias_rec.model_copy(update={"alias": clean, "entity_id": eid})
-            )
-            _index_name(clean, eid)
-            return True
-
-        # Pre-seed with initial_entities (e.g., Book 1 cast or manually curated locks)
-        for ent in initial_entities:
-            copy_ent = ent.model_copy(deep=True)
-            if copy_ent.entity_id not in entities_by_id:
-                entity_order.append(copy_ent.entity_id)
-            entities_by_id[copy_ent.entity_id] = copy_ent
-            aliases_by_entity.setdefault(copy_ent.entity_id, [])
-            alias_keys_by_entity.setdefault(copy_ent.entity_id, set())
-            _index_name(copy_ent.canonical_name, copy_ent.entity_id)
-            raw_target = copy_ent.base_attributes.get("target_name")
-            if isinstance(raw_target, str) and raw_target.strip():
-                _index_name(raw_target, copy_ent.entity_id)
-
-        for al in initial_aliases:
-            if al.entity_id in entities_by_id:
-                _add_alias(al.entity_id, al)
-
-        conflicts: list[BibleConflict] = []
-        warnings: list[str] = []
+        acc = _BibleAccumulator(self, initial_entities=initial_entities, initial_aliases=initial_aliases)
         run_usage = TokenUsage()
         run_api_calls = 0
         run_cache_hits = 0
         sections_processed = 0
-        allowed_set = set(self.allowed_kinds)
-
-        def _find_matching_entity(
-            *,
-            explicit_id: str | None,
-            canonical_name: str,
-            kind: str,
-        ) -> EntityRecord | None:
-            if explicit_id and explicit_id in entities_by_id:
-                return entities_by_id[explicit_id]
-            owners = name_index.get(canonical_name.strip().lower(), ())
-            if not owners:
-                return None
-            for eid in owners:
-                if entities_by_id[eid].kind.lower() == kind.lower():
-                    return entities_by_id[eid]
-            return entities_by_id[owners[0]]
 
         for idx, raw_sec in enumerate(sections):
             section = _coerce_section(raw_sec, idx)
             if not section.text.strip():
                 continue
 
-            ordered_entities = [entities_by_id[eid] for eid in entity_order]
-            locked_ledger = _format_locked_ledger(ordered_entities, aliases_by_entity)
+            ordered_entities = acc.ordered_entities()
+            locked_ledger = _format_locked_ledger(ordered_entities, acc.aliases_by_entity)
             prompt = self.build_section_prompt(section, locked_ledger, ordered_entities)
 
             raw_entities, raw_updates, sec_usage, was_cached = self._call_section(section, prompt)
@@ -604,178 +570,289 @@ class BibleBuilder:
                 run_api_calls += sec_usage.api_calls or 1
 
             for item in raw_entities:
-                canonical_name = str(item.get("canonical_name") or item.get("name") or "").strip()
-                if not canonical_name or self._is_ignored_name(canonical_name):
-                    continue
-
-                raw_kind = str(item.get("kind") or "character").strip().lower()
-                if raw_kind not in allowed_set:
-                    warnings.append(
-                        f"[{section.section_id}] Skipping '{canonical_name}': kind '{raw_kind}' "
-                        f"not in allowed_kinds {self.allowed_kinds}."
-                    )
-                    continue
-
-                explicit_id = str(item.get("entity_id") or "").strip() or None
-                incoming_attrs: dict[str, Any] = {}
-                raw_nested_attrs = item.get("attributes") or item.get("base_attributes")
-                if isinstance(raw_nested_attrs, dict):
-                    for k, v in raw_nested_attrs.items():
-                        if v is not None and str(v).strip():
-                            incoming_attrs[str(k).strip()] = v
-
-                for std_key in ("target_name", "target_lang", "gender", "declension", "notes"):
-                    val = item.get(std_key)
-                    if val is not None and str(val).strip():
-                        incoming_attrs[std_key] = str(val).strip()
-
-                for k, v in item.items():
-                    if k not in _RESERVED_ENTITY_KEYS and v is not None and str(v).strip():
-                        incoming_attrs[str(k).strip()] = v
-
-                if self.target_lang and "target_name" in incoming_attrs:
-                    incoming_attrs.setdefault("target_lang", self.target_lang)
-
-                raw_aliases_list = item.get("aliases") or []
-                incoming_aliases: list[str] = []
-                if isinstance(raw_aliases_list, list):
-                    for al_val in raw_aliases_list:
-                        if isinstance(al_val, str) and al_val.strip():
-                            incoming_aliases.append(al_val.strip())
-                        elif isinstance(al_val, dict) and str(al_val.get("alias") or "").strip():
-                            incoming_aliases.append(str(al_val["alias"]).strip())
-
-                existing = _find_matching_entity(
-                    explicit_id=explicit_id,
-                    canonical_name=canonical_name,
-                    kind=raw_kind,
-                )
-
-                if existing is None:
-                    eid = explicit_id or _slugify_entity_id(
-                        raw_kind, canonical_name, set(entities_by_id.keys())
-                    )
-                    if "notes" in incoming_attrs and self.max_notes_chars > 0:
-                        incoming_attrs["notes"] = _merge_notes(
-                            "", str(incoming_attrs["notes"]), max_chars=self.max_notes_chars
-                        )
-                    new_ent = EntityRecord(
-                        entity_id=eid,
-                        kind=raw_kind,
-                        canonical_name=canonical_name,
-                        base_attributes=incoming_attrs,
-                    )
-                    entities_by_id[eid] = new_ent
-                    entity_order.append(eid)
-                    aliases_by_entity[eid] = []
-                    alias_keys_by_entity[eid] = set()
-                    _index_name(canonical_name, eid)
-                    if isinstance(incoming_attrs.get("target_name"), str):
-                        _index_name(incoming_attrs["target_name"], eid)
-                    for al_str in incoming_aliases:
-                        _add_alias(
-                            eid,
-                            AliasRecord(
-                                alias=al_str,
-                                entity_id=eid,
-                                kind="permanent",
-                                lang=self.source_lang,
-                            ),
-                        )
-                else:
-                    eid = existing.entity_id
-                    if existing.kind.lower() != raw_kind:
-                        conflicts.append(
-                            BibleConflict(
-                                section_id=section.section_id,
-                                entity_id=eid,
-                                canonical_name=existing.canonical_name,
-                                field="kind",
-                                locked_value=existing.kind,
-                                proposed_value=raw_kind,
-                                resolution="kept_locked",
-                            )
-                        )
-                    if canonical_name.lower() != existing.canonical_name.strip().lower():
-                        _add_alias(
-                            eid,
-                            AliasRecord(
-                                alias=canonical_name,
-                                entity_id=eid,
-                                kind="permanent",
-                                lang=self.source_lang,
-                            ),
-                        )
-
-                    for attr_k, attr_v in incoming_attrs.items():
-                        if attr_k == "notes":
-                            existing.base_attributes["notes"] = _merge_notes(
-                                str(existing.base_attributes.get("notes") or ""),
-                                str(attr_v),
-                                max_chars=self.max_notes_chars,
-                            )
-                            continue
-                        cur_val = existing.base_attributes.get(attr_k)
-                        if cur_val is None or (isinstance(cur_val, str) and not cur_val.strip()):
-                            existing.base_attributes[attr_k] = attr_v
-                            if attr_k == "target_name" and isinstance(attr_v, str):
-                                _index_name(attr_v, eid)
-                        elif str(cur_val).strip().lower() != str(attr_v).strip().lower():
-                            conflicts.append(
-                                BibleConflict(
-                                    section_id=section.section_id,
-                                    entity_id=eid,
-                                    canonical_name=existing.canonical_name,
-                                    field=attr_k,
-                                    locked_value=cur_val,
-                                    proposed_value=attr_v,
-                                    resolution="kept_locked",
-                                )
-                            )
-
-                    for al_str in incoming_aliases:
-                        _add_alias(
-                            eid,
-                            AliasRecord(
-                                alias=al_str,
-                                entity_id=eid,
-                                kind="permanent",
-                                lang=self.source_lang,
-                            ),
-                        )
-
+                acc.ingest_entity_item(section.section_id, item)
             for upd in raw_updates:
-                target_eid = str(upd.get("entity_id") or "").strip()
-                if not target_eid or target_eid not in entities_by_id:
-                    warnings.append(
-                        f"[{section.section_id}] alias_updates referenced unknown entity_id '{target_eid}'; skipped."
-                    )
-                    continue
-                add_list = upd.get("add_aliases") or upd.get("aliases") or []
-                if isinstance(add_list, list):
-                    for raw_al in add_list:
-                        if isinstance(raw_al, str) and raw_al.strip():
-                            _add_alias(
-                                target_eid,
-                                AliasRecord(
-                                    alias=raw_al.strip(),
-                                    entity_id=target_eid,
-                                    kind="permanent",
-                                    lang=self.source_lang,
-                                ),
-                            )
+                acc.apply_alias_update(section.section_id, upd)
 
-        final_entities = [entities_by_id[eid] for eid in entity_order]
-        final_aliases = {eid: list(aliases_by_entity.get(eid, ())) for eid in entity_order}
-        return BibleDraft(
-            entities=final_entities,
-            aliases=final_aliases,
-            conflicts=conflicts,
-            warnings=warnings,
+        return acc.to_draft(
             sections_processed=sections_processed,
             cache_hits=run_cache_hits,
             api_calls=run_api_calls,
             usage=run_usage,
+        )
+
+
+class _BibleAccumulator:
+    """Mutable accumulation state for BibleBuilder.build across sequential sections."""
+
+    def __init__(
+        self,
+        builder: BibleBuilder,
+        *,
+        initial_entities: Sequence[EntityRecord],
+        initial_aliases: Sequence[AliasRecord],
+    ) -> None:
+        self._builder = builder
+        self._allowed_set = set(builder.allowed_kinds)
+        self.entities_by_id: dict[str, EntityRecord] = {}
+        self.entity_order: list[str] = []
+        self.aliases_by_entity: dict[str, list[AliasRecord]] = {}
+        self.alias_keys_by_entity: dict[str, set[str]] = {}
+        self.name_index: dict[str, list[str]] = {}
+        self.conflicts: list[BibleConflict] = []
+        self.warnings: list[str] = []
+
+        for ent in initial_entities:
+            copy_ent = ent.model_copy(deep=True)
+            if copy_ent.entity_id not in self.entities_by_id:
+                self.entity_order.append(copy_ent.entity_id)
+            self.entities_by_id[copy_ent.entity_id] = copy_ent
+            self.aliases_by_entity.setdefault(copy_ent.entity_id, [])
+            self.alias_keys_by_entity.setdefault(copy_ent.entity_id, set())
+            self._index_name(copy_ent.canonical_name, copy_ent.entity_id)
+            raw_target = copy_ent.base_attributes.get("target_name")
+            if isinstance(raw_target, str) and raw_target.strip():
+                self._index_name(raw_target, copy_ent.entity_id)
+
+        for al in initial_aliases:
+            if al.entity_id in self.entities_by_id:
+                self.add_alias(al.entity_id, al)
+
+    def ordered_entities(self) -> list[EntityRecord]:
+        return [self.entities_by_id[eid] for eid in self.entity_order]
+
+    def _index_name(self, name: str, eid: str) -> None:
+        key = name.strip().lower()
+        if not key:
+            return
+        owners = self.name_index.setdefault(key, [])
+        if eid not in owners:
+            owners.append(eid)
+
+    def add_alias(self, eid: str, alias_rec: AliasRecord) -> bool:
+        clean = alias_rec.alias.strip()
+        if not clean or self._builder._is_ignored_name(clean):
+            return False
+        low = clean.lower()
+        ent = self.entities_by_id[eid]
+        if low == ent.canonical_name.strip().lower() and alias_rec.lang is None:
+            return False
+        seen = self.alias_keys_by_entity.setdefault(eid, set())
+        if low in seen:
+            return False
+        seen.add(low)
+        self.aliases_by_entity.setdefault(eid, []).append(
+            alias_rec.model_copy(update={"alias": clean, "entity_id": eid})
+        )
+        self._index_name(clean, eid)
+        return True
+
+    def _find_matching_entity(
+        self,
+        *,
+        explicit_id: str | None,
+        canonical_name: str,
+        kind: str,
+    ) -> EntityRecord | None:
+        if explicit_id and explicit_id in self.entities_by_id:
+            return self.entities_by_id[explicit_id]
+        owners = self.name_index.get(canonical_name.strip().lower(), ())
+        if not owners:
+            return None
+        for eid in owners:
+            if self.entities_by_id[eid].kind.lower() == kind.lower():
+                return self.entities_by_id[eid]
+        return self.entities_by_id[owners[0]]
+
+    def ingest_entity_item(self, section_id: str, item: Mapping[str, Any]) -> None:
+        canonical_name = str(item.get("canonical_name") or item.get("name") or "").strip()
+        if not canonical_name or self._builder._is_ignored_name(canonical_name):
+            return
+
+        raw_kind = str(item.get("kind") or "character").strip().lower()
+        if raw_kind not in self._allowed_set:
+            self.warnings.append(
+                f"[{section_id}] Skipping '{canonical_name}': kind '{raw_kind}' "
+                f"not in allowed_kinds {self._builder.allowed_kinds}."
+            )
+            return
+
+        explicit_id = str(item.get("entity_id") or "").strip() or None
+        incoming_attrs = self._builder._extract_incoming_attributes(item)
+        incoming_aliases = self._builder._extract_incoming_aliases(item)
+        existing = self._find_matching_entity(
+            explicit_id=explicit_id,
+            canonical_name=canonical_name,
+            kind=raw_kind,
+        )
+
+        if existing is None:
+            self._register_new_entity(
+                explicit_id=explicit_id,
+                raw_kind=raw_kind,
+                canonical_name=canonical_name,
+                incoming_attrs=incoming_attrs,
+                incoming_aliases=incoming_aliases,
+            )
+        else:
+            self._merge_into_existing(
+                section_id=section_id,
+                existing=existing,
+                raw_kind=raw_kind,
+                canonical_name=canonical_name,
+                incoming_attrs=incoming_attrs,
+                incoming_aliases=incoming_aliases,
+            )
+
+    def _register_new_entity(
+        self,
+        *,
+        explicit_id: str | None,
+        raw_kind: str,
+        canonical_name: str,
+        incoming_attrs: dict[str, Any],
+        incoming_aliases: Sequence[str],
+    ) -> None:
+        eid = explicit_id or _slugify_entity_id(
+            raw_kind, canonical_name, set(self.entities_by_id.keys())
+        )
+        if "notes" in incoming_attrs and self._builder.max_notes_chars > 0:
+            incoming_attrs["notes"] = _merge_notes(
+                "", str(incoming_attrs["notes"]), max_chars=self._builder.max_notes_chars
+            )
+        new_ent = EntityRecord(
+            entity_id=eid,
+            kind=raw_kind,
+            canonical_name=canonical_name,
+            base_attributes=incoming_attrs,
+        )
+        self.entities_by_id[eid] = new_ent
+        self.entity_order.append(eid)
+        self.aliases_by_entity[eid] = []
+        self.alias_keys_by_entity[eid] = set()
+        self._index_name(canonical_name, eid)
+        if isinstance(incoming_attrs.get("target_name"), str):
+            self._index_name(incoming_attrs["target_name"], eid)
+        for al_str in incoming_aliases:
+            self.add_alias(
+                eid,
+                AliasRecord(
+                    alias=al_str,
+                    entity_id=eid,
+                    kind="permanent",
+                    lang=self._builder.source_lang,
+                ),
+            )
+
+    def _merge_into_existing(
+        self,
+        *,
+        section_id: str,
+        existing: EntityRecord,
+        raw_kind: str,
+        canonical_name: str,
+        incoming_attrs: dict[str, Any],
+        incoming_aliases: Sequence[str],
+    ) -> None:
+        eid = existing.entity_id
+        if existing.kind.lower() != raw_kind:
+            self.conflicts.append(
+                BibleConflict(
+                    section_id=section_id,
+                    entity_id=eid,
+                    canonical_name=existing.canonical_name,
+                    field="kind",
+                    locked_value=existing.kind,
+                    proposed_value=raw_kind,
+                    resolution="kept_locked",
+                )
+            )
+        if canonical_name.lower() != existing.canonical_name.strip().lower():
+            self.add_alias(
+                eid,
+                AliasRecord(
+                    alias=canonical_name,
+                    entity_id=eid,
+                    kind="permanent",
+                    lang=self._builder.source_lang,
+                ),
+            )
+
+        for attr_k, attr_v in incoming_attrs.items():
+            if attr_k == "notes":
+                existing.base_attributes["notes"] = _merge_notes(
+                    str(existing.base_attributes.get("notes") or ""),
+                    str(attr_v),
+                    max_chars=self._builder.max_notes_chars,
+                )
+                continue
+            cur_val = existing.base_attributes.get(attr_k)
+            if cur_val is None or (isinstance(cur_val, str) and not cur_val.strip()):
+                existing.base_attributes[attr_k] = attr_v
+                if attr_k == "target_name" and isinstance(attr_v, str):
+                    self._index_name(attr_v, eid)
+            elif str(cur_val).strip().lower() != str(attr_v).strip().lower():
+                self.conflicts.append(
+                    BibleConflict(
+                        section_id=section_id,
+                        entity_id=eid,
+                        canonical_name=existing.canonical_name,
+                        field=attr_k,
+                        locked_value=cur_val,
+                        proposed_value=attr_v,
+                        resolution="kept_locked",
+                    )
+                )
+
+        for al_str in incoming_aliases:
+            self.add_alias(
+                eid,
+                AliasRecord(
+                    alias=al_str,
+                    entity_id=eid,
+                    kind="permanent",
+                    lang=self._builder.source_lang,
+                ),
+            )
+
+    def apply_alias_update(self, section_id: str, upd: Mapping[str, Any]) -> None:
+        target_eid = str(upd.get("entity_id") or "").strip()
+        if not target_eid or target_eid not in self.entities_by_id:
+            self.warnings.append(
+                f"[{section_id}] alias_updates referenced unknown entity_id '{target_eid}'; skipped."
+            )
+            return
+        add_list = upd.get("add_aliases") or upd.get("aliases") or []
+        if isinstance(add_list, list):
+            for raw_al in add_list:
+                if isinstance(raw_al, str) and raw_al.strip():
+                    self.add_alias(
+                        target_eid,
+                        AliasRecord(
+                            alias=raw_al.strip(),
+                            entity_id=target_eid,
+                            kind="permanent",
+                            lang=self._builder.source_lang,
+                        ),
+                    )
+
+    def to_draft(
+        self,
+        *,
+        sections_processed: int,
+        cache_hits: int,
+        api_calls: int,
+        usage: TokenUsage,
+    ) -> BibleDraft:
+        return BibleDraft(
+            entities=self.ordered_entities(),
+            aliases={eid: list(self.aliases_by_entity.get(eid, ())) for eid in self.entity_order},
+            conflicts=self.conflicts,
+            warnings=self.warnings,
+            sections_processed=sections_processed,
+            cache_hits=cache_hits,
+            api_calls=api_calls,
+            usage=usage,
         )
 
 
