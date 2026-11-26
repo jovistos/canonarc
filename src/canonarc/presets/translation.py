@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import logging
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Literal
 
-from ..models import DirectedEdgeRecord, EntityRecord, StepContext
+from ..models import ENTITY_KIND_HEADINGS, DirectedEdgeRecord, EntityRecord, StepContext
 from .formatting import (
     _cap_voice_exemplars_per_speaker,
     _render_budgeted_blocks,
@@ -14,6 +14,16 @@ from .formatting import (
 from .policy import DEFAULT_SCHEMA_POLICY, SchemaPolicy
 
 logger = logging.getLogger(__name__)
+
+EntityGrouping = Literal["flat", "cast_and_glossary", "by_kind"]
+
+DEFAULT_TRANSLATION_SECTION_HEADERS: dict[str, str] = {
+    "state": "## Scene character state & register — binding",
+    "glossary": "## Terminology & glossary — binding",
+    "background_edges": "## Off-screen character ties — reference only",
+    "episodes": "## Relevant narrative episodes — context",
+    "voice": "## Character voice bank — stylistic anchor",
+}
 
 
 class TranslationPreset:
@@ -31,6 +41,8 @@ class TranslationPreset:
         empty_text: str = "",
         max_voice_per_speaker: int | None = None,
         max_context_chars: int | None = None,
+        entity_grouping: EntityGrouping = "flat",
+        section_headers: Mapping[str, str] | None = None,
     ) -> None:
         if include_kind not in (True, False, "non_character"):
             raise ValueError(
@@ -42,6 +54,25 @@ class TranslationPreset:
             raise ValueError("max_voice_per_speaker must be non-negative or None.")
         if max_context_chars is not None and max_context_chars < 0:
             raise ValueError("max_context_chars must be non-negative or None.")
+        if entity_grouping not in ("flat", "cast_and_glossary", "by_kind"):
+            raise ValueError(
+                f"Invalid entity_grouping: {entity_grouping!r}. "
+                "Expected 'flat', 'cast_and_glossary', or 'by_kind'."
+            )
+        merged_headers = dict(DEFAULT_TRANSLATION_SECTION_HEADERS)
+        if section_headers is not None:
+            unknown = sorted(set(section_headers) - set(DEFAULT_TRANSLATION_SECTION_HEADERS))
+            if unknown:
+                raise ValueError(
+                    f"Unknown section_headers key(s): {unknown}. "
+                    f"Expected subset of {sorted(DEFAULT_TRANSLATION_SECTION_HEADERS)}."
+                )
+            for key, val in section_headers.items():
+                if not isinstance(val, str) or not val.strip():
+                    raise ValueError(
+                        f"Invalid section_headers[{key!r}]: expected a non-empty string."
+                    )
+                merged_headers[key] = val
 
         self.policy: SchemaPolicy = policy or DEFAULT_SCHEMA_POLICY
         self.include_background_edges: bool = include_background_edges
@@ -52,6 +83,8 @@ class TranslationPreset:
         self.empty_text: str = empty_text
         self.max_voice_per_speaker: int | None = max_voice_per_speaker
         self.max_context_chars: int | None = max_context_chars
+        self.entity_grouping: EntityGrouping = entity_grouping
+        self.section_headers: dict[str, str] = merged_headers
 
     def _should_show_kind(self, kind: str) -> bool:
         if not kind:
@@ -120,13 +153,15 @@ class TranslationPreset:
         *,
         is_lexicon_only: bool,
         id_labels: dict[str, str] | None,
+        suppress_kind_tag: bool = False,
     ) -> str:
+        show_kind = (not suppress_kind_tag) and self._should_show_kind(e.kind)
         if self.show_entity_ids:
-            kind_tag = f" [{e.kind}]" if self._should_show_kind(e.kind) else ""
+            kind_tag = f" [{e.kind}]" if show_kind else ""
             subject = f"{e.canonical_name} ({e.entity_id}){kind_tag}"
         else:
             base_label = id_labels.get(e.entity_id, e.canonical_name) if id_labels is not None else e.canonical_name
-            if self._should_show_kind(e.kind) and f"[{e.kind}]" not in base_label:
+            if show_kind and f"[{e.kind}]" not in base_label:
                 subject = f"{base_label} [{e.kind}]"
             else:
                 subject = base_label
@@ -155,6 +190,40 @@ class TranslationPreset:
         extra_str = f"; {'; '.join(extra_parts)}" if extra_parts else ""
         return f"- {subject}: {attr_str}{mood_str}{extra_str}"
 
+    def _group_entity_lines(
+        self,
+        entities: Sequence[EntityRecord],
+        *,
+        is_lexicon_only: bool,
+        id_labels: dict[str, str] | None,
+    ) -> list[tuple[str | None, list[str]]]:
+        """Groups entities into deterministic ``### <Kind>`` subsections."""
+        grouped: dict[str, list[EntityRecord]] = {}
+        for e in entities:
+            kind_key = (e.kind or "").strip().lower() or "other"
+            grouped.setdefault(kind_key, []).append(e)
+
+        ordered_kinds = [
+            k for k in ENTITY_KIND_HEADINGS if k in grouped
+        ] + sorted(k for k in grouped if k not in ENTITY_KIND_HEADINGS)
+
+        sections: list[tuple[str | None, list[str]]] = []
+        for kind_key in ordered_kinds:
+            heading = ENTITY_KIND_HEADINGS.get(
+                kind_key, kind_key.replace("_", " ").title()
+            )
+            lines = [
+                self._format_entity_line(
+                    e,
+                    is_lexicon_only=is_lexicon_only,
+                    id_labels=id_labels,
+                    suppress_kind_tag=True,
+                )
+                for e in grouped[kind_key]
+            ]
+            sections.append((f"### {heading}", lines))
+        return sections
+
     def format_prompt_context(self, ctx: StepContext) -> str:
         id_labels: dict[str, str] | None = (
             None if self.show_entity_ids else self._build_display_labels(ctx)
@@ -163,21 +232,81 @@ class TranslationPreset:
         # Tier 1 & 2 binding state block (or Tier 1 lexicon block in LEXICON_ONLY)
         is_lexicon_only = not self.policy.has_tier(2) and not self.policy.has_tier(3)
         state_header = (
-            "## Terminology & glossary — binding"
+            self.section_headers["glossary"]
             if is_lexicon_only
-            else "## Scene character state & register — binding"
+            else self.section_headers["state"]
         )
-        entity_lines = [
-            self._format_entity_line(e, is_lexicon_only=is_lexicon_only, id_labels=id_labels)
-            for e in ctx.entities
-        ]
+        glossary_header = self.section_headers["glossary"]
+        glossary_sections: list[tuple[str | None, list[str]]] | None = None
+
+        if self.entity_grouping == "flat":
+            entity_lines = [
+                self._format_entity_line(e, is_lexicon_only=is_lexicon_only, id_labels=id_labels)
+                for e in ctx.entities
+            ]
+        elif self.entity_grouping == "cast_and_glossary":
+            if is_lexicon_only:
+                entity_lines = [
+                    self._format_entity_line(e, is_lexicon_only=True, id_labels=id_labels)
+                    for e in ctx.entities
+                ]
+            else:
+                char_entities = [
+                    e for e in ctx.entities if (e.kind or "").strip().lower() == "character"
+                ]
+                non_char_entities = [
+                    e for e in ctx.entities if (e.kind or "").strip().lower() != "character"
+                ]
+                entity_lines = [
+                    self._format_entity_line(e, is_lexicon_only=False, id_labels=id_labels)
+                    for e in char_entities
+                ]
+                if non_char_entities:
+                    glossary_sections = [
+                        (
+                            None,
+                            [
+                                self._format_entity_line(
+                                    e, is_lexicon_only=False, id_labels=id_labels
+                                )
+                                for e in non_char_entities
+                            ],
+                        )
+                    ]
+        else:  # "by_kind"
+            if is_lexicon_only:
+                entity_lines = []
+                glossary_sections = self._group_entity_lines(
+                    ctx.entities, is_lexicon_only=True, id_labels=id_labels
+                )
+            else:
+                char_entities = [
+                    e for e in ctx.entities if (e.kind or "").strip().lower() == "character"
+                ]
+                non_char_entities = [
+                    e for e in ctx.entities if (e.kind or "").strip().lower() != "character"
+                ]
+                entity_lines = [
+                    self._format_entity_line(
+                        e,
+                        is_lexicon_only=False,
+                        id_labels=id_labels,
+                        suppress_kind_tag=True,
+                    )
+                    for e in char_entities
+                ]
+                if non_char_entities:
+                    glossary_sections = self._group_entity_lines(
+                        non_char_entities, is_lexicon_only=False, id_labels=id_labels
+                    )
+
         active_edge_lines = (
             []
             if is_lexicon_only
             else [self._format_edge_line(edge, id_labels=id_labels) for edge in ctx.active_edges]
         )
 
-        bg_header = "## Off-screen character ties — reference only"
+        bg_header = self.section_headers["background_edges"]
         bg_lines = (
             [self._format_edge_line(edge, id_labels=id_labels) for edge in ctx.background_edges]
             if self.include_background_edges and ctx.background_edges
@@ -185,7 +314,7 @@ class TranslationPreset:
         )
 
         # Tier 6 Episodic context block (when present)
-        ep_header = "## Relevant narrative episodes — context"
+        ep_header = self.section_headers["episodes"]
         ep_lines: list[str] = []
         if ctx.episodes:
             scene_char_ids = {
@@ -215,7 +344,7 @@ class TranslationPreset:
                 ep_lines.append(f"- [Step {ep.step}{known_str}{ignorant_str}] {ep.summary}")
 
         # Tier 5 Voice Bank anchor block
-        voice_header = "## Character voice bank — stylistic anchor"
+        voice_header = self.section_headers["voice"]
         voice_lines: list[str] = []
         capped_exemplars = _cap_voice_exemplars_per_speaker(
             ctx.voice_exemplars, self.max_voice_per_speaker
@@ -240,6 +369,8 @@ class TranslationPreset:
             voice_lines=voice_lines,
             empty_text=self.empty_text,
             max_context_chars=self.max_context_chars,
+            glossary_header=glossary_header,
+            glossary_sections=glossary_sections,
         )
         if dropped_binding > 0:
             logger.warning(
