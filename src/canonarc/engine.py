@@ -21,10 +21,12 @@ from .embedders import (
 from .episodic import DEFAULT_EPISODIC_POLICY, EpisodeRanker
 from .extractors import DeltaExtractor
 from .hooks import EngineHooks
+from .inflections import InflectionGenerator
 from .models import (
     AliasRecord,
     DialogueCandidate,
     DirectedEdgeRecord,
+    EntityDelta,
     EntityRecord,
     EpisodeRecord,
     EpistemicMode,
@@ -66,6 +68,7 @@ class StepTransaction:
         rerun_clean: bool = True,
         prev_text: str = "",
         next_text: str = "",
+        lang: str | None = None,
     ) -> None:
         self.engine = engine
         self.step = step
@@ -81,6 +84,7 @@ class StepTransaction:
         self.rerun_clean = rerun_clean
         self.prev_text = prev_text
         self.next_text = next_text
+        self.lang = lang
         self._context: StepContext | None = None
         self._staged_delta: StepDelta | None = None
         self.last_raw_delta: StepDelta | None = None
@@ -114,6 +118,7 @@ class StepTransaction:
             edge_types=self.edge_types,
             location_id=self.location_id,
             timeline_id=self.timeline_id,
+            lang=self.lang,
         )
         return self
 
@@ -202,11 +207,47 @@ class TimelineSession:
         *,
         aliases: Sequence[str | AliasRecord] = (),
         step: int = 0,
+        target_lang: str | None = None,
+        auto_inflect: bool = True,
     ) -> None:
-        self.engine.register_entity(entity, aliases=aliases, step=step, timeline_id=self.timeline_id)
+        self.engine.register_entity(
+            entity,
+            aliases=aliases,
+            step=step,
+            timeline_id=self.timeline_id,
+            target_lang=target_lang,
+            auto_inflect=auto_inflect,
+        )
 
-    def seed_entities(self, entities: Sequence[EntityRecord], *, step: int = 0) -> None:
-        self.engine.seed_entities(entities, step=step, timeline_id=self.timeline_id)
+    def seed_entities(
+        self,
+        entities: Sequence[EntityRecord],
+        *,
+        step: int = 0,
+        target_lang: str | None = None,
+        auto_inflect: bool = True,
+    ) -> None:
+        self.engine.seed_entities(
+            entities,
+            step=step,
+            timeline_id=self.timeline_id,
+            target_lang=target_lang,
+            auto_inflect=auto_inflect,
+        )
+
+    def expand_entity_inflections(
+        self,
+        entity_id: str,
+        *,
+        target_lang: str | None = None,
+        step: int | None = None,
+    ) -> list[AliasRecord]:
+        return self.engine.expand_entity_inflections(
+            entity_id,
+            target_lang=target_lang,
+            step=step,
+            timeline_id=self.timeline_id,
+        )
 
     def retrieve_context(
         self,
@@ -227,6 +268,7 @@ class TimelineSession:
         chapter_id: str | None = None,
         scene_id: str | None = None,
         voice_constraints: dict[str, str] | None = None,
+        lang: str | None = None,
     ) -> StepContext:
         return self.engine.retrieve_context(
             step,
@@ -246,6 +288,7 @@ class TimelineSession:
             chapter_id=chapter_id,
             scene_id=scene_id,
             voice_constraints=voice_constraints,
+            lang=lang,
         )
 
     def step_transaction(
@@ -263,6 +306,7 @@ class TimelineSession:
         rerun_clean: bool = True,
         prev_text: str = "",
         next_text: str = "",
+        lang: str | None = None,
     ) -> StepTransaction:
         return self.engine.step_transaction(
             step,
@@ -278,6 +322,7 @@ class TimelineSession:
             rerun_clean=rerun_clean,
             prev_text=prev_text,
             next_text=next_text,
+            lang=lang,
         )
 
     def apply_delta(self, step: int, delta: StepDelta) -> list[EpisodeRecord]:
@@ -315,6 +360,7 @@ class TimelineSession:
         step: int | None = None,
         prev_text: str = "",
         next_text: str = "",
+        lang: str | None = None,
     ) -> list[DialogueCandidate]:
         return self.engine.extract_dialogue_candidates(
             text,
@@ -323,6 +369,7 @@ class TimelineSession:
             timeline_id=self.timeline_id,
             prev_text=prev_text,
             next_text=next_text,
+            lang=lang,
         )
 
     def index_voice_exemplars(
@@ -434,6 +481,7 @@ class CanonArcEngine:
         mention_resolver: MentionResolver | None = None,
         extractor: DeltaExtractor | None = None,
         episode_ranker: EpisodeRanker | None = None,
+        inflection_generator: InflectionGenerator | None = None,
         hooks: Sequence[EngineHooks] = (),
         on_embedder_mismatch: Literal["raise", "warn", "reindex", "ignore"] = "warn",
     ) -> None:
@@ -448,6 +496,7 @@ class CanonArcEngine:
         self.preset: DomainPreset = preset or InteractiveFictionPreset()
         self.mention_resolver: MentionResolver = mention_resolver or DefaultLexicalResolver()
         self.extractor: DeltaExtractor | None = extractor
+        self.inflection_generator: InflectionGenerator | None = inflection_generator
         self._hooks: list[EngineHooks] = list(hooks)
         self._on_embedder_mismatch = on_embedder_mismatch
         self._embedder_verified = False
@@ -622,6 +671,98 @@ class CanonArcEngine:
 
     # --- Tier 1 Seeding ---
 
+    def _resolve_mentions(
+        self,
+        text: str,
+        explicit_mentions: Sequence[str],
+        entities: Sequence[EntityRecord],
+        aliases: Sequence[AliasRecord],
+        *,
+        lang: str | None = None,
+    ) -> list[ResolvedMention]:
+        if lang is not None:
+            try:
+                return self.mention_resolver.resolve(  # type: ignore[call-arg]
+                    text=text,
+                    explicit_mentions=explicit_mentions,
+                    entities=entities,
+                    aliases=aliases,
+                    lang=lang,
+                )
+            except TypeError:
+                pass
+        return self.mention_resolver.resolve(
+            text=text,
+            explicit_mentions=explicit_mentions,
+            entities=entities,
+            aliases=aliases,
+        )
+
+    def _build_target_aliases(
+        self,
+        entity: EntityRecord,
+        existing_aliases: Sequence[str | AliasRecord],
+        *,
+        target_lang: str | None = None,
+        auto_inflect: bool = True,
+    ) -> list[AliasRecord]:
+        """Auto-registers base_attributes['target_name'] and optional one-shot LLM inflections."""
+        raw_target = entity.base_attributes.get("target_name")
+        if not isinstance(raw_target, str) or not raw_target.strip():
+            return []
+        target_name = raw_target.strip()
+        raw_lang = (
+            target_lang
+            or entity.base_attributes.get("target_lang")
+            or entity.base_attributes.get("lang")
+        )
+        eff_lang = raw_lang.strip().lower() if isinstance(raw_lang, str) and raw_lang.strip() else None
+
+        existing_keys: set[str] = set()
+        for a in existing_aliases:
+            s = a.alias.strip() if isinstance(a, AliasRecord) else a.strip()
+            if s:
+                existing_keys.add(s.lower())
+        canonical_lower = entity.canonical_name.strip().lower()
+
+        generated: list[AliasRecord] = []
+
+        def _maybe_add(form: str, *, allow_canonical: bool = False) -> None:
+            clean = form.strip()
+            if not clean:
+                return
+            key = clean.lower()
+            if key in existing_keys:
+                return
+            if not allow_canonical and key == canonical_lower:
+                return
+            existing_keys.add(key)
+            generated.append(
+                AliasRecord(
+                    alias=clean,
+                    entity_id=entity.entity_id,
+                    kind="permanent",
+                    lang=eff_lang,
+                )
+            )
+
+        _maybe_add(target_name, allow_canonical=eff_lang is not None)
+
+        if auto_inflect and eff_lang and self.inflection_generator is not None:
+            gender = entity.base_attributes.get("gender")
+            declension = entity.base_attributes.get("declension")
+            forms = self.inflection_generator.generate_inflections(
+                target_name,
+                eff_lang,
+                gender=str(gender) if gender is not None else None,
+                kind=entity.kind,
+                declension=str(declension) if declension is not None else None,
+            )
+            for form in forms:
+                _maybe_add(form)
+
+        return generated
+
     def register_entity(
         self,
         entity: EntityRecord,
@@ -629,9 +770,18 @@ class CanonArcEngine:
         aliases: Sequence[str | AliasRecord] = (),
         step: int = 0,
         timeline_id: str | None = None,
+        target_lang: str | None = None,
+        auto_inflect: bool = True,
     ) -> None:
         tl = timeline_id or self.active_timeline
-        self.store.register_entity(entity, aliases=aliases, step=step, timeline_id=tl)
+        extra_aliases = self._build_target_aliases(
+            entity,
+            aliases,
+            target_lang=target_lang,
+            auto_inflect=auto_inflect,
+        )
+        all_aliases: list[str | AliasRecord] = [*aliases, *extra_aliases]
+        self.store.register_entity(entity, aliases=all_aliases, step=step, timeline_id=tl)
 
     def seed_entities(
         self,
@@ -639,9 +789,62 @@ class CanonArcEngine:
         *,
         step: int = 0,
         timeline_id: str | None = None,
+        target_lang: str | None = None,
+        auto_inflect: bool = True,
     ) -> None:
         for ent in entities:
-            self.register_entity(ent, step=step, timeline_id=timeline_id)
+            self.register_entity(
+                ent,
+                step=step,
+                timeline_id=timeline_id,
+                target_lang=target_lang,
+                auto_inflect=auto_inflect,
+            )
+
+    def expand_entity_inflections(
+        self,
+        entity_id: str,
+        *,
+        target_lang: str | None = None,
+        step: int | None = None,
+        timeline_id: str | None = None,
+    ) -> list[AliasRecord]:
+        """One-shot inflection expansion for an already-registered or Zero-Seed discovered entity."""
+        tl = timeline_id or self.active_timeline
+        if step is None:
+            tl_info = self.store.get_timeline(tl)
+            eff_step = tl_info.head_step if tl_info is not None else 0
+        else:
+            eff_step = step
+
+        entities = self.store.get_all_active_entities(tl, eff_step)
+        entity = next((e for e in entities if e.entity_id == entity_id), None)
+        if entity is None:
+            raise ValueError(f"Entity '{entity_id}' not found on timeline '{tl}' at step {eff_step}.")
+
+        active_aliases = [
+            a for a in self.store.get_all_active_aliases(tl, eff_step) if a.entity_id == entity_id
+        ]
+        new_aliases = self._build_target_aliases(
+            entity,
+            active_aliases,
+            target_lang=target_lang,
+            auto_inflect=True,
+        )
+        if new_aliases:
+            self.apply_delta(
+                eff_step,
+                StepDelta(
+                    entities=[
+                        EntityDelta(
+                            entity_id=entity_id,
+                            add_aliases=list(new_aliases),
+                        )
+                    ]
+                ),
+                timeline_id=tl,
+            )
+        return new_aliases
 
     # --- Unified Tier 1-6 Retrieval ---
 
@@ -665,6 +868,7 @@ class CanonArcEngine:
         chapter_id: str | None = None,
         scene_id: str | None = None,
         voice_constraints: dict[str, str] | None = None,
+        lang: str | None = None,
     ) -> StepContext:
         tl = timeline_id or self.active_timeline
         policy = self._policy
@@ -685,11 +889,12 @@ class CanonArcEngine:
 
         # 2. Entity resolution via pluggable MentionResolver + POV epistemic disguise projection
         pov_set = set(pov_entity_ids) if pov_entity_ids else set()
-        raw_mentions = self.mention_resolver.resolve(
+        raw_mentions = self._resolve_mentions(
             text=text,
             explicit_mentions=mentions,
             entities=active_entities,
             aliases=active_aliases,
+            lang=lang,
         )
         resolved_mentions, disguise_masks, pierced_disguises = self._apply_epistemic_disguises(
             raw_mentions=raw_mentions,
@@ -711,11 +916,12 @@ class CanonArcEngine:
             )
         }
         if prev_text.strip() and len(primary_char_ids) < 2:
-            halo_raw = self.mention_resolver.resolve(
+            halo_raw = self._resolve_mentions(
                 text=prev_text,
                 explicit_mentions=(),
                 entities=active_entities,
                 aliases=active_aliases,
+                lang=lang,
             )
             halo_mentions, halo_masks, halo_pierced = self._apply_epistemic_disguises(
                 raw_mentions=halo_raw,
@@ -1244,6 +1450,7 @@ class CanonArcEngine:
         rerun_clean: bool = True,
         prev_text: str = "",
         next_text: str = "",
+        lang: str | None = None,
     ) -> StepTransaction:
         return StepTransaction(
             self,
@@ -1260,6 +1467,7 @@ class CanonArcEngine:
             rerun_clean=rerun_clean,
             prev_text=prev_text,
             next_text=next_text,
+            lang=lang,
         )
 
     # --- State & Episode Mutation ---
@@ -1449,6 +1657,7 @@ class CanonArcEngine:
         timeline_id: str | None = None,
         prev_text: str = "",
         next_text: str = "",
+        lang: str | None = None,
     ) -> list[DialogueCandidate]:
         tl = timeline_id or self.active_timeline
         if step is None:
@@ -1468,11 +1677,12 @@ class CanonArcEngine:
         ]
 
         def _resolve_in_segment(segment: str) -> tuple[str | None, str | None, str | None]:
-            mentions = self.mention_resolver.resolve(
+            mentions = self._resolve_mentions(
                 text=segment,
                 explicit_mentions=(),
                 entities=speaker_entities,
                 aliases=speaker_aliases,
+                lang=lang,
             )
             if not mentions:
                 return None, None, None
@@ -1765,6 +1975,9 @@ class CanonArcEngine:
             lookup[e.entity_id.lower()] = e.entity_id
             if e.canonical_name:
                 lookup[e.canonical_name.lower()] = e.entity_id
+            target_name = e.base_attributes.get("target_name")
+            if isinstance(target_name, str) and target_name.strip():
+                lookup.setdefault(target_name.strip().lower(), e.entity_id)
         for a in aliases:
             if a.alias and a.kind != "disguise":
                 lookup.setdefault(a.alias.lower(), a.entity_id)
@@ -1776,6 +1989,9 @@ class CanonArcEngine:
             lookup.setdefault(ed.entity_id.lower(), ed.entity_id)
             if ed.canonical_name:
                 lookup.setdefault(ed.canonical_name.lower(), ed.entity_id)
+            ed_target = ed.base_attributes.get("target_name")
+            if isinstance(ed_target, str) and ed_target.strip():
+                lookup.setdefault(ed_target.strip().lower(), ed.entity_id)
             for alias_item in ed.add_aliases:
                 if isinstance(alias_item, AliasRecord):
                     if alias_item.alias and alias_item.kind != "disguise":

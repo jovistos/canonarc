@@ -916,6 +916,7 @@ class CausalStore:
             alias=p.get("alias") or rev["subject_key"],
             entity_id=rev["source_id"],
             kind=p.get("kind", "epithet"),
+            lang=p.get("lang"),
             known_to=p.get("known_to"),
             persona_name=p.get("persona_name"),
             valid_from_step=rev["valid_from_step"],
@@ -969,11 +970,13 @@ class CausalStore:
         alias: str | AliasRecord,
         default_kind: str = "epithet",
     ) -> None:
-        """Inserts an alias revision preserving kind, known_to, and persona_name."""
+        """Inserts an alias revision preserving kind, lang, known_to, and persona_name."""
         if isinstance(alias, AliasRecord):
             alias_str = alias.alias.strip()
             target_entity_id = alias.entity_id or entity_id
             alias_payload: dict[str, Any] = {"alias": alias_str, "kind": alias.kind}
+            if alias.lang is not None and alias.lang.strip():
+                alias_payload["lang"] = alias.lang.strip().lower()
             if alias.known_to is not None:
                 alias_payload["known_to"] = alias.known_to
             if alias.persona_name is not None:

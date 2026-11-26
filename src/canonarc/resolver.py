@@ -9,6 +9,72 @@ from rapidfuzz import fuzz, process
 from .embedders import _CJK_CHAR_RE
 from .models import AliasRecord, EntityRecord, ResolvedMention
 
+_VOWELS: frozenset[str] = frozenset("aeiouáéíóúàèìòùäëïöüâêîôûāēīōū")
+
+# Conservative inflectional & possessive suffix inventory for 2-char stems (e.g. Ana -> an + i/e/om/in/ina)
+_TWO_CHAR_STEM_SUFFIXES: frozenset[str] = frozenset(
+    {
+        "a",
+        "e",
+        "i",
+        "o",
+        "u",
+        "om",
+        "em",
+        "oj",
+        "ej",
+        "in",
+        "ina",
+        "ino",
+        "ine",
+        "inu",
+        "ov",
+        "ova",
+        "ovo",
+        "ove",
+        "ovu",
+        "ev",
+        "eva",
+        "evo",
+        "eve",
+        "evu",
+    }
+)
+
+# Inflectional & possessive suffix inventory for 3-6 char stems (Slavic, Germanic, Romance, Uralic)
+_SHORT_INFLECTION_SUFFIXES: frozenset[str] = _TWO_CHAR_STEM_SUFFIXES | frozenset(
+    {
+        "y",
+        "s",
+        "n",
+        "im",
+        "am",
+        "um",
+        "aj",
+        "ih",
+        "ah",
+        "uh",
+        "an",
+        "en",
+        "oy",
+        "ey",
+        "ou",
+        "au",
+        "iu",
+        "ia",
+        "ie",
+        "io",
+        "owi",
+        "iem",
+        "ami",
+        "ach",
+        "ego",
+        "emu",
+        "ych",
+        "ymi",
+    }
+)
+
 
 class MentionResolver(Protocol):
     """Protocol for pluggable entity mention & coreference resolution."""
@@ -23,10 +89,17 @@ class MentionResolver(Protocol):
 
 
 class DefaultLexicalResolver:
-    """Word-boundary lexical + alias resolver with optional rapidfuzz inflection fallback."""
+    """Word-boundary lexical + alias resolver with bilingual target_name indexing,
+    prefix/stem-aware short-name inflection fallback, and rapidfuzz inflection fallback."""
 
-    def __init__(self, fuzzy_threshold: float | None = 88.0) -> None:
+    def __init__(
+        self,
+        fuzzy_threshold: float | None = 88.0,
+        *,
+        short_name_inflection: bool = True,
+    ) -> None:
         self.fuzzy_threshold = fuzzy_threshold
+        self.short_name_inflection = short_name_inflection
 
     @staticmethod
     def _phrase_pattern(phrase_lower: str) -> str:
@@ -41,21 +114,91 @@ class DefaultLexicalResolver:
         match = re.search(cls._phrase_pattern(phrase_lower), text_lower)
         return match.start() if match else -1
 
+    @staticmethod
+    def _short_name_stems(phrase_lower: str) -> list[tuple[str, frozenset[str]]]:
+        """Builds candidate (stem, allowed_suffixes) pairs for a 3-6 char single-word name."""
+        n = len(phrase_lower)
+        if n < 3 or n > 6 or " " in phrase_lower or _CJK_CHAR_RE.match(phrase_lower[0]):
+            return []
+        stems: list[tuple[str, frozenset[str]]] = []
+        if phrase_lower[-1] in _VOWELS:
+            stem = phrase_lower[:-1]
+            suffix_set = _TWO_CHAR_STEM_SUFFIXES if len(stem) <= 2 else _SHORT_INFLECTION_SUFFIXES
+            stems.append((stem, suffix_set))
+        else:
+            stems.append((phrase_lower, _SHORT_INFLECTION_SUFFIXES))
+            # Slavic fleeting vowel in penultimate position (e.g. Petar -> petr-, Mitar -> mitr-)
+            if n >= 5 and phrase_lower[-2] in _VOWELS and phrase_lower[-3] not in _VOWELS:
+                fleeting_stem = phrase_lower[:-2] + phrase_lower[-1]
+                if len(fleeting_stem) >= 4:
+                    stems.append((fleeting_stem, _SHORT_INFLECTION_SUFFIXES))
+        return stems
+
+    @classmethod
+    def _match_short_inflection(
+        cls,
+        phrase_lower: str,
+        raw_token_spans: Sequence[tuple[str, str, int, int]],
+        matched_spans: dict[tuple[int, int], str],
+    ) -> tuple[str, int, int] | None:
+        """Matches a capitalized short inflected proper noun token against a 3-6 char name stem."""
+        stems = cls._short_name_stems(phrase_lower)
+        if not stems:
+            return None
+        for raw_tok, lower_tok, start, end in raw_token_spans:
+            if not raw_tok or not raw_tok[0].isupper():
+                continue
+            if lower_tok == phrase_lower:
+                continue
+            if any(start < e and end > s for s, e in matched_spans):
+                continue
+            for stem, allowed_suffixes in stems:
+                if lower_tok.startswith(stem) and len(lower_tok) > len(stem):
+                    suffix = lower_tok[len(stem) :]
+                    if suffix in allowed_suffixes:
+                        return lower_tok, start, end
+        return None
+
     def resolve(
         self,
         text: str,
         explicit_mentions: Sequence[str],
         entities: Sequence[EntityRecord],
         aliases: Sequence[AliasRecord],
+        *,
+        lang: str | None = None,
     ) -> list[ResolvedMention]:
         resolved: list[ResolvedMention] = []
         seen_pairs: set[tuple[str, str]] = set()  # (entity_id, surface_lower)
+        lang_norm = lang.strip().lower() if lang and lang.strip() else None
 
-        name_to_id = {e.canonical_name.lower(): e.entity_id for e in entities if e.canonical_name}
+        name_to_id: dict[str, str] = {}
+        for e in entities:
+            if e.canonical_name:
+                name_to_id[e.canonical_name.lower()] = e.entity_id
+            target_name = e.base_attributes.get("target_name")
+            if isinstance(target_name, str) and target_name.strip():
+                ent_target_lang = e.base_attributes.get("target_lang") or e.base_attributes.get("lang")
+                ent_target_lang_norm = (
+                    ent_target_lang.strip().lower()
+                    if isinstance(ent_target_lang, str) and ent_target_lang.strip()
+                    else None
+                )
+                if (
+                    lang_norm is None
+                    or ent_target_lang_norm is None
+                    or ent_target_lang_norm == lang_norm
+                ):
+                    name_to_id.setdefault(target_name.strip().lower(), e.entity_id)
+
         alias_map: dict[str, list[AliasRecord]] = {}
         for a in aliases:
-            if a.alias:
-                alias_map.setdefault(a.alias.lower(), []).append(a)
+            if not a.alias:
+                continue
+            if lang_norm is not None and a.lang is not None:
+                if a.lang.strip().lower() != lang_norm:
+                    continue
+            alias_map.setdefault(a.alias.lower(), []).append(a)
 
         def _add(
             surface: str,
@@ -136,12 +279,39 @@ class DefaultLexicalResolver:
                     )
                     break
 
-            # 3. Optional fuzzy fallback for inflected languages / typos
-            if self.fuzzy_threshold is not None:
-                matched_entity_ids = {r.entity_id for r in resolved}
-                token_spans = [
-                    (m.group(0), m.start(), m.end()) for m in re.finditer(r"\w+", text_lower)
+            # 3. Prefix/stem-aware short-name inflection fallback (3-6 char proper names)
+            raw_token_spans: list[tuple[str, str, int, int]] | None = None
+            matched_entity_ids = {r.entity_id for r in resolved}
+            if self.short_name_inflection and self.fuzzy_threshold is not None:
+                raw_token_spans = [
+                    (m.group(0), m.group(0).lower(), m.start(), m.end())
+                    for m in re.finditer(r"\w+", text)
                 ]
+                for phrase, ent_id, candidate_via in candidates:
+                    if ent_id in matched_entity_ids or not (3 <= len(phrase) <= 6):
+                        continue
+                    hit = self._match_short_inflection(phrase, raw_token_spans, matched_spans)
+                    if hit is not None:
+                        matched_tok, start, end = hit
+                        matched_spans[(start, end)] = phrase
+                        _add(
+                            matched_tok,
+                            ent_id,
+                            "fuzzy",
+                            conf=0.9,
+                            matched_source=candidate_via,
+                            matched_phrase=phrase,
+                        )
+                        matched_entity_ids.add(ent_id)
+
+            # 4. Optional rapidfuzz WRatio fallback for longer inflected names / typos
+            if self.fuzzy_threshold is not None:
+                if raw_token_spans is None:
+                    raw_token_spans = [
+                        (m.group(0), m.group(0).lower(), m.start(), m.end())
+                        for m in re.finditer(r"\w+", text)
+                    ]
+                token_spans = [(lower_tok, s, e) for _, lower_tok, s, e in raw_token_spans]
                 n_tokens = len(token_spans)
                 # Lazily cache deduplicated non-overlapping windows and trigram index per word count
                 windows_cache: dict[int, tuple[list[str], dict[str, set[int]]]] = {}
