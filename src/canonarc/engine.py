@@ -7,11 +7,18 @@ import json
 import re
 import uuid
 import warnings
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import AbstractContextManager
 from pathlib import Path
 from typing import Any, Literal, Self
 
+from .audit import (
+    AuditReport,
+    AuditRule,
+    AuditSeverity,
+    run_audit_step as _run_audit_step,
+    run_audit_timeline as _run_audit_timeline,
+)
 from .bible import (
     BibleExportFormat,
     BibleExportResult,
@@ -613,6 +620,54 @@ class TimelineSession:
             column_map=column_map,
         )
 
+    def audit_step(
+        self,
+        step: int,
+        source_text: str = "",
+        target_text: str = "",
+        *,
+        rules: Sequence[AuditRule] | None = None,
+        include_rules: Sequence[str] | None = None,
+        exclude_rules: Sequence[str] | None = None,
+        min_severity: AuditSeverity = "info",
+        lang: str | None = None,
+    ) -> AuditReport:
+        return self.engine.audit_step(
+            step,
+            source_text=source_text,
+            target_text=target_text,
+            timeline_id=self.timeline_id,
+            rules=rules,
+            include_rules=include_rules,
+            exclude_rules=exclude_rules,
+            min_severity=min_severity,
+            lang=lang,
+        )
+
+    def audit_timeline(
+        self,
+        *,
+        from_step: int = 0,
+        to_step: int | None = None,
+        texts: Mapping[int, str | tuple[str, str]] | None = None,
+        rules: Sequence[AuditRule] | None = None,
+        include_rules: Sequence[str] | None = None,
+        exclude_rules: Sequence[str] | None = None,
+        min_severity: AuditSeverity = "info",
+        lang: str | None = None,
+    ) -> AuditReport:
+        return self.engine.audit_timeline(
+            timeline_id=self.timeline_id,
+            from_step=from_step,
+            to_step=to_step,
+            texts=texts,
+            rules=rules,
+            include_rules=include_rules,
+            exclude_rules=exclude_rules,
+            min_severity=min_severity,
+            lang=lang,
+        )
+
     def normalize_delta(self, delta: StepDelta, *, step: int | None = None) -> StepDelta:
         return self.engine.normalize_delta(delta, step=step, timeline_id=self.timeline_id)
 
@@ -679,6 +734,7 @@ class CanonArcEngine:
         episode_ranker: EpisodeRanker | None = None,
         inflection_generator: InflectionGenerator | None = None,
         hooks: Sequence[EngineHooks] = (),
+        audit_rules: Sequence[AuditRule] | None = None,
         on_embedder_mismatch: Literal["raise", "warn", "reindex", "ignore"] = "warn",
     ) -> None:
         self.store: MemoryStore = store if store is not None else CausalStore(db_path)
@@ -694,6 +750,9 @@ class CanonArcEngine:
         self.extractor: DeltaExtractor | None = extractor
         self.inflection_generator: InflectionGenerator | None = inflection_generator
         self._hooks: list[EngineHooks] = list(hooks)
+        self.audit_rules: list[AuditRule] | None = (
+            list(audit_rules) if audit_rules is not None else None
+        )
         self._on_embedder_mismatch = on_embedder_mismatch
         self._embedder_verified = False
         if self._policy.has_tier(5) or self._policy.has_tier(6):
@@ -2646,4 +2705,60 @@ class CanonArcEngine:
             story_time=delta.story_time,
             chapter_id=delta.chapter_id,
             scene_id=delta.scene_id,
+        )
+
+    # --- Pluggable QA & Continuity Audit ---
+
+    def audit_step(
+        self,
+        step: int,
+        source_text: str = "",
+        target_text: str = "",
+        *,
+        timeline_id: str | None = None,
+        rules: Sequence[AuditRule] | None = None,
+        include_rules: Sequence[str] | None = None,
+        exclude_rules: Sequence[str] | None = None,
+        min_severity: AuditSeverity = "info",
+        lang: str | None = None,
+    ) -> AuditReport:
+        """Runs pluggable QA & continuity audit rules against a single committed step."""
+        return _run_audit_step(
+            self,
+            step,
+            source_text=source_text,
+            target_text=target_text,
+            timeline_id=timeline_id,
+            rules=rules,
+            include_rules=include_rules,
+            exclude_rules=exclude_rules,
+            min_severity=min_severity,
+            lang=lang,
+        )
+
+    def audit_timeline(
+        self,
+        *,
+        timeline_id: str | None = None,
+        from_step: int = 0,
+        to_step: int | None = None,
+        texts: Mapping[int, str | tuple[str, str]] | None = None,
+        rules: Sequence[AuditRule] | None = None,
+        include_rules: Sequence[str] | None = None,
+        exclude_rules: Sequence[str] | None = None,
+        min_severity: AuditSeverity = "info",
+        lang: str | None = None,
+    ) -> AuditReport:
+        """Audits a range of steps (or the entire timeline) and aggregates all findings."""
+        return _run_audit_timeline(
+            self,
+            timeline_id=timeline_id,
+            from_step=from_step,
+            to_step=to_step,
+            texts=texts,
+            rules=rules,
+            include_rules=include_rules,
+            exclude_rules=exclude_rules,
+            min_severity=min_severity,
+            lang=lang,
         )
