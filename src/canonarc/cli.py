@@ -7,6 +7,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
+from .audit import infer_audit_export_format
 from .bible import infer_export_format
 from .engine import CanonArcEngine
 from .models import TimelineInfo
@@ -220,6 +221,24 @@ def _load_pairs_jsonl(path: str) -> dict[int, tuple[str, str]]:
 
 
 def _cmd_audit(args: argparse.Namespace) -> int:
+    if args.json and args.format not in ("auto", "json"):
+        print(
+            f"Error: --json cannot be combined with --format {args.format}.",
+            file=sys.stderr,
+        )
+        return 2
+
+    requested_fmt = "json" if (args.json and args.format == "auto") else args.format
+    out_target = args.output
+    try:
+        resolved_fmt = infer_audit_export_format(
+            None if (not out_target or out_target == "-") else out_target,
+            requested_fmt,
+        )
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 2
+
     include_rules = (
         [r.strip() for r in args.rules.split(",") if r.strip()] if args.rules else None
     )
@@ -272,10 +291,13 @@ def _cmd_audit(args: argparse.Namespace) -> int:
                 lang=args.lang,
             )
 
-    if args.json:
-        print(json.dumps(report.model_dump(), indent=2, ensure_ascii=False))
+    if out_target and out_target != "-":
+        report.export(out_target, format=resolved_fmt, excel_bom=bool(args.excel_bom))
     else:
-        print(report.summary())
+        rendered = report.render(resolved_fmt)
+        if rendered and not rendered.endswith("\n"):
+            rendered += "\n"
+        sys.stdout.write(rendered)
 
     if args.fail_on != "none" and report.has_issues_at_or_above(args.fail_on):
         return 1
@@ -504,7 +526,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="Exit non-zero if issues at or above this severity exist (default: error).",
     )
     p_audit.add_argument("--lang", default=None, help="Optional target language tag.")
-    p_audit.add_argument("--json", action="store_true", help="Output audit report as JSON.")
+    p_audit.add_argument(
+        "-o",
+        "--output",
+        default=None,
+        help="Write audit report to file path (or '-' for stdout).",
+    )
+    p_audit.add_argument(
+        "--format",
+        default="auto",
+        choices=["auto", "text", "json", "jsonl", "csv"],
+        help="Output format (default: auto-detect from --output extension, or 'text').",
+    )
+    p_audit.add_argument(
+        "--excel-bom",
+        action="store_true",
+        help="Write UTF-8 BOM for Excel CSV compatibility when exporting CSV.",
+    )
+    p_audit.add_argument("--json", action="store_true", help="Output audit report as JSON (alias for --format json).")
     p_audit.set_defaults(func=_cmd_audit)
 
     p_dups = sub.add_parser(
