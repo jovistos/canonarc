@@ -340,3 +340,210 @@ def test_translation_preset_validates_arguments() -> None:
         TranslationPreset(max_voice_per_speaker=-1)
     with pytest.raises(ValueError, match="max_context_chars"):
         TranslationPreset(max_context_chars=-10)
+    with pytest.raises(ValueError, match="entity_grouping"):
+        TranslationPreset(entity_grouping="invalid")  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="Unknown section_headers"):
+        TranslationPreset(section_headers={"unknown": "## Bad"})
+    with pytest.raises(ValueError, match="section_headers"):
+        TranslationPreset(section_headers={"glossary": "   "})
+
+
+def _hybrid_context() -> StepContext:
+    return StepContext(
+        timeline_id="main",
+        step=7,
+        entities=[
+            EntityRecord(
+                entity_id="char_arthur",
+                kind="character",
+                canonical_name="Arthur",
+                base_attributes={"target_name": "Artur", "gender": "M"},
+                state={"mood": "tense"},
+            ),
+            EntityRecord(
+                entity_id="term_drift",
+                kind="terminology",
+                canonical_name="Resonance Drift",
+                base_attributes={"target_name": "Rezonantni pomak", "gender": "M"},
+            ),
+            EntityRecord(
+                entity_id="loc_citadel",
+                kind="location",
+                canonical_name="Iron Citadel",
+                base_attributes={"target_name": "Gvozdena citadela", "gender": "F"},
+            ),
+            EntityRecord(
+                entity_id="org_council",
+                kind="organization",
+                canonical_name="Council of Nine",
+                base_attributes={"target_name": "Veće devetorice", "gender": "N"},
+            ),
+            EntityRecord(
+                entity_id="item_loom",
+                kind="artifact",
+                canonical_name="Aether Loom",
+                base_attributes={"target_name": "Eterski razboj", "gender": "M"},
+            ),
+            EntityRecord(
+                entity_id="custom_rune",
+                kind="spell_school",
+                canonical_name="Pyromancy",
+                base_attributes={"target_name": "Piromantija", "gender": "F"},
+            ),
+        ],
+        active_edges=[
+            DirectedEdgeRecord(
+                source_id="char_arthur",
+                target_id="org_council",
+                relation_type="stance",
+                state={"register": "Vi", "tone": "formal"},
+            )
+        ],
+    )
+
+
+def test_entity_grouping_cast_and_glossary_splits_binding_blocks_and_omits_empty() -> None:
+    ctx = _hybrid_context()
+    rendered = TranslationPreset(entity_grouping="cast_and_glossary").format_prompt_context(ctx)
+
+    state_idx = rendered.index("## Scene character state & register — binding")
+    glossary_idx = rendered.index("## Terminology & glossary — binding")
+    assert state_idx < glossary_idx
+
+    state_block = rendered[state_idx:glossary_idx]
+    glossary_block = rendered[glossary_idx:]
+
+    assert "- Arthur [character]: target='Artur', M [mood: tense]" in state_block
+    assert "- Arthur → Council of Nine: register=Vi, tone=formal" in state_block
+    assert "Iron Citadel" not in state_block
+
+    assert "- Iron Citadel [location]: target='Gvozdena citadela', F" in glossary_block
+    assert "- Council of Nine [organization]: target='Veće devetorice', N" in glossary_block
+    assert "- Aether Loom [artifact]: target='Eterski razboj', M" in glossary_block
+    assert "- Resonance Drift [terminology]: target='Rezonantni pomak', M" in glossary_block
+
+    # Terminology-only chunk omits character state header completely
+    term_only_ctx = StepContext(
+        timeline_id="main",
+        step=8,
+        entities=[ctx.entities[1], ctx.entities[2]],
+    )
+    term_only_rendered = TranslationPreset(
+        entity_grouping="cast_and_glossary"
+    ).format_prompt_context(term_only_ctx)
+    assert "## Scene character state & register — binding" not in term_only_rendered
+    assert "## Terminology & glossary — binding" in term_only_rendered
+
+    # Character-only chunk omits glossary header completely
+    char_only_ctx = StepContext(
+        timeline_id="main",
+        step=9,
+        entities=[ctx.entities[0]],
+    )
+    char_only_rendered = TranslationPreset(
+        entity_grouping="cast_and_glossary"
+    ).format_prompt_context(char_only_ctx)
+    assert "## Scene character state & register — binding" in char_only_rendered
+    assert "## Terminology & glossary — binding" not in char_only_rendered
+
+    # LEXICON_ONLY keeps a single glossary block without character state header
+    lex_rendered = TranslationPreset(
+        policy=SchemaPolicy.lexicon_only(),
+        entity_grouping="cast_and_glossary",
+    ).format_prompt_context(ctx)
+    assert "## Scene character state & register — binding" not in lex_rendered
+    assert lex_rendered.count("## Terminology & glossary — binding") == 1
+
+
+def test_entity_grouping_by_kind_orders_subsections_and_suppresses_redundant_kind_tags() -> None:
+    ctx = _hybrid_context()
+
+    # FULL: characters + edges in state block; non-characters grouped under glossary subsections
+    full_rendered = TranslationPreset(entity_grouping="by_kind").format_prompt_context(ctx)
+    assert "## Scene character state & register — binding" in full_rendered
+    assert "- Arthur: target='Artur', M [mood: tense]" in full_rendered
+    assert "[character]" not in full_rendered
+    assert "## Terminology & glossary — binding" in full_rendered
+
+    headings = [
+        "### Locations",
+        "### Organizations",
+        "### Artifacts",
+        "### Terminology",
+        "### Spell School",
+    ]
+    positions = [full_rendered.index(h) for h in headings]
+    assert positions == sorted(positions)
+    assert "[location]" not in full_rendered
+    assert "[terminology]" not in full_rendered
+    assert "- Iron Citadel: target='Gvozdena citadela', F" in full_rendered
+    assert "- Pyromancy: target='Piromantija', F" in full_rendered
+
+    # LEXICON_ONLY: all kinds (including Characters) grouped under glossary subsections
+    lex_rendered = TranslationPreset(
+        policy=SchemaPolicy.lexicon_only(),
+        entity_grouping="by_kind",
+    ).format_prompt_context(ctx)
+    assert "## Scene character state & register — binding" not in lex_rendered
+    assert "## Terminology & glossary — binding" in lex_rendered
+    assert lex_rendered.index("### Characters") < lex_rendered.index("### Locations")
+    assert "[mood:" not in lex_rendered
+
+    # Colliding names across kinds still preserve disambiguation in by_kind
+    collision_ctx = StepContext(
+        timeline_id="main",
+        step=1,
+        entities=[
+            EntityRecord(entity_id="char_raven", kind="character", canonical_name="Raven"),
+            EntityRecord(entity_id="loc_raven", kind="location", canonical_name="Raven"),
+        ],
+    )
+    coll_rendered = TranslationPreset(
+        policy=SchemaPolicy.lexicon_only(),
+        entity_grouping="by_kind",
+    ).format_prompt_context(collision_ctx)
+    assert "- Raven [character]: target='Raven'" in coll_rendered
+    assert "- Raven [location]: target='Raven'" in coll_rendered
+
+
+def test_custom_section_headers_override_defaults() -> None:
+    ctx = _sample_context()
+    preset = TranslationPreset(
+        include_background_edges=True,
+        entity_grouping="cast_and_glossary",
+        section_headers={
+            "state": "## Cast & Register (Strict)",
+            "glossary": "## World Terms (Strict)",
+            "episodes": "## Prior Plot Beats",
+        },
+    )
+    rendered = preset.format_prompt_context(ctx)
+    assert "## Cast & Register (Strict)" in rendered
+    assert "## World Terms (Strict)" in rendered
+    assert "## Prior Plot Beats" in rendered
+    # Unoverridden headers retain defaults
+    assert "## Off-screen character ties — reference only" in rendered
+    assert "## Character voice bank — stylistic anchor" in rendered
+
+
+def test_max_context_chars_prunes_empty_grouped_subheadings_without_orphans(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    ctx = _hybrid_context()
+    full_text = TranslationPreset(entity_grouping="by_kind").format_prompt_context(ctx)
+
+    # Trim enough to drop the trailing Spell School and Terminology subsections
+    tight_budget = len(full_text) - 120
+    with caplog.at_level(logging.WARNING, logger="canonarc.presets"):
+        trimmed = TranslationPreset(
+            entity_grouping="by_kind",
+            max_context_chars=tight_budget,
+        ).format_prompt_context(ctx)
+
+    assert len(trimmed) <= tight_budget
+    assert "### Spell School" not in trimmed
+    assert "Pyromancy" not in trimmed
+    # No orphaned ### heading at the end of the prompt
+    assert not trimmed.rstrip().endswith("### Terminology")
+    assert not trimmed.rstrip().endswith("### Artifacts")
+    assert any("truncated" in rec.message and "binding" in rec.message for rec in caplog.records)

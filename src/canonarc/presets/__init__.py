@@ -15,13 +15,19 @@ from .policy import (
     TierProfile,
 )
 from .simulation import SimulationPreset
-from .translation import TranslationPreset
+from .translation import (
+    DEFAULT_TRANSLATION_SECTION_HEADERS,
+    EntityGrouping,
+    TranslationPreset,
+)
 
 __all__ = [
     "ALL_TIERS",
     "DEFAULT_SCHEMA_POLICY",
+    "DEFAULT_TRANSLATION_SECTION_HEADERS",
     "PROFILE_TIERS",
     "DomainPreset",
+    "EntityGrouping",
     "InteractiveFictionPreset",
     "SchemaPolicy",
     "SimulationPreset",

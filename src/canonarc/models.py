@@ -16,6 +16,17 @@ ENTITY_KIND_PREFIXES: dict[str, str] = {
     "term": "term",
 }
 
+ENTITY_KIND_HEADINGS: dict[str, str] = {
+    "character": "Characters",
+    "location": "Locations",
+    "faction": "Factions",
+    "organization": "Organizations",
+    "artifact": "Artifacts",
+    "item": "Items",
+    "term": "Terms & Glossary",
+    "terminology": "Terminology",
+}
+
 
 class TimelineInfo(BaseModel):
     """Metadata for a timeline branch."""
