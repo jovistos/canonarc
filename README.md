@@ -314,15 +314,17 @@ print(report.summary())
 
 ### Pluggable QA & Continuity Audit
 
-Run fast, deterministic, zero-LLM continuity and localization checks either **pre-commit** on a draft translation inside `step_transaction` (for automatic retry loops) or **post-commit** after each step / across an entire timeline. Built-in rules catch untranslated `canonical_name` leaks, wrong target spellings/transliterations (e.g. `"Febi"` instead of locked `"Fibi"` or `"Herkul Poaro"` instead of `"Erkil Poaro"`), missing target terms, alias-hijack/fuzzy duplicate entities, unexplained register flips, and mixed register vocabularies:
+Run fast, deterministic, zero-LLM continuity and localization checks either **pre-commit** on a draft translation inside `step_transaction` (for automatic retry loops) or **post-commit** after each step / across an entire timeline. Built-in rules catch untranslated `canonical_name` leaks, wrong target spellings/transliterations (e.g. `"Febi"` instead of locked `"Fibi"` or `"Herkul Poaro"` instead of `"Erkil Poaro"`), missing target terms, alias-hijack/fuzzy duplicate entities, unexplained register flips, and mixed register vocabularies—plus an opt-in `ScriptConsistencyRule` for catching cross-script drift (e.g. Cyrillic slipping into Serbian Latin) and mixed-script homoglyphs:
 
 ```python
-from canonarc import CallableAuditRule, AuditIssue
+from canonarc import CallableAuditRule, AuditIssue, ScriptConsistencyRule, default_audit_rules
 
 # Pre-commit draft auditing + LLM-ready repair loop inside step_transaction
-with engine.step_transaction(step=2, text=chunk_en, lang="sr") as tx:
+# (optionally add ScriptConsistencyRule for non-Latin or multi-script targets)
+rules = [*default_audit_rules(), ScriptConsistencyRule(expected_script="latin")]
+with engine.step_transaction(step=2, text=chunk_en, lang="sr-Latn") as tx:
     draft = translate(chunk_en, tx.context)
-    report = tx.audit_draft(draft)
+    report = tx.audit_draft(draft, rules=rules)
     if repair := report.format_repair_instructions():
         draft = retry_translate(chunk_en, draft, repair)
     tx.extract_and_commit(draft)
