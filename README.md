@@ -318,14 +318,28 @@ print(report.summary())
 
 ### Pluggable QA & Continuity Audit
 
-Run fast, deterministic, zero-LLM continuity and localization checks either **pre-commit** on a draft translation inside `step_transaction` (for automatic retry loops) or **post-commit** after each step / across an entire timeline. Built-in rules catch untranslated `canonical_name` leaks, wrong target spellings/transliterations (e.g. `"Febi"` instead of locked `"Fibi"` or `"Herkul Poaro"` instead of `"Erkil Poaro"`), missing target terms, alias-hijack/fuzzy duplicate entities, unexplained register flips, and mixed register vocabularies—plus an opt-in `ScriptConsistencyRule` for catching cross-script drift (e.g. Cyrillic slipping into Serbian Latin) and mixed-script homoglyphs:
+Run fast, deterministic, zero-LLM continuity and localization checks either **pre-commit** on a draft translation inside `step_transaction` (for automatic retry loops) or **post-commit** after each step / across an entire timeline. Built-in rules catch untranslated `canonical_name` leaks, wrong target spellings/transliterations (e.g. `"Febi"` instead of locked `"Fibi"` or `"Herkul Poaro"` instead of `"Erkil Poaro"`), missing target terms, alias-hijack/fuzzy duplicate entities, unexplained register flips, and mixed register vocabularies—plus opt-in localization rules for cross-script drift (`ScriptConsistencyRule`), verbatim placeholder preservation (`PlaceholderPreservationRule`), untranslated source echoes (`UntranslatedSourceRule`), and coarse truncation/collapse guards (`OmissionGuardRule`):
 
 ```python
-from canonarc import CallableAuditRule, AuditIssue, ScriptConsistencyRule, default_audit_rules
+from canonarc import (
+    AuditIssue,
+    CallableAuditRule,
+    OmissionGuardRule,
+    PlaceholderPreservationRule,
+    ScriptConsistencyRule,
+    UntranslatedSourceRule,
+    default_audit_rules,
+)
 
 # Pre-commit draft auditing + LLM-ready repair loop inside step_transaction
-# (optionally add ScriptConsistencyRule for non-Latin or multi-script targets)
-rules = [*default_audit_rules(), ScriptConsistencyRule(expected_script="latin")]
+# (opt-in localization rules compose into a single unified QA gate)
+rules = [
+    *default_audit_rules(),
+    ScriptConsistencyRule(expected_script="latin"),
+    PlaceholderPreservationRule(),  # defaults to COMMON_PLACEHOLDER_PATTERNS ([[...]], {var}, %s)
+    UntranslatedSourceRule(),
+    OmissionGuardRule(),
+]
 with engine.step_transaction(step=2, text=chunk_en, lang="sr-Latn") as tx:
     draft = translate(chunk_en, tx.context)
     report = tx.audit_draft(draft, rules=rules)
@@ -357,7 +371,7 @@ full_report = engine.audit_timeline(texts={1: (en_1, sr_1), 2: (en_2, sr_2)}, ru
 
 #### Markup & Placeholder Stripping (`ignore_patterns`)
 
-Localization inputs frequently contain inline placeholders or markup (`[[IMG_1]]`, `{player_name}`, `%s`, `<b>...</b>`, Markdown images `![alt](path)`). Pass `ignore_patterns` (or the vetted `COMMON_MARKUP_PATTERNS` bundle) once on `CanonArcEngine` to mask/strip non-prose tokens automatically across lexical resolution, Gate-1/Gate-2 voice harvesting, query embeddings, and text-level audit rules while preserving exact snippet offsets:
+Localization inputs frequently contain inline placeholders or markup (`[[IMG_1]]`, `{player_name}`, `%s`, `<b>...</b>`, Markdown images `![alt](path)`). Pass `ignore_patterns` (or the vetted `COMMON_MARKUP_PATTERNS` bundle) once on `CanonArcEngine` to mask/strip non-prose tokens automatically across lexical resolution, Gate-1/Gate-2 voice harvesting, query embeddings, and text-level audit rules while preserving exact snippet offsets. Pair with `PlaceholderPreservationRule()` (which defaults to the narrower `COMMON_PLACEHOLDER_PATTERNS` bundle so translatable Markdown alt text or HTML comments don't trigger false positives) to enforce 1:1 placeholder survival:
 
 ```python
 from canonarc import COMMON_MARKUP_PATTERNS, CanonArcEngine, TranslationPreset
