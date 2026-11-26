@@ -259,3 +259,150 @@ def test_cached_delta_extractor_and_transaction_fallback_for_legacy_extractor(
         assert captured[0].index("### Target StepDelta JSON Schema:") < captured[0].index(
             "### Known Entity IDs"
         )
+
+
+def test_known_entity_scope_compact_cast_roster_modes() -> None:
+    """known_entity_scope appends a terse cast/entity roster for out-of-scene entities without leaking future steps."""
+    with CanonArcEngine(":memory:") as engine:
+        # Step 0 seeded cast + location + faction
+        engine.register_entity(
+            EntityRecord(
+                entity_id="char_elena",
+                canonical_name="Elena",
+                kind="character",
+                base_attributes={"target_name": "Jelena"},
+                state={"location_id": "loc_hall"},
+            ),
+            step=0,
+        )
+        engine.register_entity(
+            EntityRecord(
+                entity_id="char_ivan",
+                canonical_name="Ivan",
+                kind="character",
+                base_attributes={"target_name": "Ivan"},  # same as canonical -> no duplicate slash
+                state={"location_id": "loc_docks"},
+            ),
+            step=0,
+        )
+        engine.register_entity(
+            EntityRecord(
+                entity_id="char_marcus",
+                canonical_name="Marcus",
+                kind="character",
+                base_attributes={"target_name": "Markus"},
+                state={"location_id": "loc_tower"},
+            ),
+            step=0,
+        )
+        engine.register_entity(
+            EntityRecord(
+                entity_id="loc_docks",
+                canonical_name="Old Docks",
+                kind="location",
+            ),
+            step=0,
+        )
+        engine.register_entity(
+            EntityRecord(
+                entity_id="fac_guild",
+                canonical_name="Ferrymen Guild",
+                kind="faction",
+            ),
+            step=0,
+        )
+        # Future character introduced at step 5 (must not leak into step 2)
+        engine.register_entity(
+            EntityRecord(
+                entity_id="char_future",
+                canonical_name="Future Stranger",
+                kind="character",
+            ),
+            step=5,
+        )
+
+        scene = "Elena heard the old ferryman cough in the dark."
+        ctx = engine.retrieve_context(step=2, text=scene)
+
+        # 1. Default 'scene' scope: only Elena (in-scene), no compact roster
+        sys_scene, user_scene = engine.build_extraction_messages(ctx, scene)
+        assert "char_elena" in user_scene
+        assert "char_ivan" not in user_scene
+        assert "char_marcus" not in user_scene
+        assert "Other Known" not in user_scene
+
+        # 2. 'characters_compact': adds 1-line roster of out-of-scene characters only
+        sys_chars, user_chars = engine.build_extraction_messages(
+            ctx, scene, known_entity_scope="characters_compact"
+        )
+        assert sys_chars == sys_scene  # static system_prompt unchanged (prefix cache safe)
+        assert "### Other Known Characters" in user_chars
+        assert "char_ivan=Ivan, char_marcus=Marcus/Markus" in user_chars
+        # In-scene Elena is not duplicated in the compact roster
+        roster_section = user_chars.split("### Other Known Characters", 1)[1].split("### ", 1)[0]
+        assert "char_elena=" not in roster_section
+        # Non-characters and future entities are excluded
+        assert "loc_docks" not in user_chars
+        assert "fac_guild" not in user_chars
+        assert "char_future" not in user_chars
+
+        # 3. 'all_compact': includes characters + locations + factions grouped by kind
+        sys_all, user_all = engine.build_extraction_messages(
+            ctx, scene, known_entity_scope="all_compact"
+        )
+        assert sys_all == sys_scene
+        assert "### Other Known Entities" in user_all
+        assert "character: char_ivan=Ivan, char_marcus=Marcus/Markus" in user_all
+        assert "faction: fac_guild=Ferrymen Guild" in user_all
+        assert "location: loc_docks=Old Docks" in user_all
+        assert "char_future" not in user_all
+
+        # 4. TimelineSession and build_extraction_prompt forward the option
+        session = engine.session("main")
+        assert session.build_extraction_messages(
+            ctx, scene, known_entity_scope="characters_compact"
+        ) == (sys_chars, user_chars)
+        assert engine.build_extraction_prompt(
+            ctx, scene, known_entity_scope="characters_compact"
+        ) == f"{sys_chars}\n\n{user_chars}"
+
+        # 5. max_roster_entities cap & validation
+        _, user_capped = engine.build_extraction_messages(
+            ctx, scene, known_entity_scope="characters_compact", max_roster_entities=1
+        )
+        capped_line = user_capped.split("### Other Known Characters", 1)[1].splitlines()[1]
+        assert len(capped_line.split(", ")) == 1
+
+        _, user_zero = engine.build_extraction_messages(
+            ctx, scene, known_entity_scope="characters_compact", max_roster_entities=0
+        )
+        assert "### Other Known Characters" not in user_zero
+
+        with pytest.raises(ValueError, match="Unsupported known_entity_scope"):
+            engine.build_extraction_messages(ctx, scene, known_entity_scope="invalid")  # type: ignore[arg-type]
+        with pytest.raises(ValueError, match="max_roster_entities"):
+            engine.build_extraction_messages(
+                ctx, scene, known_entity_scope="characters_compact", max_roster_entities=-1
+            )
+
+
+def test_step_transaction_forwards_known_entity_scope() -> None:
+    """StepTransaction.extract_and_commit forwards known_entity_scope to build_extraction_messages."""
+    captured_prompts: list[str] = []
+
+    def _extractor_fn(prompt: str, schema: dict[str, Any]) -> StepDelta:
+        captured_prompts.append(prompt)
+        return StepDelta(entities=[EntityDelta(entity_id="char_ivan", state={"mood": "weary"})])
+
+    with CanonArcEngine(":memory:", extractor=CallableExtractor(_extractor_fn)) as engine:
+        engine.register_entity(EntityRecord(entity_id="char_elena", canonical_name="Elena", kind="character"))
+        engine.register_entity(EntityRecord(entity_id="char_ivan", canonical_name="Ivan", kind="character"))
+
+        scene = "Elena spotted the old ferryman."
+        with engine.step_transaction(step=1, text=scene) as tx:
+            delta = tx.extract_and_commit(scene, known_entity_scope="characters_compact")
+
+        assert delta.entities[0].entity_id == "char_ivan"
+        assert len(captured_prompts) == 1
+        assert "### Other Known Characters" in captured_prompts[0]
+        assert "char_ivan=Ivan" in captured_prompts[0]
