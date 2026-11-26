@@ -35,6 +35,12 @@ from .extractors import (
     resolve_lmstudio_model,
 )
 from .hooks import BaseEngineHooks, EngineHooks
+from .inflections import (
+    CallableInflectionGenerator,
+    InflectionGenerator,
+    LLMInflectionGenerator,
+    build_inflection_prompt,
+)
 from .models import (
     AliasRecord,
     DialogueCandidate,
@@ -71,6 +77,7 @@ __all__ = [
     "CachedDeltaExtractor",
     "CallableEmbedder",
     "CallableExtractor",
+    "CallableInflectionGenerator",
     "CanonArcEngine",
     "CausalStore",
     "DefaultEpisodeRanker",
@@ -89,9 +96,11 @@ __all__ = [
     "EpisodeRecord",
     "EpisodicScoringPolicy",
     "EpistemicMode",
+    "InflectionGenerator",
     "InformDelta",
     "IngestionGate",
     "InteractiveFictionPreset",
+    "LLMInflectionGenerator",
     "MemoryStore",
     "MentionResolver",
     "OfflineNgramEmbedder",
@@ -111,6 +120,7 @@ __all__ = [
     "TranslationPreset",
     "VoiceBank",
     "VoiceExemplar",
+    "build_inflection_prompt",
     "embed_texts_batch",
     "get_embedder_info",
     "get_model_pricing_per_1m_usd",
