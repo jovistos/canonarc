@@ -71,20 +71,25 @@ from .models import (
     VoiceExemplar,
 )
 from .presets import (
+    ALL_TIERS,
     DEFAULT_SCHEMA_POLICY,
+    PROFILE_TIERS,
     DomainPreset,
     InteractiveFictionPreset,
     SchemaPolicy,
     SimulationPreset,
+    TierProfile,
     TranslationPreset,
 )
 from .store import CausalStore, CheckpointStore, MemoryStore, TimelineBranchConflictError
 from .voice import IngestionGate, VoiceBank
 
 __all__ = [
+    "ALL_TIERS",
     "DEFAULT_EPISODIC_POLICY",
     "DEFAULT_SCHEMA_POLICY",
     "MODEL_PRICING_PER_1M_USD",
+    "PROFILE_TIERS",
     "AliasRecord",
     "BaseEngineHooks",
     "BibleExportFormat",
@@ -134,6 +139,7 @@ __all__ = [
     "StepContext",
     "StepDelta",
     "StepTransaction",
+    "TierProfile",
     "TimelineBranchConflictError",
     "TimelineInfo",
     "TimelineSession",
