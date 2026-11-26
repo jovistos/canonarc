@@ -1260,7 +1260,7 @@ Benchmarks across 3K–12K synthetic stories ([`docs/benchmarks.md`](benchmarks.
 | **Lifecycle Hooks** | [`src/canonarc/hooks.py`](../src/canonarc/hooks.py) | `EngineHooks`, `BaseEngineHooks` | Observability callbacks for commit, rollback, branch, and Gate 1/2 rejections |
 | **Domain Presets** | [`src/canonarc/presets/`](../src/canonarc/presets) | `DomainPreset`, `SchemaPolicy`, `InteractiveFictionPreset`, `TranslationPreset`, `SimulationPreset` | Domain prompt formatters and policy-driven filter/boost weights |
 | **Engine Facade** | [`src/canonarc/engine/`](../src/canonarc/engine) | `CanonArcEngine`, `StepTransaction`, `TimelineSession` | Unified Tier 1–6 retrieval, POV projection, `normalize_delta`, consolidation, `contextvars` sessions |
-| **Series Bible I/O** | [`src/canonarc/bible/`](../src/canonarc/bible) | `export_bible`, `render_bible`, `sync_bible`, `BibleExportResult`, `BibleSyncReport` | Human-editable CSV/JSON/Markdown Bible export and diff-aware upsert/merge/replace sync |
+| **Series Bible I/O** | [`src/canonarc/bible/`](../src/canonarc/bible) | `BibleBuilder`, `bootstrap_bible`, `BibleSection`, `BibleDraft`, `BibleConflict`, `BibleBootstrapReport`, `export_bible`, `render_bible`, `sync_bible`, `BibleExportResult`, `BibleSyncReport` | Sequential LLM Series Bible bootstrapping (with disk cache, conflict logging & duplicate scan), CSV/JSON/Markdown export, and diff-aware upsert/merge/replace sync |
 | **CLI Inspector** | [`src/canonarc/cli.py`](../src/canonarc/cli.py) | `canonarc tree / inspect / diff / history / export / import` | Terminal & `--json` inspection and Series Bible I/O for `.sqlite` saves |
 
 ### 8.4 Hands-On Study Exercises & Next Steps

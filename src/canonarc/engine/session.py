@@ -5,7 +5,17 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 from ..audit import AuditReport, AuditRule, AuditSeverity, DuplicateCandidate
-from ..bible import BibleExportFormat, BibleExportResult, BibleSyncMode, BibleSyncReport
+from ..bible import (
+    DEFAULT_ALLOWED_KINDS,
+    BibleBootstrapReport,
+    BibleBuilder,
+    BibleExportFormat,
+    BibleExportResult,
+    BibleSection,
+    BibleSyncMode,
+    BibleSyncReport,
+)
+from ..extractors import JsonCompletionClient
 from ..models import (
     AliasRecord,
     DialogueCandidate,
@@ -436,6 +446,58 @@ class TimelineSession:
             batch_size=batch_size,
             dry_run=dry_run,
             column_map=column_map,
+        )
+
+    def bootstrap_bible(
+        self,
+        sections: Sequence[BibleSection | Mapping[str, Any] | str],
+        *,
+        client: JsonCompletionClient | None = None,
+        builder: BibleBuilder | None = None,
+        source_lang: str | None = None,
+        target_lang: str | None = None,
+        allowed_kinds: Sequence[str] = DEFAULT_ALLOWED_KINDS,
+        instructions: str = "",
+        system_prompt: str | None = None,
+        cache_dir: str | Path | None = None,
+        bypass_cache: bool = False,
+        step: int = 0,
+        mode: BibleSyncMode = "upsert",
+        inherit_existing: bool = True,
+        auto_inflect: bool = True,
+        batch_size: int = 25,
+        commit: bool = True,
+        dry_run: bool = False,
+        export_path: str | Path | None = None,
+        export_format: Literal["auto", "csv", "json"] = "auto",
+        check_duplicates: bool = True,
+        fuzzy_threshold: float = 88.0,
+        same_kind_only: bool = True,
+    ) -> BibleBootstrapReport:
+        return self.engine.bootstrap_bible(
+            sections,
+            client=client,
+            builder=builder,
+            source_lang=source_lang,
+            target_lang=target_lang,
+            allowed_kinds=allowed_kinds,
+            instructions=instructions,
+            system_prompt=system_prompt,
+            cache_dir=cache_dir,
+            bypass_cache=bypass_cache,
+            step=step,
+            timeline_id=self.timeline_id,
+            mode=mode,
+            inherit_existing=inherit_existing,
+            auto_inflect=auto_inflect,
+            batch_size=batch_size,
+            commit=commit,
+            dry_run=dry_run,
+            export_path=export_path,
+            export_format=export_format,
+            check_duplicates=check_duplicates,
+            fuzzy_threshold=fuzzy_threshold,
+            same_kind_only=same_kind_only,
         )
 
     def audit_step(

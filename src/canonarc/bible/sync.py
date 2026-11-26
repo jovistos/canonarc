@@ -14,6 +14,7 @@ from ..models import (
 )
 from .models import (
     _INFLECTION_SENSITIVE_ATTRS,
+    BibleImportFormat,
     BibleSyncMode,
     BibleSyncReport,
     _alias_signature,
@@ -148,11 +149,13 @@ def _warn_shadowed_updates(
             )
 
 
-def sync_bible(
+def _sync_parsed_bible(
     engine: CanonArcEngine,
-    path: str | Path,
+    parsed: _ParsedBible,
     *,
-    format: Literal["auto", "csv", "json"] = "auto",
+    source: str,
+    eff_format: BibleImportFormat,
+    reason_tag: str,
     step: int = 0,
     timeline_id: str | None = None,
     mode: BibleSyncMode = "upsert",
@@ -160,20 +163,19 @@ def sync_bible(
     auto_inflect: bool = True,
     batch_size: int = 25,
     dry_run: bool = False,
-    column_map: dict[str, str] | None = None,
+    active_entities: dict[str, EntityRecord] | None = None,
 ) -> BibleSyncReport:
-    """Syncs a human-editable CSV or JSON Series Bible into the causal store with diff/upsert semantics."""
+    """Commits an already-parsed Bible into the causal store with diff/upsert and batched inflections."""
     tl = timeline_id or engine.active_timeline
     tl_info = engine.store.get_timeline(tl)
     if tl_info is None:
         raise ValueError(f"Timeline '{tl}' does not exist.")
 
-    src_path = Path(path)
-    eff_format = infer_import_format(src_path, format)
-    encoding = "utf-8-sig" if eff_format == "csv" else "utf-8"
-    raw_text = src_path.read_text(encoding=encoding)
-
-    active_entities = {e.entity_id: e for e in engine.store.get_all_active_entities(tl, step)}
+    eff_active_entities = (
+        active_entities
+        if active_entities is not None
+        else {e.entity_id: e for e in engine.store.get_all_active_entities(tl, step)}
+    )
     active_aliases_by_ent: dict[str, dict[str, AliasRecord]] = {}
     for a in engine.store.get_all_active_aliases(tl, step):
         active_aliases_by_ent.setdefault(a.entity_id, {})[a.alias.strip().lower()] = a
@@ -182,13 +184,8 @@ def sync_bible(
         for ed in engine.store.get_all_active_edges(tl, step)
     }
 
-    if eff_format == "csv":
-        parsed = _parse_csv_bible(raw_text, column_map=column_map, existing_ids=set(active_entities.keys()))
-    else:
-        parsed = _parse_json_bible(raw_text, existing_ids=set(active_entities.keys()))
-
     report = BibleSyncReport(
-        source=str(src_path),
+        source=source,
         format=eff_format,
         timeline_id=tl,
         step=step,
@@ -199,7 +196,6 @@ def sync_bible(
 
     _check_incoming_alias_collisions(parsed, report)
 
-    reason_tag = f"bible_sync:{src_path.name}"
     entities_to_register: list[EntityRecord] = []
     entity_deltas: list[EntityDelta] = []
     mutated_entity_ids: list[str] = []
@@ -214,7 +210,7 @@ def sync_bible(
         inc = entry.entity
         eid = inc.entity_id
         incoming_entity_ids.add(eid)
-        existing = active_entities.get(eid)
+        existing = eff_active_entities.get(eid)
 
         if existing is None:
             resolved_entity = EntityRecord(
@@ -382,7 +378,7 @@ def sync_bible(
             )
 
     if mode == "replace":
-        for eid in sorted(active_entities.keys()):
+        for eid in sorted(eff_active_entities.keys()):
             if eid not in incoming_entity_ids:
                 report.removed_entities.append(eid)
                 mutated_entity_ids.append(eid)
@@ -415,3 +411,51 @@ def sync_bible(
             )
 
     return report
+
+
+def sync_bible(
+    engine: CanonArcEngine,
+    path: str | Path,
+    *,
+    format: Literal["auto", "csv", "json"] = "auto",
+    step: int = 0,
+    timeline_id: str | None = None,
+    mode: BibleSyncMode = "upsert",
+    target_lang: str | None = None,
+    auto_inflect: bool = True,
+    batch_size: int = 25,
+    dry_run: bool = False,
+    column_map: dict[str, str] | None = None,
+) -> BibleSyncReport:
+    """Syncs a human-editable CSV or JSON Series Bible into the causal store with diff/upsert semantics."""
+    tl = timeline_id or engine.active_timeline
+    tl_info = engine.store.get_timeline(tl)
+    if tl_info is None:
+        raise ValueError(f"Timeline '{tl}' does not exist.")
+
+    src_path = Path(path)
+    eff_format = infer_import_format(src_path, format)
+    encoding = "utf-8-sig" if eff_format == "csv" else "utf-8"
+    raw_text = src_path.read_text(encoding=encoding)
+
+    active_entities = {e.entity_id: e for e in engine.store.get_all_active_entities(tl, step)}
+    if eff_format == "csv":
+        parsed = _parse_csv_bible(raw_text, column_map=column_map, existing_ids=set(active_entities.keys()))
+    else:
+        parsed = _parse_json_bible(raw_text, existing_ids=set(active_entities.keys()))
+
+    return _sync_parsed_bible(
+        engine,
+        parsed,
+        source=str(src_path),
+        eff_format=eff_format,
+        reason_tag=f"bible_sync:{src_path.name}",
+        step=step,
+        timeline_id=tl,
+        mode=mode,
+        target_lang=target_lang,
+        auto_inflect=auto_inflect,
+        batch_size=batch_size,
+        dry_run=dry_run,
+        active_entities=active_entities,
+    )

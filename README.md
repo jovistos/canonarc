@@ -291,11 +291,30 @@ diff = engine.diff_timelines("main", "reconciliation_route", at_step=85)
 engine.rollback_to(step=10, timeline_id="main")
 ```
 
-### Series Bible Import/Export & Sync (CSV / JSON / Markdown)
+### Series Bible Bootstrapping, Import/Export & Sync (CSV / JSON / Markdown)
 
-Author or review glossaries and world bibles in spreadsheets, Git-tracked JSON, or Markdown, and sync changes back idempotently with diff/upsert semantics:
+Bootstrap a Step 0 Series Bible directly from raw chapters or NER-filtered evidence with `BibleBuilder` / `bootstrap_bible()` (sequential locked-entity accumulator, conflict logging, content-addressed disk cache, batched inflections, and fuzzy duplicate scan), or author/review glossaries in spreadsheets, Git-tracked JSON, and Markdown and sync changes back idempotently with diff/upsert semantics:
 
 ```python
+from canonarc import BibleSection
+
+# Bootstrap a Series Bible sequentially from ordered sections (or raw strings)
+# Inherits existing Step 0 locks (Book 2+ continuity), exports a reviewable draft,
+# commits with batched inflections, and surfaces near-duplicate candidates
+boot = engine.bootstrap_bible(
+    [
+        BibleSection(section_id="ch_01", title="Arrival", text=ch1_evidence),
+        BibleSection(section_id="ch_02", title="Clinic", text=ch2_evidence),
+    ],
+    source_lang="en",
+    target_lang="sr",                     # omit for domain-agnostic world bibles
+    instructions="Transliterate names into Serbian Ekavian.",
+    cache_dir=".cache/bible_build",       # content-addressed per-section cache
+    export_path="bible.json",             # optional checkpoint artifact before commit
+    step=0,
+)
+print(boot.summary())                     # draft stats, conflicts, sync diff & duplicate candidates
+
 # Export active Series Bible at step 0 (or omit at_step for timeline head)
 # CSV/MD hide auto-generated kind="inflection" aliases by default; JSON includes them for lossless round-trips
 engine.export_bible("bible.json", at_step=0)                 # Lossless entities, aliases (incl. inflections) & edges
