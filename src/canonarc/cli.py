@@ -264,6 +264,35 @@ def _cmd_audit(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_merge(args: argparse.Namespace) -> int:
+    with CanonArcEngine(
+        args.db_path, timeline_id=args.timeline, on_embedder_mismatch="ignore"
+    ) as engine:
+        try:
+            report = engine.merge_entities(
+                args.duplicate_id,
+                args.canonical_id,
+                step=args.step,
+                timeline_id=args.timeline,
+                merge_attributes=not bool(args.no_attributes),
+                migrate_edges=not bool(args.no_edges),
+                migrate_voice=not bool(args.no_voice),
+                migrate_episodes=not bool(args.no_episodes),
+                conflict_strategy=args.conflict_strategy,
+                allow_kind_mismatch=bool(args.allow_kind_mismatch),
+                reason=args.reason,
+                dry_run=bool(args.dry_run),
+            )
+        except ValueError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 1
+    if args.json:
+        print(json.dumps(report.model_dump(), indent=2, ensure_ascii=False))
+    else:
+        print(report.summary())
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="canonarc",
@@ -394,6 +423,35 @@ def build_parser() -> argparse.ArgumentParser:
     p_audit.add_argument("--lang", default=None, help="Optional target language tag.")
     p_audit.add_argument("--json", action="store_true", help="Output audit report as JSON.")
     p_audit.set_defaults(func=_cmd_audit)
+
+    p_merge = sub.add_parser(
+        "merge",
+        help="Atomically merge a duplicate entity into a canonical entity.",
+    )
+    p_merge.add_argument("db_path", help="Path to SQLite database file.")
+    p_merge.add_argument("duplicate_id", help="Entity ID to retire and merge.")
+    p_merge.add_argument("canonical_id", help="Surviving canonical entity ID.")
+    p_merge.add_argument("--timeline", default="main", help="Timeline ID (default: main).")
+    p_merge.add_argument("--step", type=int, default=None, help="Step at which to record merge (default: head).")
+    p_merge.add_argument("--no-attributes", action="store_true", help="Do not backfill base_attributes/state.")
+    p_merge.add_argument("--no-edges", action="store_true", help="Do not migrate active edges.")
+    p_merge.add_argument("--no-voice", action="store_true", help="Do not migrate voice exemplars.")
+    p_merge.add_argument("--no-episodes", action="store_true", help="Do not migrate episodes or epistemics.")
+    p_merge.add_argument(
+        "--conflict-strategy",
+        default="canonical_wins",
+        choices=["canonical_wins", "duplicate_wins"],
+        help="Conflict resolution when both entities define an attribute/edge key (default: canonical_wins).",
+    )
+    p_merge.add_argument(
+        "--allow-kind-mismatch",
+        action="store_true",
+        help="Allow merging entities with different kinds (e.g. character into location).",
+    )
+    p_merge.add_argument("--reason", default=None, help="Optional provenance reason recorded on revisions.")
+    p_merge.add_argument("--dry-run", action="store_true", help="Preview merge without modifying the database.")
+    p_merge.add_argument("--json", action="store_true", help="Output merge report as JSON.")
+    p_merge.set_defaults(func=_cmd_merge)
 
     return parser
 

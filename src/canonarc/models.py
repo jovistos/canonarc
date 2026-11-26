@@ -300,3 +300,49 @@ class StepContext(BaseModel):
     background_edges: list[DirectedEdgeRecord] = Field(default_factory=list)
     voice_exemplars: list[VoiceExemplar] = Field(default_factory=list)
     episodes: list[EpisodeRecord] = Field(default_factory=list)
+
+
+class EntityMergeReport(BaseModel):
+    """Structured summary of an atomic entity merge operation."""
+    timeline_id: str
+    step: int
+    duplicate_id: str
+    canonical_id: str
+    dry_run: bool = False
+    aliases_added: list[str] = Field(default_factory=list)
+    aliases_tombstoned: list[str] = Field(default_factory=list)
+    base_attributes_merged: list[str] = Field(default_factory=list)
+    state_keys_merged: list[str] = Field(default_factory=list)
+    edges_migrated: list[str] = Field(default_factory=list)
+    edges_merged_on_collision: list[str] = Field(default_factory=list)
+    edges_tombstoned: list[str] = Field(default_factory=list)
+    self_loops_dropped: list[str] = Field(default_factory=list)
+    location_refs_updated: list[str] = Field(default_factory=list)
+    voice_exemplars_migrated: int = 0
+    episodes_migrated: int = 0
+    epistemics_migrated: int = 0
+    warnings: list[str] = Field(default_factory=list)
+
+    def summary(self) -> str:
+        prefix = "[DRY RUN] " if self.dry_run else ""
+        lines = [
+            f"{prefix}Merged '{self.duplicate_id}' -> '{self.canonical_id}' "
+            f"(timeline={self.timeline_id}, step={self.step})",
+            f"  Aliases promoted: {len(self.aliases_added)}, tombstoned: {len(self.aliases_tombstoned)}",
+            f"  Attributes merged: {len(self.base_attributes_merged)}, state keys merged: {len(self.state_keys_merged)}",
+            f"  Edges migrated: {len(self.edges_migrated)}, merged on collision: {len(self.edges_merged_on_collision)}, "
+            f"tombstoned: {len(self.edges_tombstoned)}, self-loops dropped: {len(self.self_loops_dropped)}",
+        ]
+        if self.location_refs_updated:
+            lines.append(f"  Location refs updated: {len(self.location_refs_updated)}")
+        if self.voice_exemplars_migrated or self.episodes_migrated or self.epistemics_migrated:
+            lines.append(
+                f"  Voice exemplars migrated: {self.voice_exemplars_migrated}, "
+                f"episodes migrated: {self.episodes_migrated}, "
+                f"epistemics migrated: {self.epistemics_migrated}"
+            )
+        if self.warnings:
+            lines.append("  Warnings:")
+            for w in self.warnings:
+                lines.append(f"    - {w}")
+        return "\n".join(lines)

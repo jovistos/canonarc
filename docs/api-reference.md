@@ -53,7 +53,7 @@ Supports Python context management (`with CanonArcEngine("save.sqlite") as engin
 ### Extraction & Normalization Methods
 - `build_extraction_messages(ctx: StepContext, scene_text: str, *, prev_text: str = "", next_text: str = "", compact_schema: bool = False, known_entity_scope: KnownEntityScope = "scene", max_roster_entities: int | None = None) -> tuple[str, str]`: Builds a prefix-cache-friendly `(system_prompt, user_prompt)` pair with static extraction rules and `StepDelta` JSON schema in `system_prompt` (automatically pruning disabled Tier 2/6 fields when using e.g. `TierProfile.STATE_ONLY`) and dynamic per-step context in `user_prompt`. `known_entity_scope` controls which known IDs are shown: `"scene"` (default: `ctx.entities` + `ctx.related_entities`), `"characters_compact"` (appends a terse 1-line `id=Name/TargetName` cast roster of all other active characters on `ctx.timeline_id` at `max(0, ctx.step - 1)`), or `"all_compact"` (all other active entities grouped by `kind`). Use `max_roster_entities` to cap the compact roster size on very large corpora.
 - `build_extraction_prompt(ctx: StepContext, scene_text: str, *, prev_text: str = "", next_text: str = "", compact_schema: bool = False, known_entity_scope: KnownEntityScope = "scene", max_roster_entities: int | None = None) -> str`: Single-string wrapper around `build_extraction_messages()` preserving static-prefix-first ordering.
-- `normalize_delta(delta: StepDelta, step: int | None = None, timeline_id: str | None = None) -> StepDelta`: Normalizes canonical names/aliases into canonical `entity_id`s and resolves intra-step symbolic `episode_id` references.
+- `normalize_delta(delta: StepDelta, step: int | None = None, timeline_id: str | None = None) -> StepDelta`: Normalizes canonical names, aliases, and retired IDs recorded in `base_attributes["merged_from"]` into canonical `entity_id`s, and resolves intra-step symbolic `episode_id` references.
 
 *(Extraction and normalization methods are also available on `TimelineSession`.)*
 
@@ -63,6 +63,7 @@ Supports Python context management (`with CanonArcEngine("save.sqlite") as engin
   - `tx.extract_and_commit(scene_text, *, compact_schema=False, known_entity_scope="scene", max_roster_entities=None, ...)`: Runs the configured `DeltaExtractor`, normalizes IDs, and stages the `StepDelta` (zero-LLM-call no-op when Tier 3 is disabled, e.g., `TierProfile.LEXICON_ONLY`).
   - `tx.harvest_voice(text, *, source_text="", lang=None, prev_text=None, next_text=None, scorer=None, min_quality=None, require_speaker=True, infer_addressee=True, extra_metadata=None, stage=True) -> list[VoiceExemplar]`: Runs Gate-1 extraction, attaches active dyadic edge/persona metadata (overlaying any staged `StepDelta` in the same transaction), scores candidates with Gate-2 `VoiceQualityScorer`, emits `on_gate_rejected("gate2", ...)` for rejections, and stages passing `VoiceExemplar`s for atomic commit (zero-work no-op when Tier 5 is disabled).
 - `apply_delta(step: int, delta: StepDelta, timeline_id: str | None = None) -> list[EpisodeRecord]`: Directly applies state deltas, episodes, and inform actions. When `delta.is_flashback=True`, skips overwriting existing entities/edges while still indexing episodes and new entities.
+- `merge_entities(duplicate_id: str, canonical_id: str, *, step: int | None = None, timeline_id: str | None = None, merge_attributes: bool = True, migrate_edges: bool = True, migrate_voice: bool = True, migrate_episodes: bool = True, conflict_strategy: Literal["canonical_wins", "duplicate_wins"] = "canonical_wins", allow_kind_mismatch: bool = False, reason: str | None = None, dry_run: bool = False) -> EntityMergeReport`: Atomically merges `duplicate_id` into `canonical_id` at `(timeline_id, step)` (defaults to timeline head). Promotes `duplicate_id`'s `canonical_name`, `base_attributes["target_name"]`, and active `AliasRecord`s onto `canonical_id`, tombstones `duplicate_id` and its old aliases, backfills `base_attributes`/`state`/`private_state` (recording `base_attributes["merged_from"]` for `normalize_delta()` redirects), and optionally migrates active edges (dropping self-loops and warning on `hard_filter_keys` collisions), location references, Tier 5 voice exemplars, and Tier 6 episodes/epistemics lineage-safely. Also available on `TimelineSession`.
 - `index_episodes(step: int, episodes: Sequence[EpisodeRecord], timeline_id: str | None = None) -> list[EpisodeRecord]`: Embeds (using `embed_batch()` when available) and indexes episodes into Tier 6.
 - `consolidate_episodes(step: int, before_step: int, summary: str, max_salience: float = 4.0, predicate: str = "consolidated_summary", episode_id: str | None = None, chapter_id: str | None = None, salience: float = 7.5, timeline_id: str | None = None) -> EpisodeRecord | None`: Compacts older low-salience episodes into a single higher-level summary episode.
 - `reindex_embeddings(batch_size: int = 128) -> dict[str, int]`: Re-embeds all stored episodes and voice exemplars in batches using the active embedder and updates `store_metadata` (`embedder_id`, `embedding_dim`). Returns `{"episodes": n_ep, "voice_exemplars": n_vo}`.
@@ -289,6 +290,30 @@ class AuditReport(BaseModel):
     # report.format_repair_instructions(min_severity="error", max_issues=None, header=..., include_snippets=True)
 ```
 
+### `EntityMergeReport`
+```python
+class EntityMergeReport(BaseModel):
+    timeline_id: str
+    step: int
+    duplicate_id: str
+    canonical_id: str
+    dry_run: bool = False
+    aliases_added: list[str] = []
+    aliases_tombstoned: list[str] = []
+    base_attributes_merged: list[str] = []
+    state_keys_merged: list[str] = []
+    edges_migrated: list[str] = []
+    edges_merged_on_collision: list[str] = []
+    edges_tombstoned: list[str] = []
+    self_loops_dropped: list[str] = []
+    location_refs_updated: list[str] = []
+    voice_exemplars_migrated: int = 0
+    episodes_migrated: int = 0
+    epistemics_migrated: int = 0
+    warnings: list[str] = []
+    # Helper: report.summary()
+```
+
 ---
 
 ## Extension Protocols, Adapters & Policies
@@ -382,4 +407,7 @@ canonarc import story_save.sqlite bible.csv [--format auto|csv|json] [--timeline
 
 # Run deterministic continuity and localization QA audit rules (exits 1 if --fail-on threshold matched)
 canonarc audit story_save.sqlite [--timeline main] [--step 2 --source s2_en.txt --target s2_sr.txt] [--from-step 0 --to-step 10] [--pairs-jsonl pairs.jsonl] [--rules exonym_leak,near_duplicate_entity] [--exclude-rules ...] [--min-severity info|warning|error] [--fail-on error|warning|none] [--json]
+
+# Atomically merge a duplicate entity into a canonical entity
+canonarc merge story_save.sqlite char_poirot char_hercule_poirot [--timeline main] [--step N] [--no-attributes] [--no-edges] [--no-voice] [--no-episodes] [--conflict-strategy canonical_wins|duplicate_wins] [--allow-kind-mismatch] [--reason "..."] [--dry-run] [--json]
 ```

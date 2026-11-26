@@ -867,8 +867,9 @@ class NearDuplicateEntityRule:
                         "similarity": round(score, 2),
                     },
                     suggestion=(
-                        f"Merge '{cand.entity_id}' into '{existing.entity_id}' (or register "
-                        f"'{cand.canonical_name}' as an AliasRecord on '{existing.entity_id}')."
+                        f"Merge '{cand.entity_id}' into '{existing.entity_id}' via "
+                        f"engine.merge_entities('{cand.entity_id}', '{existing.entity_id}') "
+                        f"(or register '{cand.canonical_name}' as an AliasRecord on '{existing.entity_id}')."
                     ),
                 )
             )
