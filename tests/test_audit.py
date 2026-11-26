@@ -17,6 +17,7 @@ from canonarc import (
     NearDuplicateEntityRule,
     RegisterVocabularyDriftRule,
     SchemaPolicy,
+    ScriptConsistencyRule,
     StepDelta,
     TargetTermComplianceRule,
     TranslationPreset,
@@ -681,3 +682,174 @@ def test_tx_audit_draft_works_under_lexicon_only_profile() -> None:
             assert "unexplained_register_flip" not in report.rules_executed
             assert "Fibi" in report.format_repair_instructions()
             tx.commit()
+
+
+def test_script_consistency_catches_drift_and_mixed_script_homoglyphs() -> None:
+    rule = ScriptConsistencyRule(expected_script="latin")
+    with CanonArcEngine(":memory:", preset=TranslationPreset()) as engine:
+        # 1. Clean Serbian Latin passes
+        clean = engine.audit_step(
+            step=1,
+            target_text="Jelena je otvorila teška drvena vrata i nasmešila se.",
+            rules=[rule],
+        )
+        assert clean.passed
+        assert clean.issues == []
+
+        # 2. Whole-word Cyrillic drift is aggregated into a single script_drift issue with snippet
+        drifted = engine.audit_step(
+            step=1,
+            target_text="Jelena je rekla: Нисам сигурна да је то истина.",
+            rules=[rule],
+        )
+        assert not drifted.passed
+        drift_issues = drifted.by_code("script_drift")
+        assert len(drift_issues) == 1
+        assert drift_issues[0].subject_key == "script:cyrillic"
+        assert drift_issues[0].evidence["found_script"] == "cyrillic"
+        assert drift_issues[0].evidence["offending_token_count"] == 6
+        assert "Нисам" in drift_issues[0].evidence["offending_tokens"]
+        assert "Нисам" in drift_issues[0].evidence["snippet"]
+        repair = drifted.format_repair_instructions()
+        assert "cyrillic" in repair.lower()
+        assert "latin" in repair.lower()
+        assert "(at:" in repair
+
+        # 3. Mixed-script homoglyph (Cyrillic 'о' \u043e inside Latin 'policija')
+        homoglyph_word = "p\u043elicija"
+        mixed = engine.audit_step(
+            step=1,
+            target_text=f"Stigla je {homoglyph_word} ispred kuće.",
+            rules=[ScriptConsistencyRule(expected_script="latin", severity="warning", mixed_script_severity="error")],
+        )
+        assert not mixed.passed
+        mixed_issues = mixed.by_code("mixed_script_token")
+        assert len(mixed_issues) == 1
+        assert mixed_issues[0].severity == "error"
+        assert mixed_issues[0].subject_key == "script:mixed"
+        assert homoglyph_word in mixed_issues[0].evidence["mixed_tokens"]
+        assert mixed_issues[0].evidence["mixed_scripts_by_token"][homoglyph_word] == ["cyrillic", "latin"]
+        assert mixed.by_code("script_drift") == []
+
+
+def test_script_consistency_false_positive_guards_and_exonym_dedup() -> None:
+    with CanonArcEngine(":memory:", preset=TranslationPreset()) as engine:
+        engine.register_entity(
+            EntityRecord(
+                entity_id="org_fbi",
+                canonical_name="FBI",
+                kind="organization",
+                base_attributes={"target_name": "FBI", "allow_source_name": True},
+            ),
+            step=0,
+        )
+        engine.register_entity(
+            EntityRecord(
+                entity_id="loc_london",
+                canonical_name="London",
+                kind="location",
+                base_attributes={"target_name": "Лондон"},
+            ),
+            step=0,
+        )
+
+        rule = ScriptConsistencyRule(
+            expected_script="cyrillic",
+            allowed_tokens=("Wi-Fi", "mon Dieu"),
+            allowed_patterns=(r"\[[A-Z_]+\]",),
+        )
+
+        # Roman numerals (IV, V), URLs, markup, placeholders, allowlisted tokens/phrases,
+        # and canon-approved entity names (FBI) all pass cleanly in Russian Cyrillic
+        clean_ru = engine.audit_step(
+            step=1,
+            source_text="The FBI checked Chapter IV.",
+            target_text=(
+                "Глава IV: агент FBI проверил <color=red>{player_name}</color> "
+                "[PAUSE] через Wi-Fi (%s) на https://example.com — mon Dieu, Карл V!"
+            ),
+            rules=[rule],
+        )
+        assert clean_ru.passed
+        assert clean_ru.issues == []
+
+        # Verbatim exonym leak ("London" -> "Лондон") is owned by ExonymLeakRule
+        # and not double-reported by ScriptConsistencyRule when skip_exonym_leaks=True
+        both = engine.audit_step(
+            step=1,
+            source_text="He arrived in London.",
+            target_text="Он прибыл в London вечером.",
+            rules=[ExonymLeakRule(), rule],
+        )
+        assert not both.passed
+        assert len(both.by_code("exonym_leak")) == 1
+        assert both.by_code("script_drift") == []
+
+        # Unrelated non-entity Latin drift is still caught
+        stray = engine.audit_step(
+            step=1,
+            source_text="He arrived in London.",
+            target_text="Он прибыл в Лондон actually вечером.",
+            rules=[ExonymLeakRule(), rule],
+        )
+        assert not stray.passed
+        assert stray.by_code("exonym_leak") == []
+        assert len(stray.by_code("script_drift")) == 1
+        assert stray.by_code("script_drift")[0].evidence["offending_tokens"] == ["actually"]
+
+
+def test_script_consistency_multiscript_and_lang_inference() -> None:
+    import pytest
+
+    with pytest.raises(ValueError, match="Unsupported script"):
+        ScriptConsistencyRule(expected_script="cyrilic")
+
+    with CanonArcEngine(":memory:", preset=TranslationPreset()) as engine:
+        # Japanese legitimately combines han + hiragana + katakana inside a single token (食べる)
+        ja_rule = ScriptConsistencyRule(expected_script=("han", "hiragana", "katakana"))
+        ja_clean = engine.audit_step(
+            step=1,
+            target_text="彼女はリンゴを食べる。",
+            rules=[ja_rule],
+        )
+        assert ja_clean.passed
+        assert ja_clean.issues == []
+
+        ja_bad = engine.audit_step(
+            step=1,
+            target_text="彼女はリンゴを食べる привет.",
+            rules=[ja_rule],
+        )
+        assert not ja_bad.passed
+        assert len(ja_bad.by_code("script_drift")) == 1
+        assert ja_bad.by_code("script_drift")[0].evidence["found_script"] == "cyrillic"
+
+        # Auto-inference from unambiguous BCP-47 ctx.lang when expected_script=None
+        auto_rule = ScriptConsistencyRule()
+        sr_latn = engine.audit_step(
+            step=1,
+            target_text="Dobro jutro пријатељу.",
+            lang="sr-Latn",
+            rules=[auto_rule],
+        )
+        assert not sr_latn.passed
+        assert sr_latn.by_code("script_drift")[0].evidence["found_script"] == "cyrillic"
+
+        sr_cyrl = engine.audit_step(
+            step=1,
+            target_text="Добро јутро prijatelju.",
+            lang="sr-Cyrl",
+            rules=[auto_rule],
+        )
+        assert not sr_cyrl.passed
+        assert sr_cyrl.by_code("script_drift")[0].evidence["found_script"] == "latin"
+
+        # Ambiguous 'sr' or None -> safe no-op
+        ambiguous = engine.audit_step(
+            step=1,
+            target_text="Dobro jutro пријатељу.",
+            lang="sr",
+            rules=[auto_rule],
+        )
+        assert ambiguous.passed
+        assert ambiguous.issues == []
