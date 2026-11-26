@@ -613,6 +613,8 @@ $$\text{Root-TTR} = \frac{|V|}{\sqrt{N}}$$
 
 Short filler lines (*"Yes, my lord."*) fail the unit count bound; repetitive generic lines fail $D \ge 0.40$.
 
+Inside `engine.step_transaction(...)`, `tx.harvest_voice(text, *, source_text="", lang=None, scorer=None)` automates both gates end-to-end: it runs Gate 1, resolves active dyadic edge metadata (`register`, `tone`, `facade` overrides, and speaker `disguise` → `persona`, overlaying any `StepDelta` staged earlier in the same transaction), scores candidates via `VoiceQualityScorer` (defaulting to the zero-LLM `HeuristicVoiceQualityScorer`, with optional `CallableVoiceQualityScorer` or batched `LLMVoiceQualityScorer`), and stages passing `VoiceExemplar`s for atomic commit.
+
 ### 4.3 Voice Bank Retrieval Cascade & Multi-Party Dyadic Resolution
 
 When retrieving exemplars for a speaker, `VoiceBank` applies a policy-driven cascade governed by `SchemaPolicy`:
@@ -1181,7 +1183,7 @@ Benchmarks across 3K–12K synthetic stories ([`docs/benchmarks.md`](benchmarks.
 | **Data Models** | [`src/canonarc/models.py`](../src/canonarc/models.py) | `EntityRecord`, `AliasRecord`, `DirectedEdgeRecord`, `EpisodeRecord`, `InformDelta`, `VoiceExemplar`, `StepDelta`, `StepContext`, `ResolvedMention` | Pydantic v2 schemas for Tiers 1–6 & `EpistemicMode` |
 | **Storage & CTE** | [`src/canonarc/store.py`](../src/canonarc/store.py) | `MemoryStore`, `CausalStore`, `TimelineBranchConflictError` | 7-table SQLite schema, recursive lineage CTE, FTS5 pre-filtering, snapshots, deletions, rollbacks |
 | **Embedders** | [`src/canonarc/embedders.py`](../src/canonarc/embedders.py) | `Embedder`, `OfflineNgramEmbedder`, `CallableEmbedder`, `OpenAICompatibleEmbedder`, `OllamaEmbedder`, `EmbedderMismatchError` | CJK-aware signed CRC32 hashing, batch vectorization, mismatch detection & migration |
-| **Voice Bank** | [`src/canonarc/voice.py`](../src/canonarc/voice.py) | `VoiceBank`, `IngestionGate` | Multi-script dialogue regex, Gate 1 Root-TTR, Gate 2 quality, multi-party dyadic Round-Robin retrieval |
+| **Voice Bank** | [`src/canonarc/voice.py`](../src/canonarc/voice.py) | `VoiceBank`, `IngestionGate`, `VoiceQualityScorer`, `VoiceScoreResult`, `HeuristicVoiceQualityScorer`, `CallableVoiceQualityScorer`, `LLMVoiceQualityScorer` | Multi-script dialogue regex, Gate 1 Root-TTR, automated Gate 2 scoring & `StepTransaction.harvest_voice()`, multi-party dyadic Round-Robin retrieval |
 | **Episodic Ranker** | [`src/canonarc/episodic.py`](../src/canonarc/episodic.py) | `EpisodeRanker`, `DefaultEpisodeRanker`, `EpisodicScoringPolicy` | Deceived-POV safe 4-signal scorer with salience-modulated exponential decay |
 | **Mention Resolver** | [`src/canonarc/resolver.py`](../src/canonarc/resolver.py) | `MentionResolver`, `DefaultLexicalResolver` | Word-boundary, CJK-safe, shared-span, and `rapidfuzz` inflection matching |
 | **Inflections** | [`src/canonarc/inflections.py`](../src/canonarc/inflections.py) | `InflectionGenerator`, `InflectionRequest`, `CallableInflectionGenerator`, `LLMInflectionGenerator`, `generate_inflections_batch` | One-shot and batched (`batch_size=25`) morphological inflection generation with shared per-item cache (`kind="inflection"`) |

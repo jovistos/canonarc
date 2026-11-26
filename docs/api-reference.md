@@ -19,6 +19,7 @@ class CanonArcEngine:
         extractor: DeltaExtractor | None = None,
         episode_ranker: EpisodeRanker | None = None,
         inflection_generator: InflectionGenerator | None = None,
+        voice_scorer: VoiceQualityScorer | None = None,
         hooks: Sequence[EngineHooks] = (),
         audit_rules: Sequence[AuditRule] | None = None,
         on_embedder_mismatch: Literal["raise", "warn", "reindex", "ignore"] = "warn",
@@ -57,7 +58,9 @@ Supports Python context management (`with CanonArcEngine("save.sqlite") as engin
 *(Extraction and normalization methods are also available on `TimelineSession`.)*
 
 ### Transaction & Mutation Methods
-- `step_transaction(step: int, text: str = "", mentions: Sequence[str] = (), top_k_voice: int | None = None, top_k_episodes: int | None = None, pov_entity_ids: Sequence[str] | None = None, pov_mode: Literal["any", "all"] = "any", edge_types: Sequence[str] | None = None, location_id: str | None = None, timeline_id: str | None = None, rerun_clean: bool = True) -> StepTransaction`: Context manager for clean read-and-commit workflows. Supports `tx.extract_and_commit(scene_text, *, compact_schema=False, known_entity_scope="scene", max_roster_entities=None, ...)` when a `DeltaExtractor` is configured; when Tier 3 is disabled (e.g., `TierProfile.LEXICON_ONLY`), `extract_and_commit()` is a zero-LLM-call no-op that still records the `StepCheckpoint`.
+- `step_transaction(step: int, text: str = "", mentions: Sequence[str] = (), top_k_voice: int | None = None, top_k_episodes: int | None = None, pov_entity_ids: Sequence[str] | None = None, pov_mode: Literal["any", "all"] = "any", edge_types: Sequence[str] | None = None, location_id: str | None = None, timeline_id: str | None = None, rerun_clean: bool = True) -> StepTransaction`: Context manager for clean read-and-commit workflows. Supports:
+  - `tx.extract_and_commit(scene_text, *, compact_schema=False, known_entity_scope="scene", max_roster_entities=None, ...)`: Runs the configured `DeltaExtractor`, normalizes IDs, and stages the `StepDelta` (zero-LLM-call no-op when Tier 3 is disabled, e.g., `TierProfile.LEXICON_ONLY`).
+  - `tx.harvest_voice(text, *, source_text="", lang=None, prev_text=None, next_text=None, scorer=None, min_quality=None, require_speaker=True, infer_addressee=True, extra_metadata=None, stage=True) -> list[VoiceExemplar]`: Runs Gate-1 extraction, attaches active dyadic edge/persona metadata (overlaying any staged `StepDelta` in the same transaction), scores candidates with Gate-2 `VoiceQualityScorer`, emits `on_gate_rejected("gate2", ...)` for rejections, and stages passing `VoiceExemplar`s for atomic commit (zero-work no-op when Tier 5 is disabled).
 - `apply_delta(step: int, delta: StepDelta, timeline_id: str | None = None) -> list[EpisodeRecord]`: Directly applies state deltas, episodes, and inform actions. When `delta.is_flashback=True`, skips overwriting existing entities/edges while still indexing episodes and new entities.
 - `index_episodes(step: int, episodes: Sequence[EpisodeRecord], timeline_id: str | None = None) -> list[EpisodeRecord]`: Embeds (using `embed_batch()` when available) and indexes episodes into Tier 6.
 - `consolidate_episodes(step: int, before_step: int, summary: str, max_salience: float = 4.0, predicate: str = "consolidated_summary", episode_id: str | None = None, chapter_id: str | None = None, salience: float = 7.5, timeline_id: str | None = None) -> EpisodeRecord | None`: Compacts older low-salience episodes into a single higher-level summary episode.
@@ -337,6 +340,17 @@ class AuditReport(BaseModel):
 - `LLMInflectionGenerator(extractor, *, cache_dir=None, max_tokens=None, temperature=0.0, max_retries=1, system_prompt=...)`: One-shot and batched (`generate_inflections_batch(items, *, batch_size=25)`) LLM inflection generator with shared per-item memory + disk caching, language-grouped integer-indexed batch prompts, and per-item fallback on dropped IDs.
 - `generate_inflections_batch(generator, items, *, batch_size=25) -> list[list[str]]`: Dispatcher helper that calls `generator.generate_inflections_batch()` when available and falls back to per-item calls for custom generators.
 - `build_inflection_prompt(...)` / `build_batch_inflection_prompt(items)`: Deterministic single-item and batched JSON prompt builders.
+
+---
+
+## Voice Quality Scorers (`canonarc.voice`)
+
+- `VoiceScoreResult`: Frozen dataclass (`score: float`, `reason: str = ""`, `metadata_updates: dict[str, str] = {}`) returned by Gate-2 voice quality scorers (scores clamped to `[0.0, 10.0]`).
+- `VoiceQualityScorer` (Protocol): `score_candidate(candidate: DialogueCandidate, *, metadata: dict[str, str], context: StepContext | None = None) -> float | VoiceScoreResult` (plus optional `score_candidates_batch(...)`).
+- `HeuristicVoiceQualityScorer(*, optimal_min_words=16, optimal_max_words=45, distinctiveness_weight=4.2, lexical_diversity_weight=2.3, length_weight=1.5, attribution_weight=1.2, expressiveness_weight=0.8, artifact_penalty=2.5)`: Default zero-LLM deterministic Gate-2 scorer used by `CanonArcEngine` when `voice_scorer` is not provided.
+- `CallableVoiceQualityScorer(fn)`: Wraps any 1-, 2-, or 3-argument Python callable returning `float | VoiceScoreResult`.
+- `LLMVoiceQualityScorer(extractor, *, batch_size=15, max_tokens=None, temperature=0.0, max_retries=1, system_prompt=..., fallback_scorer=None)`: Batched LLM Gate-2 judge backed by `OpenAICompatibleExtractor`.
+- `score_voice_candidates_batch(scorer, candidates, metadatas, *, context=None) -> list[VoiceScoreResult]`: Dispatcher helper calling `scorer.score_candidates_batch()` when available with per-item fallback.
 
 ---
 
