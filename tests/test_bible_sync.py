@@ -12,7 +12,10 @@ from canonarc import (
     EdgeDelta,
     EntityDelta,
     EntityRecord,
+    LLMInflectionGenerator,
+    OpenAICompatibleExtractor,
     StepDelta,
+    TokenUsage,
 )
 from canonarc.cli import main as cli_main
 
@@ -377,3 +380,91 @@ def test_cli_export_and_import_commands(tmp_path: Path, capsys: pytest.CaptureFi
     with CanonArcEngine(db2, on_embedder_mismatch="ignore") as engine2:
         assert len(engine2.store.get_all_active_entities("main", 0)) == 3
         assert len(engine2.store.get_all_active_edges("main", 0)) == 1
+
+
+def test_inflection_export_hiding_csv_roundtrip_and_batched_sync(tmp_path: Path) -> None:
+    """export_bible hides kind='inflection' in CSV/MD by default, keeps them in JSON, and sync_bible batches LLM calls."""
+
+    class BatchStubExtractor(OpenAICompatibleExtractor):
+        def __init__(self) -> None:
+            super().__init__(model="stub-sync-batch", api_key="test")
+
+        def call_json_api(self, prompt: str, **kwargs) -> tuple[str, TokenUsage]:
+            if "Input: [" in prompt:
+                items = json.loads(prompt.split("Input: ", 1)[1])
+                out = [{"id": it["id"], "forms": [it["name"], f"{it['name']}a", f"{it['name']}u"]} for it in items]
+                return (
+                    json.dumps({"items": out}, ensure_ascii=False),
+                    TokenUsage(prompt_tokens=30, completion_tokens=20, total_tokens=50, api_calls=1),
+                )
+            start = prompt.index("'") + 1
+            end = prompt.index("'", start)
+            nm = prompt[start:end]
+            return (
+                json.dumps({"forms": [nm, f"{nm}a", f"{nm}u"]}, ensure_ascii=False),
+                TokenUsage(prompt_tokens=10, completion_tokens=10, total_tokens=20, api_calls=1),
+            )
+
+    gen = LLMInflectionGenerator(BatchStubExtractor())
+    engine = CanonArcEngine(":memory:", inflection_generator=gen)
+
+    # 5 entities in CSV with batch_size=2 -> ceil(5/2) == 3 LLM calls
+    csv_path = tmp_path / "cast.csv"
+    csv_path.write_text(
+        "entity_id,kind,canonical_name,target_name,target_lang,gender,aliases\n"
+        "char_arthur,character,Arthur,Artur,sr,M,the Boy King\n"
+        "char_merlin,character,Merlin,Merlin,sr,M,the Wizard\n"
+        "char_elena,character,Elena,Jelena,sr,F,\n"
+        "char_marko,character,Marko,Marko,sr,M,\n"
+        "char_petar,character,Petar,Petar,sr,M,\n",
+        encoding="utf-8",
+    )
+    rep = engine.sync_bible(csv_path, step=0, auto_inflect=True, batch_size=2)
+    assert len(rep.created_entities) == 5
+    assert rep.inflections_generated == 10  # 2 inflected forms per entity
+    assert gen.api_calls == 3  # 2 + 2 + 1
+
+    # CSV export hides kind='inflection' by default
+    csv_out = tmp_path / "glossary.csv"
+    engine.export_bible(csv_out, at_step=0)
+    csv_text = csv_out.read_text(encoding="utf-8")
+    assert "the Boy King" in csv_text
+    assert "Artura" not in csv_text
+    assert "Arturu" not in csv_text
+
+    # Markdown export hides kind='inflection' by default, shows when include_inflections=True
+    md_default, _ = engine.render_bible(format="md", at_step=0)
+    assert "the Boy King" in md_default
+    assert "Artura" not in md_default
+
+    md_with_inf, _ = engine.render_bible(format="md", at_step=0, include_inflections=True)
+    assert "Artura (inflection, sr)" in md_with_inf
+
+    # JSON export includes kind='inflection' by default, hides when include_inflections=False
+    json_default, _ = engine.render_bible(format="json", at_step=0)
+    doc = json.loads(json_default)
+    arthur_doc = next(e for e in doc["entities"] if e["entity_id"] == "char_arthur")
+    arthur_kinds = {a["alias"]: a["kind"] for a in arthur_doc["aliases"]}
+    assert arthur_kinds["the Boy King"] == "permanent"
+    assert arthur_kinds["Artur"] == "permanent"
+    assert arthur_kinds["Artura"] == "inflection"
+    assert arthur_kinds["Arturu"] == "inflection"
+
+    json_no_inf, _ = engine.render_bible(format="json", at_step=0, include_inflections=False)
+    assert "Artura" not in json_no_inf
+
+    # Re-syncing the clean exported CSV (even with auto_inflect=False) preserves kind='inflection'
+    # while allowing deletion of a human nickname ('the Boy King').
+    edited_csv = tmp_path / "edited.csv"
+    edited_csv.write_text(csv_text.replace("the Boy King; ", "").replace("; the Boy King", ""), encoding="utf-8")
+    rep2 = engine.sync_bible(edited_csv, step=0, mode="upsert", auto_inflect=False)
+    assert ("char_arthur", "the Boy King") in rep2.removed_aliases
+    arthur_aliases = {
+        a.alias: a.kind
+        for a in engine.store.get_all_active_aliases("main", 0)
+        if a.entity_id == "char_arthur"
+    }
+    assert "the Boy King" not in arthur_aliases
+    assert arthur_aliases["Artura"] == "inflection"
+    assert arthur_aliases["Arturu"] == "inflection"
+    engine.close()
