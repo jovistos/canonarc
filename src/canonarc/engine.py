@@ -92,8 +92,8 @@ class StepTransaction:
         *,
         text: str = "",
         mentions: Sequence[str] = (),
-        top_k_voice: int = 3,
-        top_k_episodes: int = 5,
+        top_k_voice: int | None = None,
+        top_k_episodes: int | None = None,
         pov_entity_ids: Sequence[str] | None = None,
         pov_mode: Literal["any", "all"] = "any",
         edge_types: Sequence[str] | None = None,
@@ -206,7 +206,24 @@ class StepTransaction:
         content_hash: str | None = None,
         checkpoint_metadata: dict[str, Any] | None = None,
     ) -> StepDelta:
-        """Runs the configured DeltaExtractor on scene_text, normalizes IDs, and stages the StepDelta."""
+        """Runs the configured DeltaExtractor on scene_text, normalizes IDs, and stages the StepDelta.
+
+        When Tier 3 (rolling state deltas) is disabled by the active ``SchemaPolicy`` (e.g.,
+        ``TierProfile.LEXICON_ONLY``), this is a zero-LLM-call no-op that still stages the
+        step checkpoint so callers can share one unified loop across fiction and non-fiction.
+        """
+        if not self.engine._policy.has_tier(3):
+            empty = StepDelta()
+            self.last_raw_delta = empty
+            self.commit(
+                None,
+                exemplars=exemplars,
+                episodes=episodes,
+                bypass_gate=bypass_gate,
+                content_hash=content_hash,
+                checkpoint_metadata=checkpoint_metadata,
+            )
+            return empty
         active_extractor = extractor or self.engine.extractor
         if active_extractor is None:
             raise ValueError("No DeltaExtractor provided to StepTransaction or CanonArcEngine.")
@@ -321,8 +338,8 @@ class TimelineSession:
         text: str = "",
         prev_text: str = "",
         mentions: Sequence[str] = (),
-        top_k_voice: int = 3,
-        top_k_episodes: int = 5,
+        top_k_voice: int | None = None,
+        top_k_episodes: int | None = None,
         pov_entity_ids: Sequence[str] | None = None,
         pov_mode: Literal["any", "all"] = "any",
         edge_types: Sequence[str] | None = None,
@@ -362,8 +379,8 @@ class TimelineSession:
         *,
         text: str = "",
         mentions: Sequence[str] = (),
-        top_k_voice: int = 3,
-        top_k_episodes: int = 5,
+        top_k_voice: int | None = None,
+        top_k_episodes: int | None = None,
         pov_entity_ids: Sequence[str] | None = None,
         pov_mode: Literal["any", "all"] = "any",
         edge_types: Sequence[str] | None = None,
@@ -531,7 +548,7 @@ class TimelineSession:
         at_step: int | None = None,
         kinds: Sequence[str] | None = None,
         include_state: bool = False,
-        include_edges: bool = True,
+        include_edges: bool | None = None,
         include_aliases: bool = True,
         lang: str | None = None,
     ) -> tuple[str, BibleExportResult]:
@@ -554,7 +571,7 @@ class TimelineSession:
         at_step: int | None = None,
         kinds: Sequence[str] | None = None,
         include_state: bool = False,
-        include_edges: bool = True,
+        include_edges: bool | None = None,
         include_aliases: bool = True,
         lang: str | None = None,
         excel_bom: bool = False,
@@ -679,7 +696,8 @@ class CanonArcEngine:
         self._hooks: list[EngineHooks] = list(hooks)
         self._on_embedder_mismatch = on_embedder_mismatch
         self._embedder_verified = False
-        self._check_embedder_compatibility()
+        if self._policy.has_tier(5) or self._policy.has_tier(6):
+            self._check_embedder_compatibility()
 
     @property
     def active_timeline(self) -> str:
@@ -1034,8 +1052,8 @@ class CanonArcEngine:
         text: str = "",
         prev_text: str = "",
         mentions: Sequence[str] = (),
-        top_k_voice: int = 3,
-        top_k_episodes: int = 5,
+        top_k_voice: int | None = None,
+        top_k_episodes: int | None = None,
         pov_entity_ids: Sequence[str] | None = None,
         pov_mode: Literal["any", "all"] = "any",
         edge_types: Sequence[str] | None = None,
@@ -1053,18 +1071,29 @@ class CanonArcEngine:
         policy = self._policy
         cutoff_step = step if inclusive else (step - 1)
 
+        has_edges = policy.has_tier(2)
+        has_state = policy.has_tier(3)
+        has_voice = policy.has_tier(5)
+        has_episodes = policy.has_tier(6)
+        eff_top_k_voice = 0 if not has_voice else (3 if top_k_voice is None else top_k_voice)
+        eff_top_k_episodes = 0 if not has_episodes else (5 if top_k_episodes is None else top_k_episodes)
+        eff_edge_types: Sequence[str] | None = () if not has_edges else edge_types
+
         # 1. Single-pass fetch of active entities, aliases, and edges (with custom MemoryStore fallback)
         get_graph_fn = getattr(self.store, "get_active_graph_state", None)
         if callable(get_graph_fn):
             active_entities, active_aliases, active_edges = get_graph_fn(
-                tl, cutoff_step, edge_types=edge_types
+                tl, cutoff_step, edge_types=eff_edge_types
             )
         else:
             active_entities = self.store.get_all_active_entities(tl, cutoff_step)
             active_aliases = self.store.get_all_active_aliases(tl, cutoff_step)
-            active_edges = self.store.get_all_active_edges(tl, cutoff_step)
-            if edge_types is not None:
-                active_edges = [e for e in active_edges if e.relation_type in edge_types]
+            if has_edges:
+                active_edges = self.store.get_all_active_edges(tl, cutoff_step)
+                if eff_edge_types is not None:
+                    active_edges = [e for e in active_edges if e.relation_type in eff_edge_types]
+            else:
+                active_edges = []
 
         # 2. Entity resolution via pluggable MentionResolver + POV epistemic disguise projection
         pov_set = set(pov_entity_ids) if pov_entity_ids else set()
@@ -1084,6 +1113,7 @@ class CanonArcEngine:
 
         # Read-Only Coreference Halo: if target chunk has < 2 characters (e.g. pronoun-only),
         # resolve fallback mentions from prev_text so active characters/edges stay in context.
+        # Skipped in LEXICON_ONLY (no Tier 2/3) where entities are glossary terms rather than scene actors.
         entity_by_id = {e.entity_id: e for e in active_entities}
         primary_char_ids = {
             m.entity_id
@@ -1094,7 +1124,7 @@ class CanonArcEngine:
                 or ent.kind == "character"
             )
         }
-        if prev_text.strip() and len(primary_char_ids) < 2:
+        if (has_edges or has_state) and prev_text.strip() and len(primary_char_ids) < 2:
             halo_raw = self._resolve_mentions(
                 text=prev_text,
                 explicit_mentions=(),
@@ -1180,7 +1210,7 @@ class CanonArcEngine:
 
         pov_known_episode_ids: set[str] = set()
         fallback_lineage_episodes: list[tuple[EpisodeRecord, bytes]] | None = None
-        if pov_set:
+        if pov_set and has_episodes:
             provenance_ep_ids = {
                 eid
                 for eid in (
@@ -1247,7 +1277,7 @@ class CanonArcEngine:
             if speaker_ids
             else projected_entities
         )
-        if top_k_voice > 0 and speakers:
+        if eff_top_k_voice > 0 and speakers:
             in_scene_ids = resolved_entity_ids or {e.entity_id for e in projected_entities}
             for speaker in speakers:
                 is_masked_speaker = speaker.entity_id.startswith("masked:")
@@ -1287,7 +1317,7 @@ class CanonArcEngine:
                     candidates=candidates,
                     targets=voice_targets,
                     policy=policy,
-                    top_k=top_k_voice,
+                    top_k=eff_top_k_voice,
                 )
                 if is_masked_speaker:
                     ranked = [
@@ -1298,7 +1328,7 @@ class CanonArcEngine:
 
         # 5. Tier 6 Episodic Memory retrieval
         episodes: list[EpisodeRecord] = []
-        if top_k_episodes > 0:
+        if eff_top_k_episodes > 0:
             pinned_episode_ids: set[str] = set()
             for ent in projected_entities:
                 if ent.caused_by_episode_id:
@@ -1315,7 +1345,7 @@ class CanonArcEngine:
             if fallback_lineage_episodes is not None:
                 candidate_episodes = fallback_lineage_episodes
             else:
-                candidate_limit = max(top_k_episodes * 20, 200)
+                candidate_limit = max(eff_top_k_episodes * 20, 200)
                 sql_cue_ids = sorted(cue_entity_ids | active_location_ids)
                 try:
                     candidate_episodes = self.store.get_lineage_episodes(
@@ -1342,7 +1372,7 @@ class CanonArcEngine:
                     pov_entity_ids=pov_entity_ids,
                     pov_mode=pov_mode,
                     policy=episodic_policy,
-                    top_k=top_k_episodes,
+                    top_k=eff_top_k_episodes,
                 )
 
         return StepContext(
@@ -1619,8 +1649,8 @@ class CanonArcEngine:
         *,
         text: str = "",
         mentions: Sequence[str] = (),
-        top_k_voice: int = 3,
-        top_k_episodes: int = 5,
+        top_k_voice: int | None = None,
+        top_k_episodes: int | None = None,
         pov_entity_ids: Sequence[str] | None = None,
         pov_mode: Literal["any", "all"] = "any",
         edge_types: Sequence[str] | None = None,
@@ -1657,17 +1687,23 @@ class CanonArcEngine:
 
     def apply_delta(self, step: int, delta: StepDelta, *, timeline_id: str | None = None) -> list[EpisodeRecord]:
         tl = timeline_id or self.active_timeline
+        policy = self._policy
+        has_edges = policy.has_tier(2)
+        has_state = policy.has_tier(3)
+        has_episodes = policy.has_tier(6)
+
         prepared_episodes: list[EpisodeRecord] = []
-        for ep in delta.episodes:
-            ep_id = ep.episode_id or f"ep_{step}_{uuid.uuid4().hex[:8]}"
-            updates: dict[str, Any] = {"episode_id": ep_id, "step": step, "timeline_id": tl}
-            if ep.story_time is None and delta.story_time is not None:
-                updates["story_time"] = delta.story_time
-            if ep.chapter_id is None and delta.chapter_id is not None:
-                updates["chapter_id"] = delta.chapter_id
-            if ep.scene_id is None and delta.scene_id is not None:
-                updates["scene_id"] = delta.scene_id
-            prepared_episodes.append(ep.model_copy(update=updates))
+        if has_episodes:
+            for ep in delta.episodes:
+                ep_id = ep.episode_id or f"ep_{step}_{uuid.uuid4().hex[:8]}"
+                updates: dict[str, Any] = {"episode_id": ep_id, "step": step, "timeline_id": tl}
+                if ep.story_time is None and delta.story_time is not None:
+                    updates["story_time"] = delta.story_time
+                if ep.chapter_id is None and delta.chapter_id is not None:
+                    updates["chapter_id"] = delta.chapter_id
+                if ep.scene_id is None and delta.scene_id is not None:
+                    updates["scene_id"] = delta.scene_id
+                prepared_episodes.append(ep.model_copy(update=updates))
 
         ep_embeddings: dict[str, bytes] = {}
         if prepared_episodes:
@@ -1679,15 +1715,48 @@ class CanonArcEngine:
                 ep_embeddings[ep.episode_id] = vec.tobytes()
 
         delta_updates: dict[str, Any] = {}
-        if prepared_episodes:
-            delta_updates["episodes"] = prepared_episodes
+        if has_episodes:
+            if prepared_episodes:
+                delta_updates["episodes"] = prepared_episodes
+        else:
+            if delta.episodes:
+                delta_updates["episodes"] = []
+            if delta.inform:
+                delta_updates["inform"] = []
+
+        if not has_edges and delta.edges:
+            delta_updates["edges"] = []
+
+        if not has_state and delta.entities:
+            stripped_entities: list[EntityDelta] = []
+            for ed in delta.entities:
+                cleaned = ed.model_copy(
+                    update={
+                        "state": {},
+                        "private_state": {},
+                        "caused_by_episode_id": None,
+                        "reason": None,
+                    }
+                )
+                if (
+                    cleaned.canonical_name is not None
+                    or cleaned.kind is not None
+                    or cleaned.base_attributes
+                    or cleaned.add_aliases
+                    or cleaned.remove_aliases
+                    or cleaned.remove
+                ):
+                    stripped_entities.append(cleaned)
+            delta_updates["entities"] = stripped_entities
+
         if delta.is_flashback:
             # Flashbacks must not overwrite already-established present-day entity/edge states.
+            source_entities = delta_updates.get("entities", delta.entities)
             existing_ids = {
                 e.entity_id for e in self.store.get_all_active_entities(tl, step)
             }
             delta_updates["entities"] = [
-                ed for ed in delta.entities if not ed.remove and ed.entity_id not in existing_ids
+                ed for ed in source_entities if not ed.remove and ed.entity_id not in existing_ids
             ]
             delta_updates["edges"] = []
 
@@ -1704,7 +1773,7 @@ class CanonArcEngine:
         timeline_id: str | None = None,
     ) -> list[EpisodeRecord]:
         tl = timeline_id or self.active_timeline
-        if not episodes:
+        if not episodes or not self._policy.has_tier(6):
             return []
         indexed: list[EpisodeRecord] = []
         for ep in episodes:
@@ -1925,6 +1994,8 @@ class CanonArcEngine:
         timeline_id: str | None = None,
     ) -> list[VoiceExemplar]:
         tl = timeline_id or self.active_timeline
+        if not exemplars or not self._policy.has_tier(5):
+            return []
         indexed: list[VoiceExemplar] = []
         for ex in exemplars:
             if not bypass_gate and not self.voice_bank.gate.passes_quality_gate(ex):
@@ -1973,9 +2044,9 @@ class CanonArcEngine:
         with self._store_transaction():
             if delta:
                 committed_episodes.extend(self.apply_delta(step, delta, timeline_id=tl))
-            if episodes:
+            if episodes and self._policy.has_tier(6):
                 committed_episodes.extend(self.index_episodes(step, episodes, timeline_id=tl))
-            if exemplars:
+            if exemplars and self._policy.has_tier(5):
                 indexed = self.index_voice_exemplars(
                     step, exemplars, bypass_gate=bypass_gate, timeline_id=tl
                 )
@@ -2130,7 +2201,7 @@ class CanonArcEngine:
         timeline_id: str | None = None,
         kinds: Sequence[str] | None = None,
         include_state: bool = False,
-        include_edges: bool = True,
+        include_edges: bool | None = None,
         include_aliases: bool = True,
         lang: str | None = None,
     ) -> tuple[str, BibleExportResult]:
@@ -2156,7 +2227,7 @@ class CanonArcEngine:
         timeline_id: str | None = None,
         kinds: Sequence[str] | None = None,
         include_state: bool = False,
-        include_edges: bool = True,
+        include_edges: bool | None = None,
         include_aliases: bool = True,
         lang: str | None = None,
         excel_bom: bool = False,
@@ -2311,10 +2382,23 @@ class CanonArcEngine:
                 "Expected 'scene', 'characters_compact', or 'all_compact'."
             )
 
+        policy = self._policy
+        raw_schema = StepDelta.model_json_schema()
+        props = raw_schema.get("properties", {})
+        defs = raw_schema.get("$defs", {})
+        if not policy.has_tier(6):
+            for k in ("episodes", "inform", "is_flashback", "story_time", "chapter_id", "scene_id"):
+                props.pop(k, None)
+            for d in ("EpisodeRecord", "InformDelta"):
+                defs.pop(d, None)
+        if not policy.has_tier(2):
+            props.pop("edges", None)
+            defs.pop("EdgeDelta", None)
+
         schema_json = (
-            json.dumps(StepDelta.model_json_schema(), separators=(",", ":"))
+            json.dumps(raw_schema, separators=(",", ":"))
             if compact_schema
-            else json.dumps(StepDelta.model_json_schema(), indent=2)
+            else json.dumps(raw_schema, indent=2)
         )
         system_prompt = "\n\n".join(
             [
@@ -2331,11 +2415,15 @@ class CanonArcEngine:
                 continue
             seen_entity_ids.add(e.entity_id)
             entity_lines.append(f"- {e.entity_id} (name: {e.canonical_name}, kind: {e.kind})")
-        episode_lines = [
-            f"- {ep.episode_id} (step {ep.step}): {ep.summary}"
-            for ep in ctx.episodes
-            if ep.episode_id
-        ]
+        episode_lines = (
+            [
+                f"- {ep.episode_id} (step {ep.step}): {ep.summary}"
+                for ep in ctx.episodes
+                if ep.episode_id
+            ]
+            if policy.has_tier(6)
+            else []
+        )
 
         user_parts = [
             "### Known Entity IDs (use exact entity_id values, not display names):",
