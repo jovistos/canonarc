@@ -263,11 +263,14 @@ def render_bible(
     timeline_id: str | None = None,
     kinds: Sequence[str] | None = None,
     include_state: bool = False,
-    include_edges: bool = True,
+    include_edges: bool | None = None,
     include_aliases: bool = True,
     lang: str | None = None,
 ) -> tuple[str, BibleExportResult]:
     """Renders the active world Bible at `(timeline_id, at_step)` into CSV, JSON, or Markdown."""
+    eff_include_edges = (
+        engine._policy.has_tier(2) if include_edges is None else include_edges
+    )
     tl = timeline_id or engine.active_timeline
     tl_info = engine.store.get_timeline(tl)
     if tl_info is None:
@@ -297,7 +300,7 @@ def render_bible(
             total_aliases += len(al_list)
 
     edges: list[DirectedEdgeRecord] = []
-    if include_edges and format in ("json", "md"):
+    if eff_include_edges and format in ("json", "md"):
         raw_edges = engine.store.get_all_active_edges(tl, eff_step)
         if kind_filter is not None:
             edges = [
@@ -318,7 +321,7 @@ def render_bible(
             edges=edges,
             include_state=include_state,
             include_aliases=include_aliases,
-            include_edges=include_edges,
+            include_edges=eff_include_edges,
         )
     elif format == "csv":
         content = _render_csv(
@@ -335,7 +338,7 @@ def render_bible(
             edges=edges,
             include_state=include_state,
             include_aliases=include_aliases,
-            include_edges=include_edges,
+            include_edges=eff_include_edges,
         )
     else:
         raise ValueError(f"Unsupported export format: {format!r}")
@@ -540,7 +543,7 @@ def export_bible(
     timeline_id: str | None = None,
     kinds: Sequence[str] | None = None,
     include_state: bool = False,
-    include_edges: bool = True,
+    include_edges: bool | None = None,
     include_aliases: bool = True,
     lang: str | None = None,
     excel_bom: bool = False,
