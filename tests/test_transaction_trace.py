@@ -22,7 +22,6 @@ from canonarc import (
     StepContextSummary,
     StepDelta,
     StepTransactionTrace,
-    TierProfile,
     TokenUsage,
     TransactionUsageSummary,
     TranslationPreset,
