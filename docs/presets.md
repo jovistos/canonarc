@@ -35,7 +35,7 @@ Only co-present scene characters (`ctx.entities`) and edges between them (`ctx.a
 
 Designed for literary and video game localization pipelines. Emphasizes grammatical declension/gender rules, target exonyms, register constraints, and historical episodic context.
 
-Only co-present scene characters (`ctx.entities`) and edges between them (`ctx.active_edges`) are rendered in the binding state block, and `| ignorant: ...` annotations only check co-present scene characters. Initialize with `TranslationPreset(include_background_edges=True)` to optionally render `ctx.background_edges` under a separate `## Off-screen character ties — reference only` block.
+Only co-present scene characters (`ctx.entities`) and edges between them (`ctx.active_edges`) are rendered in the binding state block, and `| ignorant: ...` annotations only check co-present scene characters. Initialize with `TranslationPreset(include_background_edges=True)` to optionally render `ctx.background_edges` under a separate `## Off-screen character ties — reference only` block. When configured with `SchemaPolicy.lexicon_only()` (Tiers 1 + 4 disabled for edges/state), it renders a clean `## Terminology & glossary — binding` block without mood or edge lines.
 
 ### Injected Context Format
 ```markdown
@@ -70,7 +70,36 @@ Past Utterance Anchors:
 
 ---
 
-## 4. Custom Presets & `SchemaPolicy`
+## 4. Built-In Tier Profiles (`TierProfile`)
+
+Instead of manually zeroing `top_k_voice=0, top_k_episodes=0, edge_types=[]` on every call, you can declaratively select which architectural tiers are active on `SchemaPolicy`:
+
+| Profile | Active Tiers | Behavior | Typical Use Case |
+| :--- | :--- | :--- | :--- |
+| `TierProfile.LEXICON_ONLY` | **1, 4** | Glossary/base attributes, bilingual aliases & inflections, temporal cutoffs, and step checkpoints. Zero LLM extraction calls (`extract_and_commit()` is a checkpoint-only no-op), zero embeddings, no edge queries or `prev_text` character halo. | Non-fiction books, technical manuals, legal/academic translation |
+| `TierProfile.STATE_ONLY` | **1–4** | Adds directed edges (Tier 2) and rolling state deltas / LLM extraction (Tier 3), with Tier 6 fields pruned from the extraction JSON schema and zero embedding overhead. | Lightweight fiction, game UI/dialogue localization, cost-sensitive RPG state |
+| `TierProfile.FULL` *(default)* | **1–6** | Complete 6-tier narrative memory including Voice Bank (Tier 5) and Episodic Ledger / POV epistemics (Tier 6). | Novels, interactive fiction, mystery/social deduction, multi-agent sims |
+
+```python
+from canonarc import CanonArcEngine, SchemaPolicy, TierProfile, TranslationPreset
+
+# One unified code path for both non-fiction (zero extra LLM calls) and novels:
+profile = TierProfile.FULL if is_fiction else TierProfile.LEXICON_ONLY
+preset = TranslationPreset(policy=SchemaPolicy(profile=profile))
+
+# Convenience factories and custom tier subsets are also available:
+lex_policy = SchemaPolicy.lexicon_only()
+state_policy = SchemaPolicy.state_only()
+custom_policy = SchemaPolicy.with_tiers({1, 2, 3, 4, 5})  # State + Voice Bank, no episodes
+
+engine = CanonArcEngine("book.sqlite", preset=preset)
+```
+
+Because `CausalStore` uses one unified SQLite schema, a database started in `LEXICON_ONLY` or `STATE_ONLY` can be reopened later in `FULL` with zero migration.
+
+---
+
+## 5. Custom Presets & `SchemaPolicy`
 
 Every `DomainPreset` exposes a `policy: SchemaPolicy` attribute that controls which state/metadata keys act as hard filters, soft boosts, or edge layers in the core engine, `VoiceBank`, and `DefaultEpisodeRanker` (via `episodic_policy: EpisodicScoringPolicy`):
 

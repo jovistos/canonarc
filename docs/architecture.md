@@ -291,6 +291,6 @@ WHERE rn = 1 AND is_tombstone = 0;
 | `resolver.py` | `MentionResolver` & `DefaultLexicalResolver` (word-boundary, fuzzy inflection, alias span matching) |
 | `extractors.py` | `DeltaExtractor`, `CallableExtractor`, and `OpenAICompatibleExtractor` for LLM delta extraction |
 | `hooks.py` | `EngineHooks` & `BaseEngineHooks` lifecycle callbacks (commit, rollback, branch, gate rejection) |
-| `presets.py` | `SchemaPolicy`, `InteractiveFictionPreset`, `TranslationPreset`, and `SimulationPreset` |
+| `presets.py` | `TierProfile`, `SchemaPolicy`, `InteractiveFictionPreset`, `TranslationPreset`, and `SimulationPreset` |
 | `engine.py` | `CanonArcEngine`, `StepTransaction`, `TimelineSession` (`contextvars`), POV projection & consolidation |
 | `cli.py` | `canonarc` CLI inspector (`tree`, `inspect`, `diff`, `history`) |
