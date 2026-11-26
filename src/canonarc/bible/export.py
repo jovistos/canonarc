@@ -10,9 +10,12 @@ from typing import TYPE_CHECKING, Any, Literal
 from ..models import AliasRecord, DirectedEdgeRecord, EntityRecord
 from .models import (
     _CSV_CORE_COLS,
+    _CSV_PROVENANCE_COLS,
+    _CSV_READONLY_COLS,
     _CSV_RESERVED_COLS,
     _CSV_STANDARD_ATTR_COLS,
     _KIND_HEADINGS,
+    _PROVENANCE_METADATA_KEYS,
     BIBLE_SCHEMA_VERSION,
     BibleExportFormat,
     BibleExportResult,
@@ -23,6 +26,55 @@ from .models import (
 
 if TYPE_CHECKING:
     from ..engine import CanonArcEngine
+
+
+def _resolve_entity_provenance(
+    engine: CanonArcEngine,
+    *,
+    timeline_id: str,
+    at_step: int,
+    entities: Sequence[EntityRecord],
+) -> dict[str, tuple[int | None, str | None]]:
+    """Bulk-resolves (first_seen_step, first_seen_source) for entities without N+1 queries."""
+    if not entities:
+        return {}
+
+    step_source_map: dict[int, str] = {}
+    list_cps = getattr(engine.store, "list_step_checkpoints", None)
+    if callable(list_cps):
+        for cp in list_cps(timeline_id=timeline_id, cutoff_step=at_step):
+            meta = cp.metadata or {}
+            for key in _PROVENANCE_METADATA_KEYS:
+                val = meta.get(key)
+                if isinstance(val, str) and val.strip():
+                    step_source_map[cp.step] = val.strip()
+                    break
+
+    needs_episode_fallback = any(
+        (e.first_seen_step if e.first_seen_step is not None else e.valid_from_step)
+        not in step_source_map
+        for e in entities
+    )
+    ep_chapter_by_id: dict[str, str] = {}
+    ep_chapter_by_step: dict[int, str] = {}
+    if needs_episode_fallback:
+        for ep, _ in engine.store.get_lineage_episodes(timeline_id, at_step):
+            if ep.chapter_id and ep.chapter_id.strip():
+                ch = ep.chapter_id.strip()
+                if ep.episode_id:
+                    ep_chapter_by_id[ep.episode_id] = ch
+                ep_chapter_by_step.setdefault(ep.step, ch)
+
+    provenance: dict[str, tuple[int | None, str | None]] = {}
+    for e in entities:
+        first_step = e.first_seen_step if e.first_seen_step is not None else e.valid_from_step
+        source: str | None = step_source_map.get(first_step) if first_step is not None else None
+        if source is None and e.caused_by_episode_id:
+            source = ep_chapter_by_id.get(e.caused_by_episode_id)
+        if source is None and first_step is not None:
+            source = ep_chapter_by_step.get(first_step)
+        provenance[e.entity_id] = (first_step, source)
+    return provenance
 
 
 def render_bible(
@@ -36,6 +88,7 @@ def render_bible(
     include_edges: bool | None = None,
     include_aliases: bool = True,
     include_inflections: bool | None = None,
+    include_provenance: bool = False,
     lang: str | None = None,
 ) -> tuple[str, BibleExportResult]:
     """Renders the active world Bible at `(timeline_id, at_step)` into CSV, JSON, or Markdown."""
@@ -88,6 +141,17 @@ def render_bible(
             edges = list(raw_edges)
         edges.sort(key=lambda ed: (ed.source_id, ed.relation_type, ed.target_id))
 
+    provenance_by_entity: dict[str, tuple[int | None, str | None]] = (
+        _resolve_entity_provenance(
+            engine,
+            timeline_id=tl,
+            at_step=eff_step,
+            entities=entities,
+        )
+        if include_provenance
+        else {}
+    )
+
     if format == "json":
         content = _render_json(
             timeline_id=tl,
@@ -98,12 +162,16 @@ def render_bible(
             include_state=include_state,
             include_aliases=include_aliases,
             include_edges=eff_include_edges,
+            include_provenance=include_provenance,
+            provenance_by_entity=provenance_by_entity,
         )
     elif format == "csv":
         content = _render_csv(
             entities=entities,
             aliases_by_entity=aliases_by_entity,
             include_state=include_state,
+            include_provenance=include_provenance,
+            provenance_by_entity=provenance_by_entity,
         )
     elif format == "md":
         content = _render_markdown(
@@ -115,6 +183,8 @@ def render_bible(
             include_state=include_state,
             include_aliases=include_aliases,
             include_edges=eff_include_edges,
+            include_provenance=include_provenance,
+            provenance_by_entity=provenance_by_entity,
         )
     else:
         raise ValueError(f"Unsupported export format: {format!r}")
@@ -141,8 +211,11 @@ def _render_json(
     include_state: bool,
     include_aliases: bool,
     include_edges: bool,
+    include_provenance: bool = False,
+    provenance_by_entity: dict[str, tuple[int | None, str | None]] | None = None,
 ) -> str:
     ent_payloads: list[dict[str, Any]] = []
+    prov_map = provenance_by_entity or {}
     for e in entities:
         item: dict[str, Any] = {
             "entity_id": e.entity_id,
@@ -169,6 +242,16 @@ def _render_json(
                 }
                 for a in aliases_by_entity.get(e.entity_id, ())
             ]
+        if include_provenance:
+            first_step, first_source = prov_map.get(
+                e.entity_id,
+                (e.first_seen_step if e.first_seen_step is not None else e.valid_from_step, None),
+            )
+            item["provenance"] = {
+                "first_seen_step": first_step,
+                "first_seen_source": first_source,
+                "valid_from_step": e.valid_from_step,
+            }
         ent_payloads.append(item)
 
     doc: dict[str, Any] = {
@@ -195,12 +278,18 @@ def _render_csv(
     entities: Sequence[EntityRecord],
     aliases_by_entity: dict[str, list[AliasRecord]],
     include_state: bool,
+    include_provenance: bool = False,
+    provenance_by_entity: dict[str, tuple[int | None, str | None]] | None = None,
 ) -> str:
     extra_attr_keys: set[str] = set()
     any_private_state = False
     for e in entities:
         for k in e.base_attributes:
-            if k not in _CSV_STANDARD_ATTR_COLS and k not in _CSV_RESERVED_COLS:
+            if (
+                k not in _CSV_STANDARD_ATTR_COLS
+                and k not in _CSV_RESERVED_COLS
+                and k not in _CSV_READONLY_COLS
+            ):
                 extra_attr_keys.add(k)
         if include_state and e.private_state:
             any_private_state = True
@@ -210,7 +299,10 @@ def _render_csv(
         fieldnames.append("state")
         if any_private_state:
             fieldnames.append("private_state")
+    if include_provenance:
+        fieldnames.extend(_CSV_PROVENANCE_COLS)
 
+    prov_map = provenance_by_entity or {}
     buf = io.StringIO()
     writer = csv.DictWriter(buf, fieldnames=fieldnames, lineterminator="\n")
     writer.writeheader()
@@ -233,6 +325,13 @@ def _render_csv(
                     if e.private_state
                     else ""
                 )
+        if include_provenance:
+            first_step, first_source = prov_map.get(
+                e.entity_id,
+                (e.first_seen_step if e.first_seen_step is not None else e.valid_from_step, None),
+            )
+            row["first_seen_step"] = "" if first_step is None else str(first_step)
+            row["first_seen_source"] = first_source or ""
         writer.writerow(row)
     return buf.getvalue()
 
@@ -247,8 +346,11 @@ def _render_markdown(
     include_state: bool,
     include_aliases: bool,
     include_edges: bool,
+    include_provenance: bool = False,
+    provenance_by_entity: dict[str, tuple[int | None, str | None]] | None = None,
 ) -> str:
     lines: list[str] = [f"# Series Bible — `{timeline_id}` (Step {at_step})", ""]
+    prov_map = provenance_by_entity or {}
 
     if not entities and not edges:
         lines.append("_No active entities or relationships at this step._")
@@ -272,6 +374,8 @@ def _render_markdown(
             headers.append("Aliases")
         if include_state:
             headers.append("State")
+        if include_provenance:
+            headers.append("First Seen")
 
         lines.append("| " + " | ".join(headers) + " |")
         lines.append("| " + " | ".join("---" for _ in headers) + " |")
@@ -296,6 +400,19 @@ def _render_markdown(
                     priv = ", ".join(f"{k}={v}" for k, v in e.private_state.items())
                     state_parts.append(f"private: {priv}")
                 cells.append(_escape_md_cell(", ".join(state_parts) or "—"))
+            if include_provenance:
+                first_step, first_source = prov_map.get(
+                    e.entity_id,
+                    (e.first_seen_step if e.first_seen_step is not None else e.valid_from_step, None),
+                )
+                if first_source and first_step is not None:
+                    cells.append(f"`{_escape_md_cell(first_source)}` (step {first_step})")
+                elif first_source:
+                    cells.append(f"`{_escape_md_cell(first_source)}`")
+                elif first_step is not None:
+                    cells.append(f"step {first_step}")
+                else:
+                    cells.append("—")
             lines.append("| " + " | ".join(cells) + " |")
         lines.append("")
 
@@ -322,6 +439,7 @@ def export_bible(
     include_edges: bool | None = None,
     include_aliases: bool = True,
     include_inflections: bool | None = None,
+    include_provenance: bool = False,
     lang: str | None = None,
     excel_bom: bool = False,
 ) -> BibleExportResult:
@@ -337,6 +455,7 @@ def export_bible(
         include_edges=include_edges,
         include_aliases=include_aliases,
         include_inflections=include_inflections,
+        include_provenance=include_provenance,
         lang=lang,
     )
     out_path = Path(path)

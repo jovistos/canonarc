@@ -3,10 +3,12 @@ from __future__ import annotations
 import csv
 import io
 import json
+from collections.abc import Sequence
 from typing import Any
 
 from ..models import AliasRecord, DirectedEdgeRecord, EntityRecord
 from .models import (
+    _CSV_READONLY_COLS,
     _CSV_RESERVED_COLS,
     _ParsedBible,
     _ParsedEntityEntry,
@@ -18,6 +20,7 @@ def _parse_csv_bible(
     raw_text: str,
     *,
     column_map: dict[str, str] | None = None,
+    ignore_columns: Sequence[str] | None = None,
     existing_ids: set[str],
 ) -> _ParsedBible:
     reader = csv.DictReader(io.StringIO(raw_text))
@@ -26,6 +29,9 @@ def _parse_csv_bible(
 
     col_map = column_map or {}
     lower_col_map = {k.strip().lower(): v.strip() for k, v in col_map.items()}
+    ignored_lower = {c.strip().lower() for c in _CSV_READONLY_COLS}
+    if ignore_columns:
+        ignored_lower.update(c.strip().lower() for c in ignore_columns if c and c.strip())
 
     def _map_header(raw_header: str) -> str:
         stripped = raw_header.strip()
@@ -69,7 +75,7 @@ def _parse_csv_bible(
 
         base_attributes: dict[str, Any] = {}
         for k, v in mapped.items():
-            if k in _CSV_RESERVED_COLS or not v:
+            if k in _CSV_RESERVED_COLS or k.lower() in ignored_lower or not v:
                 continue
             base_attributes[k] = v
 

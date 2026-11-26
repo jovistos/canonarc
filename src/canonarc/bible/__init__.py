@@ -22,7 +22,7 @@ from .models import (
     infer_export_format,
     infer_import_format,
 )
-from .sync import sync_bible
+from .sync import sync_bible, sync_bible_if_changed
 
 __all__ = [
     "BIBLE_SCHEMA_VERSION",
@@ -43,4 +43,5 @@ __all__ = [
     "infer_import_format",
     "render_bible",
     "sync_bible",
+    "sync_bible_if_changed",
 ]
