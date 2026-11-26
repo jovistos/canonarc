@@ -106,6 +106,20 @@ from .presets import (
     TranslationPreset,
 )
 from .store import CausalStore, CheckpointStore, MemoryStore, TimelineBranchConflictError
+from .text_masking import (
+    COMMON_MARKUP_PATTERNS,
+    MARKUP_BRACE_PLACEHOLDERS,
+    MARKUP_BRACKET_PLACEHOLDERS,
+    MARKUP_HTML_COMMENTS,
+    MARKUP_HTML_TAGS,
+    MARKUP_MARKDOWN_IMAGES,
+    MARKUP_MARKDOWN_LINK_URLS,
+    MARKUP_PRINTF_PLACEHOLDERS,
+    TextNormalizer,
+    compile_ignore_patterns,
+    mask_ignored_spans,
+    strip_ignored_spans,
+)
 from .voice import (
     CallableVoiceQualityScorer,
     HeuristicVoiceQualityScorer,
@@ -119,8 +133,16 @@ from .voice import (
 
 __all__ = [
     "ALL_TIERS",
+    "COMMON_MARKUP_PATTERNS",
     "DEFAULT_EPISODIC_POLICY",
     "DEFAULT_SCHEMA_POLICY",
+    "MARKUP_BRACE_PLACEHOLDERS",
+    "MARKUP_BRACKET_PLACEHOLDERS",
+    "MARKUP_HTML_COMMENTS",
+    "MARKUP_HTML_TAGS",
+    "MARKUP_MARKDOWN_IMAGES",
+    "MARKUP_MARKDOWN_LINK_URLS",
+    "MARKUP_PRINTF_PLACEHOLDERS",
     "MODEL_PRICING_PER_1M_USD",
     "PROFILE_TIERS",
     "AliasRecord",
@@ -190,6 +212,7 @@ __all__ = [
     "StepDelta",
     "StepTransaction",
     "TargetTermComplianceRule",
+    "TextNormalizer",
     "TierProfile",
     "TimelineBranchConflictError",
     "TimelineInfo",
@@ -203,6 +226,7 @@ __all__ = [
     "VoiceScoreResult",
     "build_batch_inflection_prompt",
     "build_inflection_prompt",
+    "compile_ignore_patterns",
     "compute_step_hash",
     "default_audit_rules",
     "embed_texts_batch",
@@ -211,11 +235,13 @@ __all__ = [
     "get_embedder_info",
     "get_model_pricing_per_1m_usd",
     "load_dotenv",
+    "mask_ignored_spans",
     "render_bible",
     "resolve_lmstudio_model",
     "run_audit_draft",
     "run_audit_step",
     "run_audit_timeline",
     "score_voice_candidates_batch",
+    "strip_ignored_spans",
     "sync_bible",
 ]
