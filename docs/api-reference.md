@@ -228,6 +228,7 @@ class StepContext(BaseModel):
     background_edges: list[DirectedEdgeRecord] = []  # Edges from scene entities to off-screen neighbors
     voice_exemplars: list[VoiceExemplar] = []
     episodes: list[EpisodeRecord] = []
+    entity_names: dict[str, str] = {}                # entity_id -> canonical_name lookup (includes off-screen episode/edge refs)
 ```
 
 ### `BibleExportResult` & `BibleSyncReport`
@@ -329,6 +330,7 @@ class EntityMergeReport(BaseModel):
   - `UnexplainedRegisterFlipRule`: Flags mutations to `policy.hard_filter_keys` (e.g., `register`) lacking `caused_by_episode_id` and `reason` (skipping step `0`), plus `dangling_causal_episode` errors.
   - `RegisterVocabularyDriftRule`: Detects mixed register vocabularies (e.g., `Vi`/`ti` mixed with `formal`/`informal`) or values outside an explicit `allowed_values` set.
 - `TierProfile` & `SchemaPolicy`: `TierProfile` (`LEXICON_ONLY` = Tiers 1+4, `STATE_ONLY` = Tiers 1–4, `FULL` = Tiers 1–6) and frozen `SchemaPolicy` dataclass on `DomainPreset.policy` defining `profile`, optional custom `enabled_tiers`, `active_tiers`, `has_tier(tier)`, convenience factories (`SchemaPolicy.lexicon_only()`, `state_only()`, `full()`, `with_tiers(...)`), `edge_layer_order`, `facade_relation`, `belief_relation`, `hard_filter_keys`, `soft_boost_weights`, `fallback_on_empty_hard_filter`, `hard_filter_mismatch_penalty`, and `episodic_policy`.
+- `TranslationPreset(policy=None, *, include_background_edges=False, show_entity_ids=False, include_kind=True, extra_attributes=("notes",), max_attr_chars=160, empty_text="", max_voice_per_speaker=None, max_context_chars=None)`: Localization preset that renders human-readable display names by default (auto-disambiguating colliding names and resolving off-screen episode/edge IDs via `StepContext.entity_names`), includes entity `[kind]` (`True`, `"non_character"`, or `False`) and truncated extra `base_attributes` (default `("notes",)`), omits empty section headers and returns `empty_text` on empty contexts, caps per-speaker voice exemplars, and trims whole lines in reverse priority order (background edges → episodes → voice → active edges → entities) when `max_context_chars` is set.
 
 ---
 
