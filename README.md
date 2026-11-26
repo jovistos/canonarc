@@ -334,8 +334,10 @@ report = engine.audit_step(step=2, source_text=chunk_en, target_text=chunk_sr, l
 if not report.passed:
     print(report.summary())
 
-# Atomically resolve duplicate entities flagged by NearDuplicateEntityRule
-# (promotes names/aliases, tombstones duplicate, migrates edges/voice/episodes)
+# Discover near-duplicate candidates across the full active roster (read-only),
+# then explicitly merge approved pairs via merge_entities()
+for cand in engine.find_duplicate_candidates():  # defaults to head_step; pass at_step=0 post-glossary
+    print(f"[{cand.score:.1f}%] {cand.duplicate_id} -> {cand.canonical_id}: {cand.reason}")
 merge_report = engine.merge_entities("char_poirot", "char_hercule_poirot")
 print(merge_report.summary())
 
@@ -385,6 +387,7 @@ canonarc history story_save.sqlite char_arthur --timeline main
 canonarc export story_save.sqlite bible.md --step 85 --include-state
 canonarc import story_save.sqlite glossary.csv --step 0 --dry-run
 canonarc audit story_save.sqlite --timeline main --fail-on error
+canonarc duplicates story_save.sqlite --timeline main
 canonarc merge story_save.sqlite char_poirot char_hercule_poirot --dry-run
 ```
 

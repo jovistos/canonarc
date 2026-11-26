@@ -44,6 +44,7 @@ Supports Python context management (`with CanonArcEngine("save.sqlite") as engin
 ### Pluggable QA & Continuity Audit (`canonarc.audit`)
 - `audit_step(step: int, source_text: str = "", target_text: str = "", *, timeline_id: str | None = None, rules: Sequence[AuditRule] | None = None, include_rules: Sequence[str] | None = None, exclude_rules: Sequence[str] | None = None, min_severity: AuditSeverity = "info", lang: str | None = None) -> AuditReport`: Runs deterministic, zero-LLM continuity and localization QA rules against a single committed step (and optional source/target text pair). Automatically skips rules whose `required_tiers` are disabled by the active `SchemaPolicy`.
 - `audit_timeline(*, timeline_id: str | None = None, from_step: int = 0, to_step: int | None = None, texts: Mapping[int, str | tuple[str, str]] | None = None, rules: Sequence[AuditRule] | None = None, include_rules: Sequence[str] | None = None, exclude_rules: Sequence[str] | None = None, min_severity: AuditSeverity = "info", lang: str | None = None) -> AuditReport`: Audits every step in `[from_step..to_step]` on a timeline, optionally passing per-step `target_text` or `(source_text, target_text)` pairs for text-level rules.
+- `find_duplicate_candidates(*, at_step: int | None = None, timeline_id: str | None = None, fuzzy_threshold: float = 88.0, same_kind_only: bool = True) -> list[DuplicateCandidate]`: Read-only discovery helper that scans the entire active entity roster at `(timeline_id, at_step)` (defaulting to the timeline's `head_step`; pass `at_step=0` for post-glossary checks) using `NearDuplicateEntityRule(check_all_entities=True)` and returns typed `DuplicateCandidate` records sorted by descending score, ready for review or explicit `merge_entities(cand.duplicate_id, cand.canonical_id)` calls. Also available on `TimelineSession`.
 
 *(Both methods are also available on `TimelineSession`.)*
 
@@ -290,9 +291,24 @@ class BibleSyncReport(BaseModel):
     # Properties / helpers: report.has_changes, report.summary()
 ```
 
-### `AuditIssue` & `AuditReport`
+### `AuditIssue`, `AuditReport` & `DuplicateCandidate`
 ```python
 AuditSeverity = Literal["info", "warning", "error"]
+
+class DuplicateCandidate(BaseModel):
+    duplicate_id: str
+    canonical_id: str
+    score: float                         # similarity score in [0.0, 100.0]
+    reason: str                          # e.g. "canonical_name matched alias:Mr. Darcy (100.0%)"
+    duplicate_name: str = ""
+    canonical_name: str = ""
+    duplicate_kind: str = ""
+    canonical_kind: str = ""
+    candidate_field: str = ""
+    matched_against: str = ""
+    matched_value: str = ""
+    step: int = 0
+    timeline_id: str = "main"
 
 class AuditIssue(BaseModel):
     code: str                            # e.g. "exonym_leak", "near_duplicate_entity", "unexplained_register_flip"
@@ -313,7 +329,8 @@ class AuditReport(BaseModel):
     rules_executed: list[str] = []
     # Properties / helpers: report.passed, report.error_count, report.warning_count,
     # report.info_count, report.has_issues_at_or_above(min_severity),
-    # report.by_severity(sev), report.by_code(code), report.summary(),
+    # report.by_severity(sev), report.by_code(code), report.duplicate_candidates(min_score=0.0),
+    # report.summary(),
     # report.format_repair_instructions(min_severity="error", max_issues=None, header=..., include_snippets=True)
 ```
 
@@ -447,6 +464,9 @@ canonarc import story_save.sqlite bible.csv [--format auto|csv|json] [--timeline
 
 # Run deterministic continuity and localization QA audit rules (exits 1 if --fail-on threshold matched)
 canonarc audit story_save.sqlite [--timeline main] [--step 2 --source s2_en.txt --target s2_sr.txt] [--from-step 0 --to-step 10] [--pairs-jsonl pairs.jsonl] [--rules exonym_leak,near_duplicate_entity] [--exclude-rules ...] [--min-severity info|warning|error] [--fail-on error|warning|none] [--json]
+
+# Scan all active entities for near-duplicate merge candidates (read-only; prints ready-to-run merge hints)
+canonarc duplicates story_save.sqlite [--timeline main] [--step N] [--threshold 88.0] [--allow-cross-kind] [--json]
 
 # Atomically merge a duplicate entity into a canonical entity
 canonarc merge story_save.sqlite char_poirot char_hercule_poirot [--timeline main] [--step N] [--no-attributes] [--no-edges] [--no-voice] [--no-episodes] [--conflict-strategy canonical_wins|duplicate_wins] [--allow-kind-mismatch] [--reason "..."] [--dry-run] [--json]
