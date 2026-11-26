@@ -18,7 +18,11 @@ Raw Output Prose
        │
        ▼
 [Gate 1: Pre-LLM Deterministic Gate]
-  - Extract quoted dialogue across styles ("...", “...”, „...“, «...», — ...)
+  - Extract quoted & dash dialogue across typographic styles:
+    "...", “...”, „...“ / „...” (Serbian/Croatian/Polish/German),
+    «...» / »...« (guillemets), 「...」 / 『...』 (CJK), and — / – / ― dash lines
+  - Strip inline narrator interjections from dash dialogue (e.g. "– Ne znam – reče Artur – šta da radim.")
+    and route stripped beats into speaker attribution windows
   - Word count: 12 <= words <= 60
   - Lexical distinctiveness: Root-TTR (|V| / sqrt(N)) >= threshold
   - Long word density (>= 6 chars)
@@ -61,7 +65,7 @@ with engine.step_transaction(step=12, text=source_chunk, lang="sr") as tx:
 
 What `tx.harvest_voice()` does automatically:
 1. **Tier-5 Policy Short-Circuit**: No-op returning `[]` when Tier 5 is disabled (e.g., `TierProfile.LEXICON_ONLY` or `STATE_ONLY`).
-2. **Gate-1 Extraction with Staged-Delta Visibility**: Extracts dialogue spans (`"..."`, `„…“`, `«…»`, `「…」`, `— …`) and resolves `(speaker_id, addressee_id)`, including any brand-new entities/aliases introduced in `tx._staged_delta` during the same step.
+2. **Gate-1 Extraction with Staged-Delta Visibility**: Extracts dialogue spans (`"..."`, `“…”`, `„…“` / `„…”`, `«…»` / `»…«`, `「…」`, `—` / `–` / `―` dash lines with inline narrator-beat stripping) and resolves `(speaker_id, addressee_id)` with quote-boundary-isolated attribution windows, including any brand-new entities/aliases introduced in `tx._staged_delta` during the same step.
 3. **Graph-Aware Dyadic Tagging**: Looks up the active `(speaker_id → addressee_id)` edge across `SchemaPolicy.edge_layer_order` (`stance` → `facade`) **overlaid with any intra-step `StepDelta` edge/entity mutations** (so a `Vi` → `ti` shift or new `disguise` in the current scene is reflected immediately). In two-character scenes where Gate 1 only resolves the speaker, `infer_addressee=True` (default) infers the co-present addressee automatically.
 4. **Gate-2 Quality Scoring (`VoiceQualityScorer`)**: Scores candidates on `[0.0, 10.0]` via the configured scorer (defaults to `HeuristicVoiceQualityScorer`), fires `on_gate_rejected("gate2", ...)` for rejected lines, and stages passing `VoiceExemplar`s for atomic commit (or pass `stage=False` for dry-run inspection).
 
