@@ -8,7 +8,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
-from .extractors import OpenAICompatibleExtractor, _strip_json_fences
+from .extractors import (
+    JsonCompletionClient,
+    TokenUsage,
+    _coerce_usage,
+    _strip_json_fences,
+    resolve_client_model,
+    validate_json_completion_client,
+)
 
 
 @dataclass(frozen=True)
@@ -325,7 +332,7 @@ class CallableInflectionGenerator:
 
 
 class LLMInflectionGenerator:
-    """One-shot LLM inflection generator backed by OpenAICompatibleExtractor with memory + disk caching."""
+    """One-shot LLM inflection generator backed by any JsonCompletionClient with memory + disk caching."""
 
     DEFAULT_SYSTEM_PROMPT = (
         "You are a precise morphological inflection generator for literary localization. "
@@ -334,7 +341,7 @@ class LLMInflectionGenerator:
 
     def __init__(
         self,
-        extractor: OpenAICompatibleExtractor,
+        extractor: JsonCompletionClient,
         *,
         cache_dir: str | Path | None = None,
         max_tokens: int | None = None,
@@ -342,7 +349,7 @@ class LLMInflectionGenerator:
         max_retries: int = 1,
         system_prompt: str = DEFAULT_SYSTEM_PROMPT,
     ) -> None:
-        self.extractor = extractor
+        self.extractor: JsonCompletionClient = validate_json_completion_client(extractor)
         self.cache_dir = Path(cache_dir) if cache_dir is not None else None
         if self.cache_dir is not None:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
@@ -353,6 +360,11 @@ class LLMInflectionGenerator:
         self._memory_cache: dict[str, list[str]] = {}
         self.api_calls: int = 0
         self.cache_hits: int = 0
+        self.last_usage: TokenUsage = TokenUsage()
+        self.total_usage: TokenUsage = TokenUsage()
+
+    def _model_name(self) -> str:
+        return resolve_client_model(self.extractor)
 
     def _cache_key(
         self,
@@ -363,7 +375,7 @@ class LLMInflectionGenerator:
         declension: str | None,
     ) -> str:
         raw = (
-            f"model={self.extractor.model}\0"
+            f"model={self._model_name()}\0"
             f"name={name.strip()}\0"
             f"lang={lang.strip().lower()}\0"
             f"gender={gender or ''}\0"
@@ -411,7 +423,7 @@ class LLMInflectionGenerator:
                         "gender": gender,
                         "kind": kind,
                         "declension": declension,
-                        "model": self.extractor.model,
+                        "model": self._model_name(),
                         "forms": forms,
                     },
                     ensure_ascii=False,
@@ -444,13 +456,16 @@ class LLMInflectionGenerator:
         last_exc: Exception | None = None
         forms: list[str] | None = None
         for _attempt in range(self.max_retries + 1):
-            content, _ = self.extractor.call_json_api(
+            content, raw_usage = self.extractor.call_json_api(
                 prompt,
                 system_prompt=self.system_prompt,
                 max_tokens=self.max_tokens,
                 temperature=self.temperature,
             )
             self.api_calls += 1
+            call_usage = _coerce_usage(raw_usage, latency_ms=0.0)
+            self.last_usage = call_usage
+            self.total_usage.add(call_usage)
             try:
                 forms = _parse_inflection_forms(content, name)
                 break
@@ -529,13 +544,16 @@ class LLMInflectionGenerator:
                 )
                 parsed_chunk: dict[int, list[str]] = {}
                 for _attempt in range(self.max_retries + 1):
-                    content, _ = self.extractor.call_json_api(
+                    content, raw_usage = self.extractor.call_json_api(
                         prompt,
                         system_prompt=self.system_prompt,
                         max_tokens=batch_max_tokens,
                         temperature=self.temperature,
                     )
                     self.api_calls += 1
+                    call_usage = _coerce_usage(raw_usage, latency_ms=0.0)
+                    self.last_usage = call_usage
+                    self.total_usage.add(call_usage)
                     try:
                         parsed_chunk = _parse_batch_inflection_forms(content, chunk_reqs)
                         if parsed_chunk:

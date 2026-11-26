@@ -8,7 +8,7 @@ import uuid
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from itertools import pairwise
-from typing import TYPE_CHECKING, Any, Literal, Protocol
+from typing import Any, Literal, Protocol
 
 import numpy as np
 
@@ -26,11 +26,14 @@ from .episodic import (
     EpisodicScoringPolicy,
     cosine_similarity,
 )
+from .extractors import (
+    JsonCompletionClient,
+    TokenUsage,
+    _coerce_usage,
+    validate_json_completion_client,
+)
 from .models import DialogueCandidate, EpisodeRecord, StepContext, VoiceExemplar
 from .presets import DEFAULT_SCHEMA_POLICY, SchemaPolicy
-
-if TYPE_CHECKING:
-    from .extractors import OpenAICompatibleExtractor
 
 # Quoted dialogue patterns across English, European, Balkan, and CJK typographic conventions
 DIALOGUE_PATTERNS = [
@@ -682,7 +685,7 @@ def _parse_llm_voice_scores(
 
 
 class LLMVoiceQualityScorer:
-    """Optional LLM-backed Gate-2 voice quality judge backed by OpenAICompatibleExtractor."""
+    """Optional LLM-backed Gate-2 voice quality judge backed by any JsonCompletionClient."""
 
     DEFAULT_SYSTEM_PROMPT = (
         "You are a strict literary voice-bank curator performing Gate-2 quality scoring. "
@@ -696,7 +699,7 @@ class LLMVoiceQualityScorer:
 
     def __init__(
         self,
-        extractor: OpenAICompatibleExtractor,
+        extractor: JsonCompletionClient,
         *,
         batch_size: int = 15,
         max_tokens: int | None = None,
@@ -707,7 +710,7 @@ class LLMVoiceQualityScorer:
     ) -> None:
         if batch_size < 1:
             raise ValueError("batch_size must be >= 1.")
-        self.extractor = extractor
+        self.extractor: JsonCompletionClient = validate_json_completion_client(extractor)
         self.batch_size = batch_size
         self.max_tokens = max_tokens
         self.temperature = temperature
@@ -715,6 +718,8 @@ class LLMVoiceQualityScorer:
         self.system_prompt = system_prompt
         self.fallback_scorer = fallback_scorer
         self.api_calls: int = 0
+        self.last_usage: TokenUsage = TokenUsage()
+        self.total_usage: TokenUsage = TokenUsage()
 
     def _build_batch_prompt(
         self,
@@ -759,13 +764,16 @@ class LLMVoiceQualityScorer:
             parsed_chunk: dict[str, VoiceScoreResult] | None = None
             last_exc: Exception | None = None
             for _attempt in range(self.max_retries + 1):
-                content, _ = self.extractor.call_json_api(
+                content, raw_usage = self.extractor.call_json_api(
                     prompt,
                     system_prompt=self.system_prompt,
                     max_tokens=self.max_tokens,
                     temperature=self.temperature,
                 )
                 self.api_calls += 1
+                call_usage = _coerce_usage(raw_usage, latency_ms=0.0)
+                self.last_usage = call_usage
+                self.total_usage.add(call_usage)
                 try:
                     parsed_chunk = _parse_llm_voice_scores(content, chunk_cands)
                     break
