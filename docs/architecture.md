@@ -284,15 +284,15 @@ WHERE rn = 1 AND is_tombstone = 0;
 | Module | Responsibility |
 | :--- | :--- |
 | `models.py` | Pydantic v2 schemas for Tiers 1–6, `EpistemicMode`, `StepDelta`, `StepContext`, and `ResolvedMention` |
-| `store.py` | `MemoryStore` protocol & SQLite `CausalStore` (lineage CTEs, snapshots, deletions, transactions) |
+| `store/` | `MemoryStore` protocol & SQLite `CausalStore` (`schema`, `graph`, `episodes`, `timelines`, `checkpoints`, `migrations`) |
 | `embedders.py` | `Embedder` protocol, `OfflineNgramEmbedder` (CJK + signed hashing), `CallableEmbedder`, `OpenAICompatibleEmbedder`, `OllamaEmbedder` |
-| `voice.py` | `IngestionGate` & `VoiceBank` (2-stage anti-drift gate and policy-driven exemplar retrieval) |
-| `episodic.py` | `EpisodeRanker`, `DefaultEpisodeRanker`, and `EpisodicScoringPolicy` (Tier 6 hybrid 4-signal scorer) |
+| `voice/` | `IngestionGate`, `VoiceBank`, and `VoiceQualityScorer` (`gate`, `bank`, `scoring`) |
+| `episodic.py` | `EpisodeRanker`, `DefaultEpisodeRanker`, `EpisodicScoringPolicy`, and `EpisodeConsolidator` implementations |
 | `resolver.py` | `MentionResolver` & `DefaultLexicalResolver` (word-boundary, fuzzy inflection, alias span matching) |
-| `extractors.py` | `DeltaExtractor`, `JsonCompletionClient`, `CallableExtractor`, `OpenAICompatibleExtractor`, and `CachedDeltaExtractor` for unified LLM extraction & JSON completions |
+| `extractors/` | `DeltaExtractor`, `JsonCompletionClient`, `CallableExtractor`, `OpenAICompatibleExtractor`, `CachedDeltaExtractor`, and usage tracking |
 | `hooks.py` | `EngineHooks` & `BaseEngineHooks` lifecycle callbacks (commit, rollback, branch, gate rejection) |
-| `presets.py` | `TierProfile`, `SchemaPolicy`, `InteractiveFictionPreset`, `TranslationPreset`, and `SimulationPreset` |
-| `bible.py` | Lossless CSV/JSON/Markdown Series Bible export and idempotent diff/upsert sync (`export_bible`, `sync_bible`) |
-| `audit.py` | Pluggable deterministic QA & continuity audit engine (`AuditRule`, `AuditIssue`, `AuditReport`, built-in localization & graph rules) |
-| `engine.py` | `CanonArcEngine`, `StepTransaction`, `TimelineSession` (`contextvars`), POV projection, audit & consolidation |
-| `cli.py` | `canonarc` CLI inspector (`tree`, `inspect`, `diff`, `history`, `export`, `import`, `audit`) |
+| `presets/` | `TierProfile`, `SchemaPolicy`, `InteractiveFictionPreset`, `TranslationPreset`, and `SimulationPreset` |
+| `bible/` | Lossless CSV/JSON/Markdown Series Bible export and idempotent diff/upsert sync (`export`, `parsers`, `sync`, `models`) |
+| `audit/` | Pluggable deterministic QA & continuity audit engine (`models`, `runner`, `rules_continuity`, `rules_translation`, `text_utils`) |
+| `engine/` | `CanonArcEngine`, `StepTransaction`, `TimelineSession`, retrieval, epistemics, seeding, mutations, embeddings, harvesting, normalization, consolidation, merging, resume, traces |
+| `cli.py` | `canonarc` CLI inspector (`tree`, `inspect`, `diff`, `history`, `export`, `import`, `audit`, `duplicates`, `merge`) |
