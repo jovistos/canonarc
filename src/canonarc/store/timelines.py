@@ -57,6 +57,77 @@ class _TimelineStoreMixin:
             cutoff_step: int | None = None,
         ) -> list[StepCheckpoint]: ...
 
+    # --- Store Metadata ---
+
+    def get_metadata(self, key: str) -> str | None:
+        """Returns the stored value for `key` in store_metadata, or None if absent."""
+        with self._lock:
+            row = self.conn.execute(
+                "SELECT value FROM store_metadata WHERE key = ?",
+                (key,),
+            ).fetchone()
+            return str(row["value"]) if row is not None else None
+
+    def set_metadata(self, key: str, value: str) -> None:
+        """Persists a key-value pair in store_metadata."""
+        with self.transaction():
+            self.conn.execute(
+                "INSERT OR REPLACE INTO store_metadata (key, value) VALUES (?, ?)",
+                (key, value),
+            )
+
+    def delete_metadata(self, key: str) -> bool:
+        """Deletes `key` from store_metadata. Returns True if a row was removed."""
+        with self.transaction():
+            cur = self.conn.execute("DELETE FROM store_metadata WHERE key = ?", (key,))
+            return cur.rowcount > 0
+
+    def delete_metadata_prefix(self, prefix: str) -> int:
+        """Deletes all store_metadata entries whose key starts with `prefix`."""
+        with self.transaction():
+            cur = self.conn.execute(
+                "DELETE FROM store_metadata WHERE key >= ? AND key < ?",
+                (prefix, prefix + "\uffff"),
+            )
+            return int(cur.rowcount)
+
+    def _invalidate_bible_sync_metadata_in_tx(
+        self,
+        timeline_id: str,
+        *,
+        gt_step: int | None = None,
+        exact_steps: set[int] | None = None,
+    ) -> None:
+        """Invalidates cached bible_sync metadata entries affected by rollback/step deletion."""
+        prefix = f"bible_sync:{timeline_id}:"
+        if gt_step is None and exact_steps is None:
+            self.conn.execute(
+                "DELETE FROM store_metadata WHERE key >= ? AND key < ?",
+                (prefix, prefix + "\uffff"),
+            )
+            return
+        rows = self.conn.execute(
+            "SELECT key, value FROM store_metadata WHERE key >= ? AND key < ?",
+            (prefix, prefix + "\uffff"),
+        ).fetchall()
+        keys_to_delete: list[str] = []
+        for row in rows:
+            try:
+                data = json.loads(row["value"])
+                synced_step = int(data.get("step", 0))
+            except Exception:
+                keys_to_delete.append(row["key"])
+                continue
+            if gt_step is not None and synced_step > gt_step:
+                keys_to_delete.append(row["key"])
+            elif exact_steps is not None and synced_step in exact_steps:
+                keys_to_delete.append(row["key"])
+        if keys_to_delete:
+            self.conn.executemany(
+                "DELETE FROM store_metadata WHERE key = ?",
+                [(k,) for k in keys_to_delete],
+            )
+
     # --- Embedding Provenance & Re-indexing ---
 
     def get_embedding_metadata(self) -> tuple[str | None, int | None]:
@@ -241,6 +312,7 @@ class _TimelineStoreMixin:
                     (timeline_id, step),
                 )
                 deleted += cur.rowcount
+            self._invalidate_bible_sync_metadata_in_tx(timeline_id, gt_step=step)
             return deleted
 
     def delete_steps(
@@ -276,6 +348,7 @@ class _TimelineStoreMixin:
                     params,
                 )
                 deleted += cur.rowcount
+            self._invalidate_bible_sync_metadata_in_tx(timeline_id, exact_steps=set(unique_steps))
             return deleted
 
     def delete_timeline(self, timeline_id: str, *, cascade: bool = False) -> int:
@@ -320,6 +393,7 @@ class _TimelineStoreMixin:
 
             deleted_rows = 0
             for tid in reversed(to_delete):
+                self._invalidate_bible_sync_metadata_in_tx(tid)
                 for table in (*TIMELINE_OWNED_TABLES, "timelines"):
                     cur = self.conn.execute(
                         f"DELETE FROM {table} WHERE timeline_id = ?",
@@ -543,6 +617,10 @@ class _TimelineStoreMixin:
                 payload_to_export = dict(r["payload"])
                 if rev_offset > 0:
                     payload_to_export["_revision_count_offset"] = rev_offset
+                orig_first_seen = r.get("first_seen_step")
+                min_exported_step = min(r["valid_from_step"], r["prior_step"]) if has_prior else r["valid_from_step"]
+                if orig_first_seen is not None and int(orig_first_seen) < int(min_exported_step):
+                    payload_to_export["_first_seen_step"] = int(orig_first_seen)
 
                 if has_prior:
                     export_store.conn.execute(

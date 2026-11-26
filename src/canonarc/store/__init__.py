@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .causal_store import CausalStore
-from .protocols import CheckpointStore, MemoryStore, TimelineBranchConflictError
+from .protocols import CheckpointStore, MemoryStore, MetadataStore, TimelineBranchConflictError
 from .schema import (
     LINEAGE_ACTIVE_REVISIONS_CTE,
     LINEAGE_CTE_SQL,
@@ -20,6 +20,7 @@ __all__ = [
     "CausalStore",
     "CheckpointStore",
     "MemoryStore",
+    "MetadataStore",
     "TimelineBranchConflictError",
     "_pack_episode_metadata",
     "_unpack_edge_payload",
