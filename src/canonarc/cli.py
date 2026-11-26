@@ -124,6 +124,7 @@ def _cmd_export(args: argparse.Namespace) -> int:
                 include_edges=not bool(args.no_edges),
                 include_aliases=not bool(args.no_aliases),
                 include_inflections=args.include_inflections,
+                include_provenance=bool(args.include_provenance),
                 lang=args.lang,
             )
             sys.stdout.write(content)
@@ -138,6 +139,7 @@ def _cmd_export(args: argparse.Namespace) -> int:
             include_edges=not bool(args.no_edges),
             include_aliases=not bool(args.no_aliases),
             include_inflections=args.include_inflections,
+            include_provenance=bool(args.include_provenance),
             lang=args.lang,
             excel_bom=bool(args.excel_bom),
         )
@@ -166,17 +168,33 @@ def _cmd_import(args: argparse.Namespace) -> int:
             src_col, dst_col = pair.split("=", 1)
             col_map[src_col.strip()] = dst_col.strip()
     with CanonArcEngine(args.db_path, timeline_id=args.timeline, on_embedder_mismatch="ignore") as engine:
-        report = engine.sync_bible(
-            args.input_path,
-            format=args.format,
-            step=args.step,
-            timeline_id=args.timeline,
-            mode=args.mode,
-            target_lang=args.target_lang,
-            auto_inflect=False,
-            dry_run=bool(args.dry_run),
-            column_map=col_map,
-        )
+        if args.if_changed:
+            report = engine.sync_bible_if_changed(
+                args.input_path,
+                format=args.format,
+                step=args.step,
+                timeline_id=args.timeline,
+                mode=args.mode,
+                target_lang=args.target_lang,
+                auto_inflect=False,
+                dry_run=bool(args.dry_run),
+                column_map=col_map,
+                ignore_columns=args.ignore_column or None,
+                force=bool(args.force),
+            )
+        else:
+            report = engine.sync_bible(
+                args.input_path,
+                format=args.format,
+                step=args.step,
+                timeline_id=args.timeline,
+                mode=args.mode,
+                target_lang=args.target_lang,
+                auto_inflect=False,
+                dry_run=bool(args.dry_run),
+                column_map=col_map,
+                ignore_columns=args.ignore_column or None,
+            )
     if args.json:
         print(json.dumps(report.model_dump(), indent=2, ensure_ascii=False))
     else:
@@ -405,6 +423,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_false",
         help="Exclude kind='inflection' aliases even in JSON exports.",
     )
+    p_export.add_argument(
+        "--include-provenance",
+        action="store_true",
+        help="Include read-only provenance columns (first_seen_step, first_seen_source).",
+    )
     p_export.add_argument("--excel-bom", action="store_true", help="Write UTF-8 BOM for Excel CSV compatibility.")
     p_export.add_argument("--json", action="store_true", help="Output export metadata as JSON.")
     p_export.set_defaults(func=_cmd_export)
@@ -432,6 +455,22 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         default=[],
         help="Map CSV header to canonical column in 'SRC=DST' format (repeatable).",
+    )
+    p_import.add_argument(
+        "--ignore-column",
+        action="append",
+        default=[],
+        help="CSV column name to ignore as read-only during sync (repeatable).",
+    )
+    p_import.add_argument(
+        "--if-changed",
+        action="store_true",
+        help="Short-circuit when the file SHA-256 and sync parameters match the last sync.",
+    )
+    p_import.add_argument(
+        "--force",
+        action="store_true",
+        help="Bypass the --if-changed hash cache and force a full sync.",
     )
     p_import.add_argument("--dry-run", action="store_true", help="Preview diff without modifying the database.")
     p_import.add_argument("--json", action="store_true", help="Output sync report as JSON.")
