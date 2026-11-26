@@ -213,6 +213,8 @@ class DefaultLexicalResolver:
             *,
             matched_source: Literal["canonical", "alias"] | None = None,
             matched_phrase: str | None = None,
+            alias_kind: Literal["permanent", "epithet", "disguise", "title", "inflection"] | None = None,
+            alias_lang: str | None = None,
         ) -> None:
             key = (entity_id, surface.strip().lower())
             if key in seen_pairs:
@@ -226,6 +228,8 @@ class DefaultLexicalResolver:
                     confidence=conf,
                     matched_source=matched_source,
                     matched_phrase=matched_phrase,
+                    alias_kind=alias_kind,
+                    lang=alias_lang,
                 )
             )
 
@@ -250,6 +254,8 @@ class DefaultLexicalResolver:
                         "alias",
                         matched_source="alias",
                         matched_phrase=m_clean,
+                        alias_kind=alias_rec.kind,
+                        alias_lang=alias_rec.lang,
                     )
 
         # 2. Word-boundary text scan (longest phrases first to avoid partial shadowing)
@@ -260,16 +266,24 @@ class DefaultLexicalResolver:
                 )
         if text:
             text_lower = text.lower()
-            candidates: list[tuple[str, str, Literal["canonical", "alias"]]] = []
+            candidates: list[
+                tuple[
+                    str,
+                    str,
+                    Literal["canonical", "alias"],
+                    Literal["permanent", "epithet", "disguise", "title", "inflection"] | None,
+                    str | None,
+                ]
+            ] = []
             for name, ent_id in name_to_id.items():
-                candidates.append((name, ent_id, "canonical"))
+                candidates.append((name, ent_id, "canonical", None, None))
             for alias_str, alias_recs in alias_map.items():
                 for alias_rec in alias_recs:
-                    candidates.append((alias_str, alias_rec.entity_id, "alias"))
+                    candidates.append((alias_str, alias_rec.entity_id, "alias", alias_rec.kind, alias_rec.lang))
             candidates.sort(key=lambda item: len(item[0]), reverse=True)
 
             matched_spans: dict[tuple[int, int], str] = {}
-            for phrase, ent_id, via in candidates:
+            for phrase, ent_id, via, a_kind, a_lang in candidates:
                 pattern = self._phrase_pattern(phrase)
                 for match in re.finditer(pattern, text_lower):
                     start, end = match.start(), match.end()
@@ -286,6 +300,8 @@ class DefaultLexicalResolver:
                         via,
                         matched_source=via,
                         matched_phrase=phrase,
+                        alias_kind=a_kind,
+                        alias_lang=a_lang,
                     )
                     break
 
@@ -297,7 +313,7 @@ class DefaultLexicalResolver:
                     (m.group(0), m.group(0).lower(), m.start(), m.end())
                     for m in re.finditer(r"\w+", text)
                 ]
-                for phrase, ent_id, candidate_via in candidates:
+                for phrase, ent_id, candidate_via, a_kind, a_lang in candidates:
                     if ent_id in matched_entity_ids or not (3 <= len(phrase) <= 6):
                         continue
                     hit = self._match_short_inflection(phrase, raw_token_spans, matched_spans)
@@ -311,6 +327,8 @@ class DefaultLexicalResolver:
                             conf=0.9,
                             matched_source=candidate_via,
                             matched_phrase=phrase,
+                            alias_kind=a_kind,
+                            alias_lang=a_lang,
                         )
                         matched_entity_ids.add(ent_id)
 
@@ -350,7 +368,7 @@ class DefaultLexicalResolver:
                     windows_cache[n_words] = cached
                     return cached
 
-                for phrase, ent_id, candidate_via in candidates:
+                for phrase, ent_id, candidate_via, a_kind, a_lang in candidates:
                     if ent_id in matched_entity_ids or len(phrase) < 4:
                         continue
                     n_words = len(phrase.split())
@@ -395,6 +413,8 @@ class DefaultLexicalResolver:
                             conf=round(score / 100.0, 3),
                             matched_source=candidate_via,
                             matched_phrase=phrase,
+                            alias_kind=a_kind,
+                            alias_lang=a_lang,
                         )
                         matched_entity_ids.add(ent_id)
 

@@ -63,9 +63,10 @@ Supports Python context management (`with CanonArcEngine("save.sqlite") as engin
 
 ### Transaction & Mutation Methods
 - `step_transaction(step: int, text: str = "", mentions: Sequence[str] = (), top_k_voice: int | None = None, top_k_episodes: int | None = None, pov_entity_ids: Sequence[str] | None = None, pov_mode: Literal["any", "all"] = "any", edge_types: Sequence[str] | None = None, location_id: str | None = None, timeline_id: str | None = None, rerun_clean: bool = True) -> StepTransaction`: Context manager for clean read-and-commit workflows. Supports:
-  - `tx.audit_draft(target_text, *, source_text=None, rules=None, include_rules=None, exclude_rules=None, min_severity="info", lang=None, include_all_timeline_entities=False) -> AuditReport`: Audits a pre-commit draft translation against the pre-commit state (`tx.context` / `step - 1`) before `tx.commit()` or `tx.extract_and_commit()`, enabling deterministic retry loops via `report.format_repair_instructions()`.
+  - `tx.audit_draft(target_text, *, source_text=None, rules=None, include_rules=None, exclude_rules=None, min_severity="info", lang=None, include_all_timeline_entities=False, label=None) -> AuditReport`: Audits a pre-commit draft translation against the pre-commit state (`tx.context` / `step - 1`) before `tx.commit()` or `tx.extract_and_commit()`, enabling deterministic retry loops via `report.format_repair_instructions()`. Every call is appended to the transaction's audit trace in attempt order (tagged with optional `label`, e.g. `"initial"`, `"repair_1"`).
   - `tx.extract_and_commit(scene_text, *, compact_schema=False, known_entity_scope="scene", max_roster_entities=None, ...)`: Runs the configured `DeltaExtractor`, normalizes IDs, and stages the `StepDelta` (zero-LLM-call no-op when Tier 3 is disabled, e.g., `TierProfile.LEXICON_ONLY`).
   - `tx.harvest_voice(text, *, source_text="", lang=None, prev_text=None, next_text=None, scorer=None, min_quality=None, require_speaker=True, infer_addressee=True, extra_metadata=None, stage=True) -> list[VoiceExemplar]`: Runs Gate-1 extraction, attaches active dyadic edge/persona metadata (overlaying any staged `StepDelta` in the same transaction), scores candidates with Gate-2 `VoiceQualityScorer`, emits `on_gate_rejected("gate2", ...)` for rejections, and stages passing `VoiceExemplar`s for atomic commit (zero-work no-op when Tier 5 is disabled).
+  - `tx.trace(*, include_raw_delta=False) -> StepTransactionTrace` & `tx.to_trace_dict(*, include_raw_delta=False, exclude_none=True) -> dict[str, Any]`: Builds a standardized, JSON-ready provenance snapshot capturing `StepContextSummary` (resolved mentions, injected entity/edge/episode/voice IDs & counts), all `audit_draft()` reports, `staged_delta` & `delta_counts` (plus opt-in pre-normalization `raw_delta`), `VoiceHarvestTrace` counts, post-commit status/IDs (`committed_episode_ids`, `indexed_exemplar_ids`), and per-stage model-specific `TransactionUsageSummary`. Safe to call inside the `with` block (`status="open"`) or after exit (`status="committed" | "skipped" | "rolled_back"`; call after exit for final committed IDs and `duration_ms`).
 - `apply_delta(step: int, delta: StepDelta, timeline_id: str | None = None) -> list[EpisodeRecord]`: Directly applies state deltas, episodes, and inform actions. When `delta.is_flashback=True`, skips overwriting existing entities/edges while still indexing episodes and new entities.
 - `merge_entities(duplicate_id: str, canonical_id: str, *, step: int | None = None, timeline_id: str | None = None, merge_attributes: bool = True, migrate_edges: bool = True, migrate_voice: bool = True, migrate_episodes: bool = True, conflict_strategy: Literal["canonical_wins", "duplicate_wins"] = "canonical_wins", allow_kind_mismatch: bool = False, reason: str | None = None, dry_run: bool = False) -> EntityMergeReport`: Atomically merges `duplicate_id` into `canonical_id` at `(timeline_id, step)` (defaults to timeline head). Promotes `duplicate_id`'s `canonical_name`, `base_attributes["target_name"]`, and active `AliasRecord`s onto `canonical_id`, tombstones `duplicate_id` and its old aliases, backfills `base_attributes`/`state`/`private_state` (recording `base_attributes["merged_from"]` for `normalize_delta()` redirects), and optionally migrates active edges (dropping self-loops and warning on `hard_filter_keys` collisions), location references, Tier 5 voice exemplars, and Tier 6 episodes/epistemics lineage-safely. Also available on `TimelineSession`.
 - `index_episodes(step: int, episodes: Sequence[EpisodeRecord], timeline_id: str | None = None) -> list[EpisodeRecord]`: Embeds (using `embed_batch()` when available) and indexes episodes into Tier 6.
@@ -229,6 +230,8 @@ class ResolvedMention(BaseModel):
     confidence: float = 1.0
     matched_source: Literal["canonical", "alias"] | None = None
     matched_phrase: str | None = None
+    alias_kind: Literal["permanent", "epithet", "disguise", "title", "inflection"] | None = None
+    lang: str | None = None
 ```
 
 ### `StepDelta`
@@ -244,7 +247,7 @@ class StepDelta(BaseModel):
     scene_id: str | None = None
 ```
 
-### `StepContext`
+### `StepContext` & `StepContextSummary`
 ```python
 class StepContext(BaseModel):
     timeline_id: str
@@ -260,6 +263,35 @@ class StepContext(BaseModel):
     voice_exemplars: list[VoiceExemplar] = []
     episodes: list[EpisodeRecord] = []
     entity_names: dict[str, str] = {}                # entity_id -> canonical_name lookup (includes off-screen episode/edge refs)
+    # Helper: ctx.to_summary() -> StepContextSummary (compact IDs, edge keys, counts, and resolved_mentions)
+```
+
+### `StepTransactionTrace`
+```python
+class StepTransactionTrace(BaseModel):
+    schema_version: str = "1.0"
+    timeline_id: str
+    step: int
+    lang: str | None = None
+    rerun_clean: bool = True
+    status: Literal["open", "committed", "skipped", "rolled_back"] = "open"
+    content_hash: str | None = None
+    checkpoint_metadata: dict[str, Any] = {}
+    duration_ms: float | None = None
+    context: StepContextSummary                      # resolved_mentions, injected IDs, edge keys, counts
+    audit_reports: list[DraftAuditTrace] = []        # ordered pre-commit audit_draft() attempts
+    extraction_skipped_by_policy: bool = False
+    raw_delta: StepDelta | None = None               # populated when tx.trace(include_raw_delta=True)
+    staged_delta: StepDelta | None = None
+    delta_counts: dict[str, int] = {}                # entities, edges, episodes, inform
+    staged_extra_episodes: int = 0
+    staged_extra_exemplars: int = 0
+    voice_harvest: VoiceHarvestTrace                 # candidates_extracted, gate1/gate2 rejections, staged_count, IDs
+    harvested_voice_count: int = 0
+    committed_episode_ids: list[str] = []
+    indexed_exemplar_ids: list[str] = []
+    error: str | None = None
+    usage: TransactionUsageSummary                   # per-stage StageUsageSummary + summed model-specific cost
 ```
 
 ### `BibleExportResult` & `BibleSyncReport`
