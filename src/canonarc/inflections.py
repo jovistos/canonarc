@@ -3,11 +3,39 @@ from __future__ import annotations
 import hashlib
 import inspect
 import json
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
 from .extractors import OpenAICompatibleExtractor, _strip_json_fences
+
+
+@dataclass(frozen=True)
+class InflectionRequest:
+    """Input specification for a single morphological inflection request."""
+
+    name: str
+    lang: str
+    gender: str | None = None
+    kind: str = "character"
+    declension: str | None = None
+
+
+def _coerce_inflection_request(item: InflectionRequest | Mapping[str, Any]) -> InflectionRequest:
+    if isinstance(item, InflectionRequest):
+        return item
+    if isinstance(item, Mapping):
+        raw_gender = item.get("gender")
+        raw_declension = item.get("declension")
+        return InflectionRequest(
+            name=str(item["name"]),
+            lang=str(item["lang"]),
+            gender=str(raw_gender) if raw_gender is not None else None,
+            kind=str(item.get("kind") or "character"),
+            declension=str(raw_declension) if raw_declension is not None else None,
+        )
+    raise TypeError(f"Unsupported inflection request item: {type(item).__name__}")
 
 
 class InflectionGenerator(Protocol):
@@ -22,6 +50,31 @@ class InflectionGenerator(Protocol):
         kind: str = "character",
         declension: str | None = None,
     ) -> list[str]: ...
+
+
+def generate_inflections_batch(
+    generator: InflectionGenerator,
+    items: Sequence[InflectionRequest | Mapping[str, Any]],
+    *,
+    batch_size: int = 25,
+) -> list[list[str]]:
+    """Dispatches to `generator.generate_inflections_batch()` when available, with per-item fallback."""
+    if not items:
+        return []
+    requests = [_coerce_inflection_request(item) for item in items]
+    batch_fn = getattr(generator, "generate_inflections_batch", None)
+    if callable(batch_fn):
+        return batch_fn(requests, batch_size=batch_size)
+    return [
+        generator.generate_inflections(
+            req.name,
+            req.lang,
+            gender=req.gender,
+            kind=req.kind,
+            declension=req.declension,
+        )
+        for req in requests
+    ]
 
 
 def _parse_inflection_forms(raw: str | Sequence[str] | dict[str, Any], base_name: str) -> list[str]:
@@ -94,6 +147,111 @@ def build_inflection_prompt(
     )
 
 
+def build_batch_inflection_prompt(items: Sequence[InflectionRequest]) -> str:
+    """Builds a compact, indexed JSON batch prompt for multiple morphological inflection requests."""
+    payload_items: list[dict[str, Any]] = []
+    for idx, req in enumerate(items):
+        entry: dict[str, Any] = {
+            "id": idx,
+            "name": req.name.strip(),
+            "lang": req.lang.strip(),
+        }
+        if req.gender:
+            entry["gender"] = req.gender
+        if req.declension:
+            entry["declension"] = req.declension
+        if req.kind and req.kind != "character":
+            entry["kind"] = req.kind
+        payload_items.append(entry)
+    items_json = json.dumps(payload_items, ensure_ascii=False)
+    return (
+        "For each proper name in the JSON array below, return its common inflected (declined) "
+        "and possessive forms used in literary prose (including the base form). "
+        'Return ONLY a valid JSON object of the form {"items": [{"id": 0, "forms": [...]}, ...]} '
+        "preserving every input id exactly.\n"
+        f"Input: {items_json}"
+    )
+
+
+def _parse_batch_inflection_forms(
+    raw: str | Sequence[Any] | dict[str, Any],
+    chunk: Sequence[InflectionRequest],
+) -> dict[int, list[str]]:
+    """Parses a batched inflection JSON payload into a mapping of chunk index -> deduplicated forms."""
+    parsed: Any = raw
+    if isinstance(raw, str):
+        cleaned = _strip_json_fences(raw).strip()
+        if not cleaned.startswith(("{", "[")):
+            first_brace = cleaned.find("{")
+            last_brace = cleaned.rfind("}")
+            first_bracket = cleaned.find("[")
+            last_bracket = cleaned.rfind("]")
+            if first_brace != -1 and last_brace > first_brace and (
+                first_bracket == -1 or first_brace < first_bracket
+            ):
+                cleaned = cleaned[first_brace : last_brace + 1]
+            elif first_bracket != -1 and last_bracket > first_bracket:
+                cleaned = cleaned[first_bracket : last_bracket + 1]
+        parsed = json.loads(cleaned)
+
+    results: dict[int, list[str]] = {}
+
+    def _record(idx: int, raw_forms: Any) -> None:
+        if 0 <= idx < len(chunk) and idx not in results:
+            results[idx] = _parse_inflection_forms(raw_forms, chunk[idx].name)
+
+    if isinstance(parsed, dict):
+        container: Any = (
+            parsed.get("items")
+            or parsed.get("results")
+            or parsed.get("entries")
+        )
+        if container is None:
+            # Handle direct {"0": [...], "1": [...]} mapping
+            if all(isinstance(k, str) and k.strip().isdigit() for k in parsed):
+                container = parsed
+            else:
+                container = next((v for v in parsed.values() if isinstance(v, (list, dict))), None)
+    elif isinstance(parsed, list):
+        container = parsed
+    else:
+        raise ValueError(f"Unsupported batch inflection response payload: {type(parsed).__name__}")
+
+    if isinstance(container, dict):
+        for k, v in container.items():
+            if isinstance(k, str) and k.strip().isdigit():
+                try:
+                    _record(int(k.strip()), v)
+                except ValueError:
+                    continue
+    elif isinstance(container, list):
+        for pos, entry in enumerate(container):
+            if isinstance(entry, dict) and "id" in entry:
+                try:
+                    idx = int(entry["id"])
+                except (TypeError, ValueError):
+                    continue
+                raw_forms = (
+                    entry.get("forms")
+                    or entry.get("inflections")
+                    or entry.get("variants")
+                )
+                if raw_forms is not None:
+                    try:
+                        _record(idx, raw_forms)
+                    except ValueError:
+                        continue
+            elif isinstance(entry, (list, tuple)) and pos < len(chunk):
+                try:
+                    _record(pos, entry)
+                except ValueError:
+                    continue
+    else:
+        raise ValueError("Batch inflection response did not contain a valid items list or id map.")
+
+    return results
+
+
 class CallableInflectionGenerator:
     """Adapter turning any Python callable into an InflectionGenerator with in-memory caching."""
 
@@ -145,6 +303,26 @@ class CallableInflectionGenerator:
             self._cache[cache_key] = list(forms)
         return forms
 
+    def generate_inflections_batch(
+        self,
+        items: Sequence[InflectionRequest | Mapping[str, Any]],
+        *,
+        batch_size: int = 25,
+    ) -> list[list[str]]:
+        if batch_size < 1:
+            raise ValueError("batch_size must be >= 1.")
+        requests = [_coerce_inflection_request(item) for item in items]
+        return [
+            self.generate_inflections(
+                req.name,
+                req.lang,
+                gender=req.gender,
+                kind=req.kind,
+                declension=req.declension,
+            )
+            for req in requests
+        ]
+
 
 class LLMInflectionGenerator:
     """One-shot LLM inflection generator backed by OpenAICompatibleExtractor with memory + disk caching."""
@@ -194,16 +372,7 @@ class LLMInflectionGenerator:
         )
         return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
-    def generate_inflections(
-        self,
-        name: str,
-        lang: str,
-        *,
-        gender: str | None = None,
-        kind: str = "character",
-        declension: str | None = None,
-    ) -> list[str]:
-        key = self._cache_key(name, lang, gender, kind, declension)
+    def _load_cached(self, key: str, name: str) -> list[str] | None:
         if key in self._memory_cache:
             self.cache_hits += 1
             return list(self._memory_cache[key])
@@ -218,6 +387,52 @@ class LLMInflectionGenerator:
                 return forms
             except Exception:  # noqa: BLE001, S110
                 pass
+        return None
+
+    def _save_cached(
+        self,
+        key: str,
+        *,
+        name: str,
+        lang: str,
+        gender: str | None,
+        kind: str,
+        declension: str | None,
+        forms: list[str],
+    ) -> None:
+        self._memory_cache[key] = list(forms)
+        if self.cache_dir is not None:
+            cache_path = self.cache_dir / f"{key}.json"
+            cache_path.write_text(
+                json.dumps(
+                    {
+                        "name": name.strip(),
+                        "lang": lang.strip().lower(),
+                        "gender": gender,
+                        "kind": kind,
+                        "declension": declension,
+                        "model": self.extractor.model,
+                        "forms": forms,
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+
+    def generate_inflections(
+        self,
+        name: str,
+        lang: str,
+        *,
+        gender: str | None = None,
+        kind: str = "character",
+        declension: str | None = None,
+    ) -> list[str]:
+        key = self._cache_key(name, lang, gender, kind, declension)
+        cached = self._load_cached(key, name)
+        if cached is not None:
+            return cached
 
         prompt = build_inflection_prompt(
             name.strip(),
@@ -244,22 +459,111 @@ class LLMInflectionGenerator:
         if forms is None:
             assert last_exc is not None
             raise last_exc
-        self._memory_cache[key] = list(forms)
-        if cache_path is not None:
-            cache_path.write_text(
-                json.dumps(
-                    {
-                        "name": name.strip(),
-                        "lang": lang.strip().lower(),
-                        "gender": gender,
-                        "kind": kind,
-                        "declension": declension,
-                        "model": self.extractor.model,
-                        "forms": forms,
-                    },
-                    ensure_ascii=False,
-                    indent=2,
-                ),
-                encoding="utf-8",
-            )
+        self._save_cached(
+            key,
+            name=name,
+            lang=lang,
+            gender=gender,
+            kind=kind,
+            declension=declension,
+            forms=forms,
+        )
         return forms
+
+    def generate_inflections_batch(
+        self,
+        items: Sequence[InflectionRequest | Mapping[str, Any]],
+        *,
+        batch_size: int = 25,
+    ) -> list[list[str]]:
+        """Generates inflections in language-grouped batches with shared per-item cache and single-item fallback."""
+        if batch_size < 1:
+            raise ValueError("batch_size must be >= 1.")
+        if not items:
+            return []
+
+        requests = [_coerce_inflection_request(item) for item in items]
+        item_keys: list[str] = []
+        resolved_by_key: dict[str, list[str]] = {}
+        unique_misses: list[tuple[str, InflectionRequest]] = []
+        queued_miss_keys: set[str] = set()
+
+        for req in requests:
+            key = self._cache_key(req.name, req.lang, req.gender, req.kind, req.declension)
+            item_keys.append(key)
+            if key in resolved_by_key:
+                continue
+            cached = self._load_cached(key, req.name)
+            if cached is not None:
+                resolved_by_key[key] = cached
+                continue
+            if key not in queued_miss_keys:
+                queued_miss_keys.add(key)
+                unique_misses.append((key, req))
+
+        # Group cache misses by normalized language so each prompt stays linguistically coherent
+        misses_by_lang: dict[str, list[tuple[str, InflectionRequest]]] = {}
+        for key, req in unique_misses:
+            misses_by_lang.setdefault(req.lang.strip().lower(), []).append((key, req))
+
+        for lang_group in misses_by_lang.values():
+            for start in range(0, len(lang_group), batch_size):
+                chunk_pairs = lang_group[start : start + batch_size]
+                if len(chunk_pairs) == 1:
+                    key, req = chunk_pairs[0]
+                    resolved_by_key[key] = self.generate_inflections(
+                        req.name,
+                        req.lang,
+                        gender=req.gender,
+                        kind=req.kind,
+                        declension=req.declension,
+                    )
+                    continue
+
+                chunk_reqs = [req for _, req in chunk_pairs]
+                prompt = build_batch_inflection_prompt(chunk_reqs)
+                batch_max_tokens = (
+                    self.max_tokens * len(chunk_reqs)
+                    if self.max_tokens is not None
+                    else None
+                )
+                parsed_chunk: dict[int, list[str]] = {}
+                for _attempt in range(self.max_retries + 1):
+                    content, _ = self.extractor.call_json_api(
+                        prompt,
+                        system_prompt=self.system_prompt,
+                        max_tokens=batch_max_tokens,
+                        temperature=self.temperature,
+                    )
+                    self.api_calls += 1
+                    try:
+                        parsed_chunk = _parse_batch_inflection_forms(content, chunk_reqs)
+                        if parsed_chunk:
+                            break
+                    except Exception:  # noqa: BLE001
+                        parsed_chunk = {}
+
+                # Save successfully parsed items and fall back to per-item calls for any dropped IDs
+                for idx, (key, req) in enumerate(chunk_pairs):
+                    if idx in parsed_chunk:
+                        forms = parsed_chunk[idx]
+                        self._save_cached(
+                            key,
+                            name=req.name,
+                            lang=req.lang,
+                            gender=req.gender,
+                            kind=req.kind,
+                            declension=req.declension,
+                            forms=forms,
+                        )
+                        resolved_by_key[key] = forms
+                    else:
+                        resolved_by_key[key] = self.generate_inflections(
+                            req.name,
+                            req.lang,
+                            gender=req.gender,
+                            kind=req.kind,
+                            declension=req.declension,
+                        )
+
+        return [list(resolved_by_key[key]) for key in item_keys]
