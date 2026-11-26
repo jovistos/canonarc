@@ -333,6 +333,73 @@ class ResolvedMention(BaseModel):
     confidence: float = 1.0
     matched_source: Literal["canonical", "alias"] | None = None
     matched_phrase: str | None = None
+    alias_kind: Literal["permanent", "epithet", "disguise", "title", "inflection"] | None = None
+    lang: str | None = None
+
+
+class StepContextSummary(BaseModel):
+    """Compact, JSON-friendly provenance summary of a StepContext."""
+    timeline_id: str
+    step: int
+    story_time: int | float | str | None = None
+    chapter_id: str | None = None
+    scene_id: str | None = None
+    resolved_mentions: list[ResolvedMention] = Field(default_factory=list)
+    entity_ids: list[str] = Field(default_factory=list)
+    related_entity_ids: list[str] = Field(default_factory=list)
+    active_edge_keys: list[str] = Field(default_factory=list)
+    background_edge_keys: list[str] = Field(default_factory=list)
+    episode_ids: list[str] = Field(default_factory=list)
+    voice_exemplar_ids: list[str] = Field(default_factory=list)
+    counts: dict[str, int] = Field(default_factory=dict)
+
+
+class VoiceHarvestTrace(BaseModel):
+    """Per-transaction summary of Tier 5 dialogue harvesting and gating."""
+    candidates_extracted: int = 0
+    gate1_rejected: int = 0
+    gate2_rejected: int = 0
+    staged_count: int = 0
+    staged_exemplar_ids: list[str] = Field(default_factory=list)
+
+
+class StageUsageSummary(BaseModel):
+    """Token, cache, latency, and estimated USD cost metrics for a single internal stage."""
+    stage: str
+    model: str | None = None
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+    cached_prompt_tokens: int = 0
+    reasoning_tokens: int = 0
+    api_calls: int = 0
+    cache_hits: int = 0
+    cache_misses: int = 0
+    retry_count: int = 0
+    validation_errors: int = 0
+    latency_ms: float = 0.0
+    estimated_cost_usd: float = 0.0
+
+
+class TransactionUsageSummary(BaseModel):
+    """Per-stage and rolled-up LLM usage captured during a StepTransaction.
+
+    Rolled-up ``estimated_cost_usd`` sums each stage's model-specific cost rather than
+    re-pricing combined tokens under a single model.
+    """
+    stages: dict[str, StageUsageSummary] = Field(default_factory=dict)
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+    cached_prompt_tokens: int = 0
+    reasoning_tokens: int = 0
+    api_calls: int = 0
+    cache_hits: int = 0
+    cache_misses: int = 0
+    retry_count: int = 0
+    validation_errors: int = 0
+    latency_ms: float = 0.0
+    estimated_cost_usd: float = 0.0
 
 
 class StepContext(BaseModel):
@@ -353,6 +420,42 @@ class StepContext(BaseModel):
         default_factory=dict,
         description="Optional entity_id -> canonical_name lookup for entities referenced in edges, episodes, or voice exemplars",
     )
+
+    def to_summary(self) -> StepContextSummary:
+        """Returns a compact ID/count/mention summary suitable for per-step debug logs."""
+        entity_ids = [e.entity_id for e in self.entities]
+        related_entity_ids = [e.entity_id for e in self.related_entities]
+        active_edge_keys = [
+            f"{e.source_id}->{e.target_id}:{e.relation_type}" for e in self.active_edges
+        ]
+        background_edge_keys = [
+            f"{e.source_id}->{e.target_id}:{e.relation_type}" for e in self.background_edges
+        ]
+        episode_ids = [ep.episode_id for ep in self.episodes]
+        voice_exemplar_ids = [ex.exemplar_id for ex in self.voice_exemplars]
+        return StepContextSummary(
+            timeline_id=self.timeline_id,
+            step=self.step,
+            story_time=self.story_time,
+            chapter_id=self.chapter_id,
+            scene_id=self.scene_id,
+            resolved_mentions=[m.model_copy(deep=True) for m in self.resolved_mentions],
+            entity_ids=entity_ids,
+            related_entity_ids=related_entity_ids,
+            active_edge_keys=active_edge_keys,
+            background_edge_keys=background_edge_keys,
+            episode_ids=episode_ids,
+            voice_exemplar_ids=voice_exemplar_ids,
+            counts={
+                "resolved_mentions": len(self.resolved_mentions),
+                "entities": len(entity_ids),
+                "related_entities": len(related_entity_ids),
+                "active_edges": len(active_edge_keys),
+                "background_edges": len(background_edge_keys),
+                "episodes": len(episode_ids),
+                "voice_exemplars": len(voice_exemplar_ids),
+            },
+        )
 
 
 class EntityMergeReport(BaseModel):
