@@ -41,6 +41,39 @@ Rejected Gate 1 / Gate 2 candidates can be observed for diagnostics via `Ingesti
 
 ---
 
+## Automated Gate-2 Harvesting (`StepTransaction.harvest_voice`)
+
+Inside `engine.step_transaction(...)`, call `tx.harvest_voice(...)` to run the entire Gate-1 → dyadic tagging → Gate-2 scoring → atomic staging pipeline in one call:
+
+```python
+with engine.step_transaction(step=12, text=source_chunk, lang="sr") as tx:
+    prompt = engine.format_context(tx.context)
+    translated = translate(prompt, source_chunk)
+
+    tx.extract_and_commit(source_chunk)
+    harvested = tx.harvest_voice(
+        translated,
+        source_text=source_chunk,
+        lang="sr",  # resolves Serbian inflected names/aliases around „…“ and —
+    )
+# On exit: StepDelta, episodes, passing Gate-2 VoiceExemplars, and StepCheckpoint commit atomically.
+```
+
+What `tx.harvest_voice()` does automatically:
+1. **Tier-5 Policy Short-Circuit**: No-op returning `[]` when Tier 5 is disabled (e.g., `TierProfile.LEXICON_ONLY` or `STATE_ONLY`).
+2. **Gate-1 Extraction with Staged-Delta Visibility**: Extracts dialogue spans (`"..."`, `„…“`, `«…»`, `「…」`, `— …`) and resolves `(speaker_id, addressee_id)`, including any brand-new entities/aliases introduced in `tx._staged_delta` during the same step.
+3. **Graph-Aware Dyadic Tagging**: Looks up the active `(speaker_id → addressee_id)` edge across `SchemaPolicy.edge_layer_order` (`stance` → `facade`) **overlaid with any intra-step `StepDelta` edge/entity mutations** (so a `Vi` → `ti` shift or new `disguise` in the current scene is reflected immediately). In two-character scenes where Gate 1 only resolves the speaker, `infer_addressee=True` (default) infers the co-present addressee automatically.
+4. **Gate-2 Quality Scoring (`VoiceQualityScorer`)**: Scores candidates on `[0.0, 10.0]` via the configured scorer (defaults to `HeuristicVoiceQualityScorer`), fires `on_gate_rejected("gate2", ...)` for rejected lines, and stages passing `VoiceExemplar`s for atomic commit (or pass `stage=False` for dry-run inspection).
+
+### Pluggable `VoiceQualityScorer` Implementations
+- **`HeuristicVoiceQualityScorer`** *(default, zero-LLM)*: Deterministic scorer combining normalized Gate-1 distinctiveness, lexical diversity, length sweet spot, attribution/metadata completeness, dialogue expressiveness, and template/markup artifact penalties.
+- **`CallableVoiceQualityScorer(fn)`**: Wraps any 1-, 2-, or 3-argument Python callable `(candidate[, metadata[, context]]) -> float | VoiceScoreResult`.
+- **`LLMVoiceQualityScorer(extractor, *, batch_size=15, fallback_scorer=None)`**: Optional batched LLM judge backed by `OpenAICompatibleExtractor`. Evaluates all Gate-1 candidates from a scene in a single JSON call (verifying character voice, register fidelity, and optional `source_text` alignment), with optional `metadata_updates` and fallback scoring.
+
+Configure a default scorer on `CanonArcEngine(..., voice_scorer=...)` or pass `scorer=...` per call to `tx.harvest_voice(...)`.
+
+---
+
 ## Voice Bank Retrieval: Policy-Driven Hard-Filter / Soft-Boost Cascade
 
 When retrieving exemplars for a character or agent, the Voice Bank applies a multi-priority ranking cascade driven by `SchemaPolicy` (defaulting to `register` hard-filter and `tone` soft-boost):

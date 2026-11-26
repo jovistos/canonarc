@@ -115,8 +115,9 @@ with engine.step_transaction(step=85, text=scene_text, pov_entity_ids=["char_art
     # 2. Generate the next scene or dialogue with your LLM
     generated_scene = call_llm(prompt)
 
-    # 3. Extract StepDelta JSON + Gate 1/2 voice exemplars & commit atomically
+    # 3. Extract StepDelta JSON + harvest Gate 1/2 voice exemplars & commit atomically
     tx.extract_and_commit(generated_scene)
+    tx.harvest_voice(generated_scene)
     # Or commit deterministic game-engine deltas directly:
     # tx.commit(delta=my_step_delta, exemplars=candidate_lines)
 ```

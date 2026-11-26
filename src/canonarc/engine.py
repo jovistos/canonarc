@@ -62,7 +62,13 @@ from .presets import (
 )
 from .resolver import DefaultLexicalResolver, MentionResolver
 from .store import CausalStore, CheckpointStore, MemoryStore, TimelineBranchConflictError
-from .voice import IngestionGate, VoiceBank
+from .voice import (
+    HeuristicVoiceQualityScorer,
+    IngestionGate,
+    VoiceBank,
+    VoiceQualityScorer,
+    score_voice_candidates_batch,
+)
 
 
 KnownEntityScope = Literal["scene", "characters_compact", "all_compact"]
@@ -264,6 +270,144 @@ class StepTransaction:
             checkpoint_metadata=checkpoint_metadata,
         )
         return normalized
+
+    def harvest_voice(
+        self,
+        text: str,
+        *,
+        source_text: str = "",
+        lang: str | None = None,
+        prev_text: str | None = None,
+        next_text: str | None = None,
+        scorer: VoiceQualityScorer | None = None,
+        min_quality: float | None = None,
+        require_speaker: bool = True,
+        infer_addressee: bool = True,
+        extra_metadata: Mapping[str, str] | None = None,
+        stage: bool = True,
+    ) -> list[VoiceExemplar]:
+        """Runs Gate-1 extraction, attaches active dyadic edge/persona metadata, scores via Gate 2, and stages passing VoiceExemplars.
+
+        When Tier 5 (Voice Bank) is disabled by the active ``SchemaPolicy`` (e.g., ``LEXICON_ONLY``
+        or ``STATE_ONLY``), this is a zero-work no-op returning ``[]``.
+        """
+        if not self.engine._policy.has_tier(5) or not text.strip():
+            return []
+
+        effective_lang = self.lang if lang is None else lang
+        effective_prev = self.prev_text if prev_text is None else prev_text
+        effective_next = self.next_text if next_text is None else next_text
+        cutoff_step = max(0, self.step - 1)
+
+        candidates = self.engine._extract_dialogue_candidates_with_delta(
+            text,
+            source_text=source_text,
+            step=cutoff_step,
+            timeline_id=self.timeline_id,
+            prev_text=effective_prev,
+            next_text=effective_next,
+            lang=effective_lang,
+            staged_delta=self._staged_delta,
+        )
+        if not candidates:
+            return []
+
+        eligible: list[DialogueCandidate] = []
+        for cand in candidates:
+            if require_speaker and not cand.speaker_id:
+                for hook in self.engine._hooks:
+                    hook.on_gate_rejected(
+                        "gate1",
+                        cand.text,
+                        "unresolved_speaker",
+                        {"candidate_id": cand.candidate_id},
+                    )
+                continue
+            eligible.append(cand)
+        if not eligible:
+            return []
+
+        scored_candidates: list[DialogueCandidate] = []
+        base_metadatas: list[dict[str, str]] = []
+        for cand in eligible:
+            eff_addressee, meta = self.engine._resolve_harvest_metadata(
+                speaker_id=cand.speaker_id,
+                addressee_id=cand.addressee_id,
+                context=self.context,
+                staged_delta=self._staged_delta,
+                cutoff_step=cutoff_step,
+                timeline_id=self.timeline_id,
+                infer_addressee=infer_addressee,
+            )
+            if extra_metadata:
+                for k, v in extra_metadata.items():
+                    ks, vs = str(k).strip(), str(v).strip()
+                    if ks and vs:
+                        meta[ks] = vs
+            scored_cand = (
+                cand.model_copy(update={"addressee_id": eff_addressee})
+                if eff_addressee != cand.addressee_id
+                else cand
+            )
+            scored_candidates.append(scored_cand)
+            base_metadatas.append(meta)
+
+        active_scorer = scorer or self.engine.voice_scorer
+        score_results = score_voice_candidates_batch(
+            active_scorer,
+            scored_candidates,
+            base_metadatas,
+            context=self.context,
+        )
+
+        gate_min = self.engine.voice_bank.gate.min_quality
+        effective_min_quality = gate_min if min_quality is None else float(min_quality)
+
+        passing: list[VoiceExemplar] = []
+        for cand, base_meta, score_res in zip(
+            scored_candidates, base_metadatas, score_results
+        ):
+            merged_meta = dict(base_meta)
+            merged_meta.update(score_res.metadata_updates)
+            if extra_metadata:
+                for k, v in extra_metadata.items():
+                    ks, vs = str(k).strip(), str(v).strip()
+                    if ks and vs:
+                        merged_meta[ks] = vs
+
+            if not cand.speaker_id:
+                continue
+            exemplar = cand.to_voice_exemplar(
+                step=self.step,
+                speaker_id=cand.speaker_id,
+                addressee_id=cand.addressee_id,
+                metadata=merged_meta,
+                quality_score=score_res.score,
+                timeline_id=self.timeline_id,
+            )
+            if exemplar.quality_score < effective_min_quality:
+                reason_suffix = f" ({score_res.reason})" if score_res.reason else ""
+                for hook in self.engine._hooks:
+                    hook.on_gate_rejected(
+                        "gate2",
+                        exemplar.text,
+                        f"quality_score {exemplar.quality_score} < {effective_min_quality}{reason_suffix}",
+                        {
+                            "speaker_id": exemplar.speaker_id,
+                            "addressee_id": exemplar.addressee_id,
+                            "quality_score": exemplar.quality_score,
+                            "threshold": effective_min_quality,
+                            "reason": score_res.reason,
+                        },
+                    )
+                continue
+            passing.append(exemplar)
+
+        if stage and passing:
+            self._staged_exemplars.extend(passing)
+            if any(ex.quality_score < gate_min for ex in passing):
+                self._bypass_gate = True
+        return passing
 
     def __exit__(self, exc_type: object, exc_val: object, exc_tb: object) -> None:
         if exc_type is None:
@@ -741,6 +885,7 @@ class CanonArcEngine:
         extractor: DeltaExtractor | None = None,
         episode_ranker: EpisodeRanker | None = None,
         inflection_generator: InflectionGenerator | None = None,
+        voice_scorer: VoiceQualityScorer | None = None,
         hooks: Sequence[EngineHooks] = (),
         audit_rules: Sequence[AuditRule] | None = None,
         on_embedder_mismatch: Literal["raise", "warn", "reindex", "ignore"] = "warn",
@@ -757,6 +902,7 @@ class CanonArcEngine:
         self.mention_resolver: MentionResolver = mention_resolver or DefaultLexicalResolver()
         self.extractor: DeltaExtractor | None = extractor
         self.inflection_generator: InflectionGenerator | None = inflection_generator
+        self.voice_scorer: VoiceQualityScorer = voice_scorer or HeuristicVoiceQualityScorer()
         self._hooks: list[EngineHooks] = list(hooks)
         self.audit_rules: list[AuditRule] | None = (
             list(audit_rules) if audit_rules is not None else None
@@ -2030,7 +2176,7 @@ class CanonArcEngine:
             step_range=step_range,
         )
 
-    def extract_dialogue_candidates(
+    def _extract_dialogue_candidates_with_delta(
         self,
         text: str,
         *,
@@ -2040,6 +2186,7 @@ class CanonArcEngine:
         prev_text: str = "",
         next_text: str = "",
         lang: str | None = None,
+        staged_delta: StepDelta | None = None,
     ) -> list[DialogueCandidate]:
         tl = timeline_id or self.active_timeline
         if step is None:
@@ -2048,8 +2195,44 @@ class CanonArcEngine:
         else:
             cutoff_step = step
 
-        active_entities = self.store.get_all_active_entities(tl, cutoff_step)
-        active_aliases = self.store.get_all_active_aliases(tl, cutoff_step)
+        active_entities = list(self.store.get_all_active_entities(tl, cutoff_step))
+        active_aliases = list(self.store.get_all_active_aliases(tl, cutoff_step))
+
+        if staged_delta is not None and staged_delta.entities:
+            ent_by_id = {e.entity_id: e for e in active_entities}
+            for ed in staged_delta.entities:
+                if ed.remove:
+                    ent_by_id.pop(ed.entity_id, None)
+                    continue
+                existing = ent_by_id.get(ed.entity_id)
+                if existing is None:
+                    ent_by_id[ed.entity_id] = EntityRecord(
+                        entity_id=ed.entity_id,
+                        canonical_name=ed.canonical_name or ed.entity_id,
+                        kind=ed.kind or "character",
+                        base_attributes=dict(ed.base_attributes),
+                        state=dict(ed.state),
+                    )
+                else:
+                    merged_base = {**existing.base_attributes, **ed.base_attributes}
+                    merged_state = {**existing.state, **ed.state} if ed.merge_state else dict(ed.state)
+                    ent_by_id[ed.entity_id] = existing.model_copy(
+                        update={
+                            "canonical_name": ed.canonical_name or existing.canonical_name,
+                            "kind": ed.kind or existing.kind,
+                            "base_attributes": merged_base,
+                            "state": merged_state,
+                        }
+                    )
+                for alias_item in ed.add_aliases:
+                    if isinstance(alias_item, AliasRecord):
+                        active_aliases.append(alias_item)
+                    elif isinstance(alias_item, str) and alias_item.strip():
+                        active_aliases.append(
+                            AliasRecord(alias=alias_item.strip(), entity_id=ed.entity_id)
+                        )
+            active_entities = list(ent_by_id.values())
+
         speaker_entities = [
             e for e in active_entities if e.kind not in ("location", "artifact", "item", "term")
         ]
@@ -2113,6 +2296,147 @@ class CanonArcEngine:
             next_text=next_text,
             speaker_resolver=_resolve_speaker,
             on_rejected=_on_gate1_rejected if self._hooks else None,
+        )
+
+    def _resolve_harvest_metadata(
+        self,
+        *,
+        speaker_id: str | None,
+        addressee_id: str | None,
+        context: StepContext,
+        staged_delta: StepDelta | None,
+        cutoff_step: int,
+        timeline_id: str,
+        infer_addressee: bool = True,
+    ) -> tuple[str | None, dict[str, str]]:
+        """Resolves dyadic edge metadata (register/tone) and speaker persona with staged-delta overlay."""
+        policy = self._policy
+        meta: dict[str, str] = {}
+        if not speaker_id:
+            return addressee_id, meta
+
+        # Build effective entity map (context + store fallback + staged_delta overlay)
+        ent_by_id: dict[str, EntityRecord] = {
+            e.entity_id: e
+            for e in (*context.entities, *context.related_entities)
+            if not e.entity_id.startswith("masked:")
+        }
+        if speaker_id not in ent_by_id:
+            for e in self.store.get_all_active_entities(timeline_id, cutoff_step):
+                ent_by_id.setdefault(e.entity_id, e)
+
+        if staged_delta is not None:
+            for ed in staged_delta.entities:
+                if ed.remove:
+                    ent_by_id.pop(ed.entity_id, None)
+                    continue
+                existing = ent_by_id.get(ed.entity_id)
+                if existing is None:
+                    ent_by_id[ed.entity_id] = EntityRecord(
+                        entity_id=ed.entity_id,
+                        canonical_name=ed.canonical_name or ed.entity_id,
+                        kind=ed.kind or "character",
+                        base_attributes=dict(ed.base_attributes),
+                        state=dict(ed.state),
+                    )
+                else:
+                    merged_state = {**existing.state, **ed.state} if ed.merge_state else dict(ed.state)
+                    ent_by_id[ed.entity_id] = existing.model_copy(
+                        update={
+                            "canonical_name": ed.canonical_name or existing.canonical_name,
+                            "kind": ed.kind or existing.kind,
+                            "state": merged_state,
+                        }
+                    )
+
+        # Two-person scene addressee inference when Gate 1 found speaker but no explicit addressee
+        eff_addressee = addressee_id
+        if eff_addressee is None and infer_addressee:
+            scene_chars = [
+                e.entity_id
+                for e in context.entities
+                if not e.entity_id.startswith("masked:")
+                and e.kind == "character"
+                and e.entity_id != speaker_id
+            ]
+            if len(scene_chars) == 1:
+                eff_addressee = scene_chars[0]
+
+        target_keys = tuple(
+            dict.fromkeys((*policy.hard_filter_keys, *policy.soft_boost_weights.keys()))
+        )
+
+        # Resolve effective dyadic edges (store at cutoff_step + staged_delta overlay)
+        if policy.has_tier(2) and eff_addressee:
+            edge_map: dict[tuple[str, str, str], dict[str, Any]] = {}
+            for edge in self.store.get_all_active_edges(timeline_id, cutoff_step):
+                if edge.source_id == speaker_id and edge.target_id == eff_addressee:
+                    edge_map[(edge.source_id, edge.target_id, edge.relation_type)] = dict(edge.state)
+            if staged_delta is not None:
+                for rd in staged_delta.edges:
+                    if rd.source_id != speaker_id or rd.target_id != eff_addressee:
+                        continue
+                    key = (rd.source_id, rd.target_id, rd.relation_type)
+                    if rd.remove:
+                        edge_map.pop(key, None)
+                    elif rd.merge and key in edge_map:
+                        edge_map[key] = {**edge_map[key], **rd.state}
+                    else:
+                        edge_map[key] = dict(rd.state)
+
+            # Apply layers in SchemaPolicy.edge_layer_order (later layers e.g. facade override stance)
+            for rel_type in policy.edge_layer_order:
+                state = edge_map.get((speaker_id, eff_addressee, rel_type))
+                if not state:
+                    continue
+                for k in target_keys:
+                    val = state.get(k)
+                    if val is not None and str(val).strip():
+                        meta[k] = str(val).strip()
+
+            # Fallback to any other non-belief edge if none of edge_layer_order populated a key
+            for (_, _, rel_type), state in edge_map.items():
+                if rel_type in policy.edge_layer_order or rel_type == policy.belief_relation:
+                    continue
+                for k in target_keys:
+                    if k not in meta:
+                        val = state.get(k)
+                        if val is not None and str(val).strip():
+                            meta[k] = str(val).strip()
+
+        # Speaker disguise / persona tagging + optional mood -> tone fallback
+        speaker_ent = ent_by_id.get(speaker_id)
+        if speaker_ent is not None:
+            disguise = speaker_ent.state.get(policy.entity_disguise_key)
+            if disguise is not None and str(disguise).strip():
+                meta[policy.exemplar_persona_key] = str(disguise).strip()
+            if "tone" in target_keys and "tone" not in meta:
+                mood = speaker_ent.state.get("mood")
+                if mood is not None and str(mood).strip():
+                    meta["tone"] = str(mood).strip()
+
+        return eff_addressee, meta
+
+    def extract_dialogue_candidates(
+        self,
+        text: str,
+        *,
+        source_text: str = "",
+        step: int | None = None,
+        timeline_id: str | None = None,
+        prev_text: str = "",
+        next_text: str = "",
+        lang: str | None = None,
+    ) -> list[DialogueCandidate]:
+        return self._extract_dialogue_candidates_with_delta(
+            text,
+            source_text=source_text,
+            step=step,
+            timeline_id=timeline_id,
+            prev_text=prev_text,
+            next_text=next_text,
+            lang=lang,
+            staged_delta=None,
         )
 
     def index_voice_exemplars(
