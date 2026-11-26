@@ -344,9 +344,23 @@ no_slang = CallableAuditRule(
     "no_slang",
     lambda ctx: [
         AuditIssue(code="slang", rule_name="no_slang", step=ctx.step, message="Modern slang detected")
-    ] if "okay" in ctx.target_text.lower() else [],
+    ] if "okay" in ctx.masked_target_text.lower() else [],
 )
 full_report = engine.audit_timeline(texts={1: (en_1, sr_1), 2: (en_2, sr_2)}, rules=[no_slang])
+```
+
+#### Markup & Placeholder Stripping (`ignore_patterns`)
+
+Localization inputs frequently contain inline placeholders or markup (`[[IMG_1]]`, `{player_name}`, `%s`, `<b>...</b>`, Markdown images `![alt](path)`). Pass `ignore_patterns` (or the vetted `COMMON_MARKUP_PATTERNS` bundle) once on `CanonArcEngine` to mask/strip non-prose tokens automatically across lexical resolution, Gate-1/Gate-2 voice harvesting, query embeddings, and text-level audit rules while preserving exact snippet offsets:
+
+```python
+from canonarc import COMMON_MARKUP_PATTERNS, CanonArcEngine, TranslationPreset
+
+engine = CanonArcEngine(
+    "novel.sqlite",
+    preset=TranslationPreset(),
+    ignore_patterns=COMMON_MARKUP_PATTERNS,  # or custom regexes / text_normalizer=fn
+)
 ```
 
 ### CLI Timeline Inspector

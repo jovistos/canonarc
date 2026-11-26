@@ -43,6 +43,8 @@ Indexed into Tier 5 Voice Bank
 
 Rejected Gate 1 / Gate 2 candidates can be observed for diagnostics via `IngestionGate.extract_candidates(..., on_rejected=callback)` or the `on_gate_rejected` hook in `BaseEngineHooks`.
 
+If your localization input contains inline markup or placeholders (`[[IMG_1]]`, `<i>...</i>`, `![alt](path)`), configure `CanonArcEngine(..., ignore_patterns=COMMON_MARKUP_PATTERNS)` (or pass `ignore_patterns` to `IngestionGate`). Configured patterns are stripped **before** quote extraction, attribution-window slicing, and Gate-1 word-count/distinctiveness scoring—preventing HTML attribute quotes (`class="..."`) from colliding with dialogue quotes and keeping stored `VoiceExemplar.text` clean—while unexpected LLM artifacts (`TODO`, `[TRANSLATOR NOTE]`) still trigger `HeuristicVoiceQualityScorer`'s artifact penalty.
+
 ---
 
 ## Automated Gate-2 Harvesting (`StepTransaction.harvest_voice`)

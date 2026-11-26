@@ -23,6 +23,8 @@ class CanonArcEngine:
         hooks: Sequence[EngineHooks] = (),
         audit_rules: Sequence[AuditRule] | None = None,
         on_embedder_mismatch: Literal["raise", "warn", "reindex", "ignore"] = "warn",
+        ignore_patterns: Sequence[str | re.Pattern[str]] = (),
+        text_normalizer: TextNormalizer | None = None,
     ) -> None: ...
 ```
 
@@ -344,7 +346,11 @@ class EntityMergeReport(BaseModel):
 ## Extension Protocols, Adapters & Policies
 
 - `MemoryStore`: Storage protocol implemented by `CausalStore`. Inject a custom backend via `CanonArcEngine(store=my_store)`. `CausalStore` also provides `get_known_episode_ids()` and bounded/pre-filtered `get_lineage_episodes(..., limit=..., pov_entity_ids=..., cue_entity_ids=..., pinned_episode_ids=..., query_text=...)` backed by SQLite FTS5 (`episodes_fts`).
-- `MentionResolver`: Pluggable entity/coreference resolution protocol (`resolve(text, explicit_mentions, entities, aliases) -> list[ResolvedMention]`). Defaults to `DefaultLexicalResolver(fuzzy_threshold=88.0)`, which uses word-boundary matching and optional `rapidfuzz` inflection matching.
+- `MentionResolver`: Pluggable entity/coreference resolution protocol (`resolve(text, explicit_mentions, entities, aliases) -> list[ResolvedMention]`). Defaults to `DefaultLexicalResolver(fuzzy_threshold=88.0, *, short_name_inflection=True, ignore_patterns=(), text_normalizer=None)`, which uses word-boundary matching, short-name inflection fallback, and optional `rapidfuzz` inflection matching.
+- **Markup & Placeholder Stripping (`canonarc.text_masking`)**: Configure `CanonArcEngine(..., ignore_patterns=..., text_normalizer=...)` once to automatically mask or strip non-prose tokens across lexical resolution (`retrieve_context()` + `prev_text` halo), Gate-1/Gate-2 voice harvesting (`harvest_voice()`), vector query embeddings, and text-level audit rules (`ExonymLeakRule`, `TargetTermComplianceRule`, `ScriptConsistencyRule`, plus `AuditContext.masked_source_text` / `masked_target_text` for custom rules).
+  - **Offset-preserving masking vs. prose stripping:** Audit rules and lexical resolution use `mask_ignored_spans()` (replacing matched spans with spaces of identical length while preserving `\n`, keeping `matched_spans` and `_extract_snippet()` aligned with raw text); voice harvesting and query embeddings use `strip_ignored_spans()` (removing spans and collapsing horizontal whitespace so long markup does not starve attribution windows or pollute `VoiceExemplar.text`).
+  - **Vetted built-in pattern constants:** `COMMON_MARKUP_PATTERNS` bundles `MARKUP_HTML_COMMENTS`, `MARKUP_MARKDOWN_IMAGES`, `MARKUP_MARKDOWN_LINK_URLS` (masks `(url)` while keeping visible `[anchor]` prose), `MARKUP_HTML_TAGS` (masks tags without erasing inner prose), `MARKUP_BRACKET_PLACEHOLDERS` (`[[IMG_1]]`), `MARKUP_BRACE_PLACEHOLDERS` (`{player_name}`), and `MARKUP_PRINTF_PLACEHOLDERS` (`%s`).
+  - **Caveat:** Prefer specific non-greedy patterns (avoid `<b>.*?</b>` which erases inner prose), and note that `text_normalizer: Callable[[str], str]` changes string length so audit snippets fall back to `AuditContext.target_snippet_text` (normalized text).
 - `EpisodeRanker` / `EpisodicScoringPolicy`: Pluggable Tier 6 episodic memory ranker (`DefaultEpisodeRanker`) decoupled from `VoiceBank`, configurable via `SchemaPolicy.episodic_policy`.
 - `EngineHooks` / `BaseEngineHooks`: Middleware callbacks (`on_before_commit`, `on_after_commit`, `on_rollback`, `on_branch`, `on_gate_rejected`).
 - `AuditRule` / `CallableAuditRule` (`canonarc.audit`): Pluggable QA rule protocol (`name`, `required_tiers`, `check(ctx: AuditContext) -> Sequence[AuditIssue]`). Also exposes `run_audit_draft(...)` for pre-commit draft auditing. Built-in rules (`default_audit_rules()`):

@@ -66,6 +66,12 @@ from .presets import (
 )
 from .resolver import DefaultLexicalResolver, MentionResolver
 from .store import CausalStore, CheckpointStore, MemoryStore, TimelineBranchConflictError
+from .text_masking import (
+    TextNormalizer,
+    apply_text_masking,
+    compile_ignore_patterns,
+    strip_ignored_spans,
+)
 from .voice import (
     HeuristicVoiceQualityScorer,
     IngestionGate,
@@ -971,12 +977,18 @@ class CanonArcEngine:
         hooks: Sequence[EngineHooks] = (),
         audit_rules: Sequence[AuditRule] | None = None,
         on_embedder_mismatch: Literal["raise", "warn", "reindex", "ignore"] = "warn",
+        ignore_patterns: Sequence[str | re.Pattern[str]] = (),
+        text_normalizer: TextNormalizer | None = None,
     ) -> None:
         self.store: MemoryStore = store if store is not None else CausalStore(db_path)
         self._default_timeline = timeline_id
         self._timeline_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
             f"canonarc_timeline_{id(self)}", default=None
         )
+        self._ignore_patterns: tuple[re.Pattern[str], ...] = compile_ignore_patterns(
+            ignore_patterns
+        )
+        self.text_normalizer: TextNormalizer | None = text_normalizer
         self.voice_bank = VoiceBank(
             embedder=embedder, gate=gate, episode_ranker=episode_ranker
         )
@@ -1028,6 +1040,25 @@ class CanonArcEngine:
 
     def remove_hook(self, hook: EngineHooks) -> None:
         self._hooks = [h for h in self._hooks if h is not hook]
+
+    @property
+    def ignore_patterns(self) -> tuple[re.Pattern[str], ...]:
+        """Compiled regex patterns masked/stripped during lexical resolution, voice scoring, and audits."""
+        return self._ignore_patterns
+
+    def _mask_text(self, text: str) -> str:
+        if not text or (not self._ignore_patterns and self.text_normalizer is None):
+            return text
+        return apply_text_masking(
+            text, self._ignore_patterns, normalizer=self.text_normalizer
+        )
+
+    def _strip_text(self, text: str) -> str:
+        if not text or (not self._ignore_patterns and self.text_normalizer is None):
+            return text
+        return strip_ignored_spans(
+            text, self._ignore_patterns, normalizer=self.text_normalizer
+        )
 
     @property
     def _policy(self) -> SchemaPolicy:
@@ -1172,10 +1203,11 @@ class CanonArcEngine:
         *,
         lang: str | None = None,
     ) -> list[ResolvedMention]:
+        masked_text = self._mask_text(text)
         if lang is not None:
             try:
                 return self.mention_resolver.resolve(  # type: ignore[call-arg]
-                    text=text,
+                    text=masked_text,
                     explicit_mentions=explicit_mentions,
                     entities=entities,
                     aliases=aliases,
@@ -1184,7 +1216,7 @@ class CanonArcEngine:
             except TypeError:
                 pass
         return self.mention_resolver.resolve(
-            text=text,
+            text=masked_text,
             explicit_mentions=explicit_mentions,
             entities=entities,
             aliases=aliases,
@@ -2114,7 +2146,7 @@ class CanonArcEngine:
                         candidates = persona_candidates
 
                 ranked = self.voice_bank.rank_exemplars_for_targets(
-                    query_text=text,
+                    query_text=self._strip_text(text),
                     candidates=candidates,
                     targets=voice_targets,
                     policy=policy,
@@ -2148,6 +2180,7 @@ class CanonArcEngine:
             else:
                 candidate_limit = max(eff_top_k_episodes * 20, 200)
                 sql_cue_ids = sorted(cue_entity_ids | active_location_ids)
+                clean_query = self._strip_text(text)
                 try:
                     candidate_episodes = self.store.get_lineage_episodes(
                         tl,
@@ -2157,7 +2190,7 @@ class CanonArcEngine:
                         pov_mode=pov_mode,
                         cue_entity_ids=sql_cue_ids,
                         pinned_episode_ids=sorted(pinned_episode_ids),
-                        query_text=text,
+                        query_text=clean_query,
                     )
                 except TypeError:
                     candidate_episodes = self.store.get_lineage_episodes(tl, cutoff_step)
@@ -2166,7 +2199,7 @@ class CanonArcEngine:
                 episodic_policy = getattr(policy, "episodic_policy", DEFAULT_EPISODIC_POLICY)
                 episodes = self.voice_bank.rank_episodes(
                     current_step=step,
-                    query_text=text,
+                    query_text=self._strip_text(text),
                     candidates=candidate_episodes,
                     scene_entity_ids=cue_entity_ids,
                     pinned_episode_ids=pinned_episode_ids,
@@ -2846,6 +2879,8 @@ class CanonArcEngine:
             next_text=next_text,
             speaker_resolver=_resolve_speaker,
             on_rejected=_on_gate1_rejected if self._hooks else None,
+            ignore_patterns=self._ignore_patterns,
+            text_normalizer=self.text_normalizer,
         )
 
     def _resolve_harvest_metadata(
