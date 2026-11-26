@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import csv
+import io
+import json
 import re
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Literal, Protocol
 
 from pydantic import BaseModel, Field
@@ -18,6 +22,9 @@ from ..presets import DEFAULT_SCHEMA_POLICY, SchemaPolicy
 from ..text_masking import TextNormalizer, apply_text_masking
 
 AuditSeverity = Literal["info", "warning", "error"]
+AuditExportFormat = Literal["text", "json", "jsonl", "csv"]
+StepTextEntry = str | tuple[str, str]
+StepTextProvider = Callable[[int], StepTextEntry | None]
 
 _SEVERITY_RANK: dict[AuditSeverity, int] = {
     "info": 0,
@@ -226,6 +233,122 @@ class AuditReport(BaseModel):
             else:
                 lines.append(f"- {subj}{body}")
         return "\n".join(lines)
+
+    def to_json(self, *, indent: int | None = 2) -> str:
+        """Serializes the full AuditReport to a JSON string."""
+        return json.dumps(self.model_dump(), indent=indent, ensure_ascii=False)
+
+    def to_jsonl(self) -> str:
+        """Serializes each AuditIssue as one JSON object per line (NDJSON)."""
+        if not self.issues:
+            return ""
+        return (
+            "\n".join(json.dumps(issue.model_dump(), ensure_ascii=False) for issue in self.issues)
+            + "\n"
+        )
+
+    def to_csv(self) -> str:
+        """Serializes issues as a flat spreadsheet-friendly CSV string."""
+        fieldnames = [
+            "timeline_id",
+            "step",
+            "severity",
+            "code",
+            "rule_name",
+            "subject_key",
+            "entity_ids",
+            "message",
+            "suggestion",
+            "snippet",
+        ]
+        buf = io.StringIO(newline="")
+        writer = csv.DictWriter(buf, fieldnames=fieldnames, lineterminator="\n")
+        writer.writeheader()
+        for issue in self.issues:
+            raw_snippet = issue.evidence.get("snippet") if issue.evidence else None
+            snippet = raw_snippet if isinstance(raw_snippet, str) else ""
+            writer.writerow(
+                {
+                    "timeline_id": issue.timeline_id,
+                    "step": issue.step,
+                    "severity": issue.severity,
+                    "code": issue.code,
+                    "rule_name": issue.rule_name,
+                    "subject_key": issue.subject_key or "",
+                    "entity_ids": ";".join(issue.entity_ids),
+                    "message": issue.message,
+                    "suggestion": issue.suggestion or "",
+                    "snippet": snippet,
+                }
+            )
+        return buf.getvalue()
+
+    def render(
+        self,
+        format: AuditExportFormat = "text",
+        *,
+        indent: int | None = 2,
+    ) -> str:
+        """Renders the report in the requested format ('text', 'json', 'jsonl', or 'csv')."""
+        if format == "text":
+            return self.summary()
+        if format == "json":
+            return self.to_json(indent=indent)
+        if format == "jsonl":
+            return self.to_jsonl()
+        if format == "csv":
+            return self.to_csv()
+        raise ValueError(
+            f"Unsupported audit export format {format!r}. Expected 'text', 'json', 'jsonl', or 'csv'."
+        )
+
+    def export(
+        self,
+        path: str | Path,
+        *,
+        format: Literal["auto", "text", "json", "jsonl", "csv"] = "auto",
+        indent: int | None = 2,
+        excel_bom: bool = False,
+    ) -> Path:
+        """Writes the audit report to disk in text, JSON, JSONL, or CSV format."""
+        out_path = Path(path)
+        resolved_fmt = infer_audit_export_format(out_path, format)
+        content = self.render(resolved_fmt, indent=indent)
+        if content and not content.endswith("\n"):
+            content += "\n"
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        encoding = "utf-8-sig" if (excel_bom and resolved_fmt == "csv") else "utf-8"
+        out_path.write_text(content, encoding=encoding)
+        return out_path
+
+
+def infer_audit_export_format(
+    path: str | Path | None,
+    format: Literal["auto", "text", "json", "jsonl", "csv"] = "auto",
+) -> AuditExportFormat:
+    """Resolves an explicit or extension-inferred audit export format."""
+    if format != "auto":
+        if format not in ("text", "json", "jsonl", "csv"):
+            raise ValueError(
+                f"Unsupported audit export format {format!r}. "
+                "Expected 'auto', 'text', 'json', 'jsonl', or 'csv'."
+            )
+        return format
+    if path is None:
+        return "text"
+    suffix = Path(path).suffix.lower()
+    if suffix == ".json":
+        return "json"
+    if suffix in (".jsonl", ".ndjson"):
+        return "jsonl"
+    if suffix == ".csv":
+        return "csv"
+    if suffix in (".txt", ".log"):
+        return "text"
+    raise ValueError(
+        f"Cannot infer audit export format from extension {suffix!r}; "
+        "pass format='text'|'json'|'jsonl'|'csv' explicitly."
+    )
 
 
 @dataclass(frozen=True)
