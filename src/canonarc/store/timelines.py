@@ -517,30 +517,14 @@ class _TimelineStoreMixin:
                     )
         return diff
 
-    def export_snapshot(
+    def _collect_snapshot_epistemics_and_voice(
         self,
-        target_path: str | Path,
-        *,
+        timeline_id: str,
         at_step: int,
-        timeline_id: str = "main",
-    ) -> Path:
-        """Exports a flattened, standalone SQLite save-slot representing active state and episodes at at_step."""
-        from .causal_store import CausalStore
-
-        path = Path(target_path)
-        if path.exists():
-            path.unlink()
-
-        export_store: CausalStore = CausalStore(path)
-        with self._lock:
-            active_revs = self.get_active_revisions(timeline_id, at_step)
-            lineage_episodes = self.get_lineage_episodes(timeline_id, at_step)
-            lineage_checkpoints = self.list_step_checkpoints(
-                timeline_id=timeline_id, cutoff_step=at_step
-            )
-            epistemic_query = (
-                LINEAGE_CTE_SQL
-                + """,
+    ) -> tuple[list[sqlite3.Row], list[tuple[VoiceExemplar, bytes]]]:
+        epistemic_query = (
+            LINEAGE_CTE_SQL
+            + """,
         ranked_epistemics AS (
             SELECT
                 ep.step,
@@ -563,14 +547,14 @@ class _TimelineStoreMixin:
         WHERE rn = 1
         ORDER BY step ASC, id ASC;
         """
-            )
-            epistemic_rows = self.conn.execute(
-                epistemic_query, {"timeline_id": timeline_id, "cutoff_step": at_step}
-            ).fetchall()
+        )
+        epistemic_rows = self.conn.execute(
+            epistemic_query, {"timeline_id": timeline_id, "cutoff_step": at_step}
+        ).fetchall()
 
-            voice_query = (
-                LINEAGE_CTE_SQL
-                + """
+        voice_query = (
+            LINEAGE_CTE_SQL
+            + """
         SELECT v.exemplar_id, v.step, v.speaker_id, v.addressee_id,
                v.text, v.source_text, v.metadata, v.quality_score, v.distinctiveness_score, v.embedding
         FROM voice_exemplars v
@@ -579,10 +563,10 @@ class _TimelineStoreMixin:
          AND (l.max_step IS NULL OR v.step <= l.max_step)
         ORDER BY l.depth ASC, v.step ASC;
         """
-            )
-            voice_rows = self.conn.execute(
-                voice_query, {"timeline_id": timeline_id, "cutoff_step": at_step}
-            ).fetchall()
+        )
+        voice_rows = self.conn.execute(
+            voice_query, {"timeline_id": timeline_id, "cutoff_step": at_step}
+        ).fetchall()
 
         lineage_exemplars: list[tuple[VoiceExemplar, bytes]] = []
         seen_exemplar_ids: set[str] = set()
@@ -608,51 +592,84 @@ class _TimelineStoreMixin:
                     bytes(row["embedding"]),
                 )
             )
+        return epistemic_rows, lineage_exemplars
 
-        with export_store.conn:
-            for r in active_revs:
-                has_prior = r.get("prior_payload") is not None and r.get("prior_step") is not None
-                exported_rows = 2 if has_prior else 1
-                rev_offset = max(0, int(r.get("revision_count", 1)) - exported_rows)
-                payload_to_export = dict(r["payload"])
-                if rev_offset > 0:
-                    payload_to_export["_revision_count_offset"] = rev_offset
-                orig_first_seen = r.get("first_seen_step")
-                min_exported_step = min(r["valid_from_step"], r["prior_step"]) if has_prior else r["valid_from_step"]
-                if orig_first_seen is not None and int(orig_first_seen) < int(min_exported_step):
-                    payload_to_export["_first_seen_step"] = int(orig_first_seen)
+    @staticmethod
+    def _write_snapshot_graph_revisions(
+        conn: sqlite3.Connection,
+        active_revs: Sequence[dict[str, Any]],
+    ) -> None:
+        insert_sql = """
+            INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, relation_type, source_id, target_id, is_tombstone, payload)
+            VALUES ('main', ?, ?, ?, ?, ?, ?, 0, ?)
+        """
+        for r in active_revs:
+            has_prior = r.get("prior_payload") is not None and r.get("prior_step") is not None
+            exported_rows = 2 if has_prior else 1
+            rev_offset = max(0, int(r.get("revision_count", 1)) - exported_rows)
+            payload_to_export = dict(r["payload"])
+            if rev_offset > 0:
+                payload_to_export["_revision_count_offset"] = rev_offset
+            orig_first_seen = r.get("first_seen_step")
+            min_exported_step = (
+                min(r["valid_from_step"], r["prior_step"]) if has_prior else r["valid_from_step"]
+            )
+            if orig_first_seen is not None and int(orig_first_seen) < int(min_exported_step):
+                payload_to_export["_first_seen_step"] = int(orig_first_seen)
 
-                if has_prior:
-                    export_store.conn.execute(
-                        """
-                        INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, relation_type, source_id, target_id, is_tombstone, payload)
-                        VALUES ('main', ?, ?, ?, ?, ?, ?, 0, ?)
-                        """,
-                        (
-                            r["prior_step"],
-                            r["record_type"],
-                            r["subject_key"],
-                            r.get("relation_type"),
-                            r["source_id"],
-                            r["target_id"],
-                            json.dumps(r["prior_payload"]),
-                        ),
-                    )
-                export_store.conn.execute(
-                    """
-                    INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, relation_type, source_id, target_id, is_tombstone, payload)
-                    VALUES ('main', ?, ?, ?, ?, ?, ?, 0, ?)
-                    """,
+            if has_prior:
+                conn.execute(
+                    insert_sql,
                     (
-                        r["valid_from_step"],
+                        r["prior_step"],
                         r["record_type"],
                         r["subject_key"],
                         r.get("relation_type"),
                         r["source_id"],
                         r["target_id"],
-                        json.dumps(payload_to_export),
+                        json.dumps(r["prior_payload"]),
                     ),
                 )
+            conn.execute(
+                insert_sql,
+                (
+                    r["valid_from_step"],
+                    r["record_type"],
+                    r["subject_key"],
+                    r.get("relation_type"),
+                    r["source_id"],
+                    r["target_id"],
+                    json.dumps(payload_to_export),
+                ),
+            )
+
+    def export_snapshot(
+        self,
+        target_path: str | Path,
+        *,
+        at_step: int,
+        timeline_id: str = "main",
+    ) -> Path:
+        """Exports a flattened, standalone SQLite save-slot representing active state and episodes at at_step."""
+        from .causal_store import CausalStore
+
+        path = Path(target_path)
+        if path.exists():
+            path.unlink()
+
+        export_store: CausalStore = CausalStore(path)
+        with self._lock:
+            active_revs = self.get_active_revisions(timeline_id, at_step)
+            lineage_episodes = self.get_lineage_episodes(timeline_id, at_step)
+            lineage_checkpoints = self.list_step_checkpoints(
+                timeline_id=timeline_id, cutoff_step=at_step
+            )
+            epistemic_rows, lineage_exemplars = self._collect_snapshot_epistemics_and_voice(
+                timeline_id, at_step
+            )
+
+        with export_store.conn:
+            self._write_snapshot_graph_revisions(export_store.conn, active_revs)
             for ep, emb_bytes in lineage_episodes:
                 export_store.conn.execute(
                     """

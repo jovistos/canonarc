@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Literal, Protocol
+from typing import Any, Literal, Protocol, runtime_checkable
 
 from ..models import (
     AliasRecord,
@@ -146,6 +146,7 @@ class MemoryStore(Protocol):
     ) -> Path: ...
 
 
+@runtime_checkable
 class CheckpointStore(Protocol):
     """Optional extension protocol for backends supporting step-level resumability checkpoints."""
 
@@ -172,6 +173,7 @@ class CheckpointStore(Protocol):
     ) -> list[StepCheckpoint]: ...
 
 
+@runtime_checkable
 class MetadataStore(Protocol):
     """Optional extension protocol for backends supporting key-value store_metadata persistence."""
 
@@ -179,3 +181,31 @@ class MetadataStore(Protocol):
     def set_metadata(self, key: str, value: str) -> None: ...
     def delete_metadata(self, key: str) -> bool: ...
     def delete_metadata_prefix(self, prefix: str) -> int: ...
+
+
+def fetch_active_graph_state(
+    store: MemoryStore,
+    timeline_id: str,
+    cutoff_step: int,
+    *,
+    edge_types: Sequence[str] | None = None,
+    include_edges: bool = True,
+) -> tuple[list[EntityRecord], list[AliasRecord], list[DirectedEdgeRecord]]:
+    """Fetches active (entities, aliases, edges) using single-pass CTE when available."""
+    eff_edge_types: Sequence[str] | None = () if not include_edges else edge_types
+    get_graph_fn = getattr(store, "get_active_graph_state", None)
+    if callable(get_graph_fn):
+        if eff_edge_types is None:
+            return get_graph_fn(timeline_id, cutoff_step)
+        return get_graph_fn(timeline_id, cutoff_step, edge_types=eff_edge_types)
+
+    entities = store.get_all_active_entities(timeline_id, cutoff_step)
+    aliases = store.get_all_active_aliases(timeline_id, cutoff_step)
+    if not include_edges:
+        edges: list[DirectedEdgeRecord] = []
+    else:
+        edges = store.get_all_active_edges(timeline_id, cutoff_step)
+        if eff_edge_types is not None:
+            allowed = set(eff_edge_types)
+            edges = [e for e in edges if e.relation_type in allowed]
+    return entities, aliases, edges

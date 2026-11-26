@@ -387,6 +387,150 @@ class _GraphStoreMixin:
                     default_kind="permanent",
                 )
 
+    def _apply_entity_delta_in_tx(
+        self,
+        ed: Any,
+        *,
+        step: int,
+        timeline_id: str,
+    ) -> None:
+        if ed.remove:
+            self.conn.execute(
+                """
+                INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, source_id, target_id, is_tombstone, payload)
+                VALUES (?, ?, 'entity', ?, ?, NULL, 1, '{}')
+                """,
+                (timeline_id, step, ed.entity_id, ed.entity_id),
+            )
+            return
+
+        active = self.get_active_entity(ed.entity_id, timeline_id=timeline_id, cutoff_step=step)
+        base_attrs = dict(active.base_attributes) if active else {}
+        base_attrs.update(ed.base_attributes)
+
+        current_state = dict(active.state) if (active and ed.merge_state) else {}
+        current_state.update(ed.state)
+        current_state = {k: v for k, v in current_state.items() if v is not None}
+
+        current_private = dict(active.private_state) if (active and ed.merge_state) else {}
+        current_private.update(ed.private_state)
+        current_private = {k: v for k, v in current_private.items() if v is not None}
+
+        canonical_name = ed.canonical_name or (active.canonical_name if active else ed.entity_id)
+        kind = ed.kind or (active.kind if active else "character")
+
+        has_state_mutation = bool(ed.state or ed.private_state or not ed.merge_state)
+        caused_by = ed.caused_by_episode_id
+        if caused_by is None and active and ed.merge_state and not has_state_mutation:
+            caused_by = active.caused_by_episode_id
+        reason = ed.reason
+        if reason is None and active and ed.merge_state and not has_state_mutation:
+            reason = active.reason
+
+        is_noop_entity_state = (
+            active is not None
+            and kind == active.kind
+            and canonical_name == active.canonical_name
+            and base_attrs == active.base_attributes
+            and current_state == active.state
+            and current_private == active.private_state
+        )
+        if not is_noop_entity_state:
+            payload: dict[str, Any] = {
+                "kind": kind,
+                "canonical_name": canonical_name,
+                "base_attributes": base_attrs,
+                "state": current_state,
+            }
+            if current_private:
+                payload["private_state"] = current_private
+            if caused_by is not None:
+                payload["caused_by_episode_id"] = caused_by
+            if reason is not None:
+                payload["reason"] = reason
+
+            self.conn.execute(
+                """
+                INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, source_id, target_id, is_tombstone, payload)
+                VALUES (?, ?, 'entity', ?, ?, NULL, 0, ?)
+                """,
+                (timeline_id, step, ed.entity_id, ed.entity_id, json.dumps(payload)),
+            )
+
+        for alias in ed.add_aliases:
+            self._insert_alias_revision(
+                timeline_id=timeline_id,
+                step=step,
+                entity_id=ed.entity_id,
+                alias=alias,
+                default_kind="epithet",
+            )
+
+        for alias in ed.remove_aliases:
+            alias_key = self.alias_subject_key(ed.entity_id, alias)
+            self.conn.execute(
+                """
+                INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, source_id, target_id, is_tombstone, payload)
+                VALUES (?, ?, 'alias', ?, ?, NULL, 1, '{}')
+                """,
+                (timeline_id, step, alias_key, ed.entity_id),
+            )
+
+    def _apply_edge_delta_in_tx(
+        self,
+        rd: Any,
+        *,
+        step: int,
+        timeline_id: str,
+    ) -> None:
+        subject_key = self.edge_subject_key(rd.source_id, rd.target_id, rd.relation_type)
+        if rd.remove:
+            self.conn.execute(
+                """
+                INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, relation_type, source_id, target_id, is_tombstone, payload)
+                VALUES (?, ?, 'edge', ?, ?, ?, ?, 1, '{}')
+                """,
+                (timeline_id, step, subject_key, rd.relation_type, rd.source_id, rd.target_id),
+            )
+            return
+
+        active_edge = self.get_active_edge(
+            rd.source_id,
+            rd.target_id,
+            relation_type=rd.relation_type,
+            timeline_id=timeline_id,
+            cutoff_step=step,
+        )
+        edge_state = dict(active_edge.state) if (active_edge and rd.merge) else {}
+        edge_state.update(rd.state)
+        edge_state = {k: v for k, v in edge_state.items() if v is not None}
+
+        has_edge_mutation = bool(rd.state or not rd.merge)
+        caused_by = rd.caused_by_episode_id
+        if caused_by is None and active_edge and rd.merge and not has_edge_mutation:
+            caused_by = active_edge.caused_by_episode_id
+        reason = rd.reason
+        if reason is None and active_edge and rd.merge and not has_edge_mutation:
+            reason = active_edge.reason
+
+        if active_edge is not None and edge_state == active_edge.state:
+            return
+
+        edge_payload = dict(edge_state)
+        if caused_by is not None or reason is not None:
+            edge_payload["_provenance"] = {
+                "caused_by_episode_id": caused_by,
+                "reason": reason,
+            }
+
+        self.conn.execute(
+            """
+            INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, relation_type, source_id, target_id, is_tombstone, payload)
+            VALUES (?, ?, 'edge', ?, ?, ?, ?, 0, ?)
+            """,
+            (timeline_id, step, subject_key, rd.relation_type, rd.source_id, rd.target_id, json.dumps(edge_payload)),
+        )
+
     def apply_delta(
         self,
         step: int,
@@ -399,18 +543,20 @@ class _GraphStoreMixin:
         committed_episodes: list[EpisodeRecord] = []
 
         with self.transaction():
-            # 0. Process episodes first so their IDs exist if referenced by deltas in the same step
             if delta.episodes:
                 to_insert: list[tuple[EpisodeRecord, bytes]] = []
                 for ep in delta.episodes:
                     ep_id = ep.episode_id or f"ep_{step}_{uuid.uuid4().hex[:8]}"
-                    item = ep.model_copy(update={"episode_id": ep_id, "step": step, "timeline_id": timeline_id})
-                    emb = (episode_embeddings or {}).get(ep_id) or (episode_embeddings or {}).get(ep.episode_id, b"")
+                    item = ep.model_copy(
+                        update={"episode_id": ep_id, "step": step, "timeline_id": timeline_id}
+                    )
+                    emb = (episode_embeddings or {}).get(ep_id) or (episode_embeddings or {}).get(
+                        ep.episode_id, b""
+                    )
                     to_insert.append((item, emb))
                     committed_episodes.append(item)
                 self._insert_episodes_in_tx(to_insert, timeline_id=timeline_id)
 
-            # 0b. Process epistemic inform deltas
             for inf in delta.inform:
                 self.conn.execute(
                     """
@@ -420,139 +566,11 @@ class _GraphStoreMixin:
                     (timeline_id, step, inf.episode_id, inf.entity_id, inf.epistemic, inf.believed_summary),
                 )
 
-            # 1. Process entity deltas
             for ed in delta.entities:
-                if ed.remove:
-                    self.conn.execute(
-                        """
-                        INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, source_id, target_id, is_tombstone, payload)
-                        VALUES (?, ?, 'entity', ?, ?, NULL, 1, '{}')
-                        """,
-                        (timeline_id, step, ed.entity_id, ed.entity_id),
-                    )
-                    continue
+                self._apply_entity_delta_in_tx(ed, step=step, timeline_id=timeline_id)
 
-                active = self.get_active_entity(ed.entity_id, timeline_id=timeline_id, cutoff_step=step)
-                base_attrs = dict(active.base_attributes) if active else {}
-                base_attrs.update(ed.base_attributes)
-
-                current_state = dict(active.state) if (active and ed.merge_state) else {}
-                current_state.update(ed.state)
-                current_state = {k: v for k, v in current_state.items() if v is not None}
-
-                current_private = dict(active.private_state) if (active and ed.merge_state) else {}
-                current_private.update(ed.private_state)
-                current_private = {k: v for k, v in current_private.items() if v is not None}
-
-                canonical_name = ed.canonical_name or (active.canonical_name if active else ed.entity_id)
-                kind = ed.kind or (active.kind if active else "character")
-
-                has_state_mutation = bool(ed.state or ed.private_state or not ed.merge_state)
-                caused_by = ed.caused_by_episode_id
-                if caused_by is None and active and ed.merge_state and not has_state_mutation:
-                    caused_by = active.caused_by_episode_id
-                reason = ed.reason
-                if reason is None and active and ed.merge_state and not has_state_mutation:
-                    reason = active.reason
-
-                is_noop_entity_state = (
-                    active is not None
-                    and kind == active.kind
-                    and canonical_name == active.canonical_name
-                    and base_attrs == active.base_attributes
-                    and current_state == active.state
-                    and current_private == active.private_state
-                )
-                if not is_noop_entity_state:
-                    payload: dict[str, Any] = {
-                        "kind": kind,
-                        "canonical_name": canonical_name,
-                        "base_attributes": base_attrs,
-                        "state": current_state,
-                    }
-                    if current_private:
-                        payload["private_state"] = current_private
-                    if caused_by is not None:
-                        payload["caused_by_episode_id"] = caused_by
-                    if reason is not None:
-                        payload["reason"] = reason
-
-                    self.conn.execute(
-                        """
-                        INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, source_id, target_id, is_tombstone, payload)
-                        VALUES (?, ?, 'entity', ?, ?, NULL, 0, ?)
-                        """,
-                        (timeline_id, step, ed.entity_id, ed.entity_id, json.dumps(payload)),
-                    )
-
-                for alias in ed.add_aliases:
-                    self._insert_alias_revision(
-                        timeline_id=timeline_id,
-                        step=step,
-                        entity_id=ed.entity_id,
-                        alias=alias,
-                        default_kind="epithet",
-                    )
-
-                for alias in ed.remove_aliases:
-                    alias_key = self.alias_subject_key(ed.entity_id, alias)
-                    self.conn.execute(
-                        """
-                        INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, source_id, target_id, is_tombstone, payload)
-                        VALUES (?, ?, 'alias', ?, ?, NULL, 1, '{}')
-                        """,
-                        (timeline_id, step, alias_key, ed.entity_id),
-                    )
-
-            # 2. Process edge deltas
             for rd in delta.edges:
-                subject_key = self.edge_subject_key(rd.source_id, rd.target_id, rd.relation_type)
-                if rd.remove:
-                    self.conn.execute(
-                        """
-                        INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, relation_type, source_id, target_id, is_tombstone, payload)
-                        VALUES (?, ?, 'edge', ?, ?, ?, ?, 1, '{}')
-                        """,
-                        (timeline_id, step, subject_key, rd.relation_type, rd.source_id, rd.target_id),
-                    )
-                    continue
-
-                active_edge = self.get_active_edge(
-                    rd.source_id,
-                    rd.target_id,
-                    relation_type=rd.relation_type,
-                    timeline_id=timeline_id,
-                    cutoff_step=step,
-                )
-                edge_state = dict(active_edge.state) if (active_edge and rd.merge) else {}
-                edge_state.update(rd.state)
-                edge_state = {k: v for k, v in edge_state.items() if v is not None}
-
-                has_edge_mutation = bool(rd.state or not rd.merge)
-                caused_by = rd.caused_by_episode_id
-                if caused_by is None and active_edge and rd.merge and not has_edge_mutation:
-                    caused_by = active_edge.caused_by_episode_id
-                reason = rd.reason
-                if reason is None and active_edge and rd.merge and not has_edge_mutation:
-                    reason = active_edge.reason
-
-                if active_edge is not None and edge_state == active_edge.state:
-                    continue
-
-                edge_payload = dict(edge_state)
-                if caused_by is not None or reason is not None:
-                    edge_payload["_provenance"] = {
-                        "caused_by_episode_id": caused_by,
-                        "reason": reason,
-                    }
-
-                self.conn.execute(
-                    """
-                    INSERT INTO graph_revisions (timeline_id, step, record_type, subject_key, relation_type, source_id, target_id, is_tombstone, payload)
-                    VALUES (?, ?, 'edge', ?, ?, ?, ?, 0, ?)
-                    """,
-                    (timeline_id, step, subject_key, rd.relation_type, rd.source_id, rd.target_id, json.dumps(edge_payload)),
-                )
+                self._apply_edge_delta_in_tx(rd, step=step, timeline_id=timeline_id)
 
         return committed_episodes
 
