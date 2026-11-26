@@ -855,19 +855,19 @@ Pass `include_background_edges=True` to also render off-screen 1-hop ties (`ctx.
 ```
 
 #### 2. `TranslationPreset`
-Emphasizes Tier 1 binding grammar/exonyms, T–V register, and target-language voice anchors:
+Emphasizes Tier 1 binding grammar/exonyms, entity kinds, translator `notes`, T–V register, and target-language voice anchors—rendering clean human names by default (`show_entity_ids=False`) while keeping full canonical IDs in `build_extraction_messages()`. Supports `include_kind` (`True`, `"non_character"`, `False`), `extra_attributes`, `max_attr_chars`, `empty_text`, `max_voice_per_speaker`, and priority-ordered `max_context_chars` budgeting:
 
 ```markdown
 ## Scene character state & register — binding
-- Arthur (char_arthur): target='Artur', M, type_1 [mood: calm]
-- Merlin (char_merlin): target='Merlin', M, type_1
-- char_arthur → char_merlin: register=Vi, tone=calm
+- Arthur [character]: target='Artur', M, type_1 [mood: calm]; notes: clipped royal cadence
+- Merlin [character]: target='Merlin', M, type_1
+- Arthur → Merlin: register=Vi, tone=calm
 
 ## Relevant narrative episodes — context
-- [Step 82 | known to: char_arthur, char_merlin] Arthur and Merlin argued fiercely over the war plans.
+- [Step 82 | known to: Arthur, Merlin] Arthur and Merlin argued fiercely over the war plans.
 
 ## Character voice bank — stylistic anchor
-- char_arthur (Vi): "Molim vas da me saslušate pažljivo, jer kraljevstvo visi o koncu sudbine."
+- Arthur (Vi): "Molim vas da me saslušate pažljivo, jer kraljevstvo visi o koncu sudbine."
 ```
 
 #### 3. `SimulationPreset`

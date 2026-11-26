@@ -33,22 +33,45 @@ Only co-present scene characters (`ctx.entities`) and edges between them (`ctx.a
 
 ## 2. `TranslationPreset`
 
-Designed for literary and video game localization pipelines. Emphasizes grammatical declension/gender rules, target exonyms, register constraints, and historical episodic context.
+Designed for literary and video game localization pipelines. Emphasizes grammatical declension/gender rules, target exonyms, entity kinds, translator notes, register constraints, and historical episodic context.
 
-Only co-present scene characters (`ctx.entities`) and edges between them (`ctx.active_edges`) are rendered in the binding state block, and `| ignorant: ...` annotations only check co-present scene characters. Initialize with `TranslationPreset(include_background_edges=True)` to optionally render `ctx.background_edges` under a separate `## Off-screen character ties — reference only` block. When configured with `SchemaPolicy.lexicon_only()` (Tiers 1 + 4 disabled for edges/state), it renders a clean `## Terminology & glossary — binding` block without mood or edge lines.
+By default, `TranslationPreset` renders **translator-friendly prose prompts** using human-readable display names (no raw `char_*` / `loc_*` internal IDs that can leak into translated output on smaller local models), while `engine.build_extraction_messages()` continues to pass full canonical `entity_id`s to the extractor LLM. Colliding canonical names are automatically disambiguated by `[kind]` (when kinds differ) or `({entity_id})` (when both name and kind collide).
+
+Only co-present scene entities (`ctx.entities`) and edges between them (`ctx.active_edges`) are rendered in the binding state block, and `| ignorant: ...` annotations only check co-present scene characters. Off-screen witnesses referenced in episodes or background edges are resolved via `ctx.entity_names`. When configured with `SchemaPolicy.lexicon_only()` (Tiers 1 + 4), it renders a clean `## Terminology & glossary — binding` block without mood or edge lines. Empty sections omit their headers, and a completely empty `StepContext` returns `empty_text` (default `""`).
+
+### Configuration Controls
+
+```python
+from canonarc import SchemaPolicy, TranslationPreset
+
+preset = TranslationPreset(
+    policy=SchemaPolicy.full(),
+    include_background_edges=False,  # True adds "## Off-screen character ties — reference only"
+    show_entity_ids=False,           # True restores legacy "(char_arthur)" & raw IDs on edges/episodes/voice
+    include_kind=True,               # True | "non_character" | False
+    extra_attributes=("notes",),     # Extra base_attributes keys appended per entity
+    max_attr_chars=160,              # Word-boundary cap for verbose notes/attributes (None = unlimited)
+    empty_text="",                   # Returned when ctx has no entities, edges, episodes, or voice exemplars
+    max_voice_per_speaker=2,         # Optional per-speaker Voice Bank cap (preserves rank order)
+    max_context_chars=2400,          # Optional total char budget; trims whole lines in reverse priority order
+)
+```
+
+When `max_context_chars` is exceeded, whole lines are trimmed cleanly (never mid-line) in reverse priority order so binding translation rules survive longest: **background edges → episodes → voice exemplars → active edges → entities** (with a warning logged if any binding entity or active edge line is truncated).
 
 ### Injected Context Format
 ```markdown
 ## Scene character state & register — binding
-- Arthur (char_arthur): target='Artur', M, type_1 [mood: calm]
-- Merlin (char_merlin): target='Merlin', M, type_1
-- char_arthur → char_merlin: register=Vi, tone=calm
+- Arthur [character]: target='Artur', M, type_1 [mood: calm]; notes: clipped royal cadence
+- Iron Citadel [location]: target='Gvozdena citadela', F
+- Merlin [character]: target='Merlin', M, type_1
+- Arthur → Merlin: register=Vi, tone=calm
 
 ## Relevant narrative episodes — context
-- [Step 82 | known to: char_arthur, char_merlin] Arthur and Merlin argued fiercely over the war plans.
+- [Step 82 | known to: Arthur, Merlin] Arthur and Merlin argued fiercely over the war plans.
 
 ## Character voice bank — stylistic anchor
-- char_arthur (Vi): "Molim vas da me saslušate pažljivo, jer kraljevstvo visi o koncu sudbine."
+- Arthur (Vi): "Molim vas da me saslušate pažljivo, jer kraljevstvo visi o koncu sudbine."
 ```
 
 ---

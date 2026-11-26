@@ -2155,6 +2155,30 @@ class CanonArcEngine:
                     top_k=eff_top_k_episodes,
                 )
 
+        entity_names: dict[str, str] = {
+            e.entity_id: e.canonical_name
+            for e in (*projected_entities, *projected_related_entities)
+        }
+        referenced_ids: set[str] = set()
+        for edge in (*projected_edges, *projected_background_edges):
+            referenced_ids.add(edge.source_id)
+            referenced_ids.add(edge.target_id)
+        for ex in voice_exemplars:
+            if ex.speaker_id:
+                referenced_ids.add(ex.speaker_id)
+            if ex.addressee_id:
+                referenced_ids.add(ex.addressee_id)
+        for ep in episodes:
+            referenced_ids.update(ep.known_by.keys())
+        for missing_id in sorted(referenced_ids - entity_names.keys()):
+            if missing_id.startswith("masked:"):
+                continue
+            rec = self.store.get_active_entity(
+                missing_id, timeline_id=tl, cutoff_step=cutoff_step
+            )
+            if rec is not None:
+                entity_names[missing_id] = rec.canonical_name
+
         return StepContext(
             timeline_id=tl,
             step=step,
@@ -2168,6 +2192,7 @@ class CanonArcEngine:
             background_edges=projected_background_edges,
             voice_exemplars=voice_exemplars,
             episodes=episodes,
+            entity_names=entity_names,
         )
 
     def _resolve_speaker_voice_targets(
