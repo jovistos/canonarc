@@ -17,6 +17,7 @@ from .engine import (
     MentionResolver,
     StepTransaction,
     TimelineSession,
+    compute_step_hash,
 )
 from .episodic import (
     DEFAULT_EPISODIC_POLICY,
@@ -52,6 +53,7 @@ from .models import (
     EpistemicMode,
     InformDelta,
     ResolvedMention,
+    StepCheckpoint,
     StepContext,
     StepDelta,
     TimelineInfo,
@@ -65,7 +67,7 @@ from .presets import (
     SimulationPreset,
     TranslationPreset,
 )
-from .store import CausalStore, MemoryStore, TimelineBranchConflictError
+from .store import CausalStore, CheckpointStore, MemoryStore, TimelineBranchConflictError
 from .voice import IngestionGate, VoiceBank
 
 __all__ = [
@@ -80,6 +82,7 @@ __all__ = [
     "CallableInflectionGenerator",
     "CanonArcEngine",
     "CausalStore",
+    "CheckpointStore",
     "DefaultEpisodeRanker",
     "DefaultLexicalResolver",
     "DeltaExtractor",
@@ -110,6 +113,7 @@ __all__ = [
     "ResolvedMention",
     "SchemaPolicy",
     "SimulationPreset",
+    "StepCheckpoint",
     "StepContext",
     "StepDelta",
     "StepTransaction",
@@ -121,6 +125,7 @@ __all__ = [
     "VoiceBank",
     "VoiceExemplar",
     "build_inflection_prompt",
+    "compute_step_hash",
     "embed_texts_batch",
     "get_embedder_info",
     "get_model_pricing_per_1m_usd",

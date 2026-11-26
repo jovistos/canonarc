@@ -44,8 +44,12 @@ DELETE FROM graph_revisions WHERE timeline_id = :tl AND step > :step;
 DELETE FROM voice_exemplars WHERE timeline_id = :tl AND step > :step;
 DELETE FROM episodes WHERE timeline_id = :tl AND step > :step;
 DELETE FROM episode_epistemics WHERE timeline_id = :tl AND step > :step;
+DELETE FROM step_checkpoints WHERE timeline_id = :tl AND step > :step;
 ```
 Execution takes **< 1ms**, making it suitable for 60 FPS game engine main loops.
+
+### Step Checkpoints & Resumability
+Every `commit_step()` records a lineage-aware row in `step_checkpoints(timeline_id, step, content_hash, metadata_json)`—even for empty-delta steps—so `TimelineInfo.head_step` advances accurately and resumable pipelines can query `engine.is_step_committed(step, content_hash=...)` and `engine.last_committed_step()`. Rolling back with `rollback_to(step)` automatically removes checkpoints at `> step`.
 
 ---
 

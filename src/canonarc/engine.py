@@ -32,6 +32,7 @@ from .models import (
     EpistemicMode,
     InformDelta,
     ResolvedMention,
+    StepCheckpoint,
     StepContext,
     StepDelta,
     TimelineInfo,
@@ -44,8 +45,29 @@ from .presets import (
     SchemaPolicy,
 )
 from .resolver import DefaultLexicalResolver, MentionResolver
-from .store import CausalStore, MemoryStore, TimelineBranchConflictError
+from .store import CausalStore, CheckpointStore, MemoryStore, TimelineBranchConflictError
 from .voice import IngestionGate, VoiceBank
+
+
+def compute_step_hash(
+    text: str,
+    *,
+    model: str | None = None,
+    prompt_version: str | None = None,
+    extra: dict[str, Any] | None = None,
+) -> str:
+    """Computes a deterministic SHA-256 hex digest for step resumability checks."""
+    payload: dict[str, Any] = {"text": text}
+    if model is not None:
+        payload["model"] = model
+    if prompt_version is not None:
+        payload["prompt_version"] = prompt_version
+    if extra:
+        payload["extra"] = extra
+    encoded = json.dumps(
+        payload, sort_keys=True, ensure_ascii=False, separators=(",", ":")
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 class StepTransaction:
@@ -69,6 +91,8 @@ class StepTransaction:
         prev_text: str = "",
         next_text: str = "",
         lang: str | None = None,
+        content_hash: str | None = None,
+        checkpoint_metadata: dict[str, Any] | None = None,
     ) -> None:
         self.engine = engine
         self.step = step
@@ -91,6 +115,11 @@ class StepTransaction:
         self._staged_exemplars: list[VoiceExemplar] = []
         self._staged_episodes: list[EpisodeRecord] = []
         self._bypass_gate = False
+        self._committed = False
+        self._content_hash: str | None = content_hash
+        self._checkpoint_metadata: dict[str, Any] | None = (
+            dict(checkpoint_metadata) if checkpoint_metadata is not None else None
+        )
 
     def __enter__(self) -> Self:
         if self.rerun_clean:
@@ -135,12 +164,19 @@ class StepTransaction:
         episodes: Sequence[EpisodeRecord] = (),
         *,
         bypass_gate: bool = False,
+        content_hash: str | None = None,
+        checkpoint_metadata: dict[str, Any] | None = None,
     ) -> None:
         """Stage mutations to be committed when the transaction context exits successfully."""
+        self._committed = True
         self._staged_delta = delta
         self._staged_exemplars.extend(exemplars)
         self._staged_episodes.extend(episodes)
         self._bypass_gate = bypass_gate
+        if content_hash is not None:
+            self._content_hash = content_hash
+        if checkpoint_metadata is not None:
+            self._checkpoint_metadata = dict(checkpoint_metadata)
 
     def extract_and_commit(
         self,
@@ -152,6 +188,8 @@ class StepTransaction:
         bypass_gate: bool = False,
         prev_text: str | None = None,
         next_text: str | None = None,
+        content_hash: str | None = None,
+        checkpoint_metadata: dict[str, Any] | None = None,
     ) -> StepDelta:
         """Runs the configured DeltaExtractor on scene_text, normalizes IDs, and stages the StepDelta."""
         active_extractor = extractor or self.engine.extractor
@@ -175,7 +213,14 @@ class StepTransaction:
             )
         self.last_raw_delta = raw_delta
         normalized = self.engine.normalize_delta(raw_delta, step=self.step, timeline_id=self.timeline_id)
-        self.commit(normalized, exemplars=exemplars, episodes=episodes, bypass_gate=bypass_gate)
+        self.commit(
+            normalized,
+            exemplars=exemplars,
+            episodes=episodes,
+            bypass_gate=bypass_gate,
+            content_hash=content_hash,
+            checkpoint_metadata=checkpoint_metadata,
+        )
         return normalized
 
     def __exit__(self, exc_type: object, exc_val: object, exc_tb: object) -> None:
@@ -183,7 +228,7 @@ class StepTransaction:
             with self.engine._store_transaction():
                 if self.rerun_clean:
                     self.engine.rollback_to(self.step - 1, timeline_id=self.timeline_id)
-                if self._staged_delta or self._staged_exemplars or self._staged_episodes:
+                if self._committed or self._staged_delta or self._staged_exemplars or self._staged_episodes:
                     self.engine.commit_step(
                         self.step,
                         delta=self._staged_delta,
@@ -191,6 +236,8 @@ class StepTransaction:
                         episodes=self._staged_episodes,
                         bypass_gate=self._bypass_gate,
                         timeline_id=self.timeline_id,
+                        content_hash=self._content_hash,
+                        checkpoint_metadata=self._checkpoint_metadata,
                     )
 
 
@@ -307,6 +354,8 @@ class TimelineSession:
         prev_text: str = "",
         next_text: str = "",
         lang: str | None = None,
+        content_hash: str | None = None,
+        checkpoint_metadata: dict[str, Any] | None = None,
     ) -> StepTransaction:
         return self.engine.step_transaction(
             step,
@@ -323,6 +372,8 @@ class TimelineSession:
             prev_text=prev_text,
             next_text=next_text,
             lang=lang,
+            content_hash=content_hash,
+            checkpoint_metadata=checkpoint_metadata,
         )
 
     def apply_delta(self, step: int, delta: StepDelta) -> list[EpisodeRecord]:
@@ -391,6 +442,8 @@ class TimelineSession:
         episodes: Sequence[EpisodeRecord] = (),
         *,
         bypass_gate: bool = False,
+        content_hash: str | None = None,
+        checkpoint_metadata: dict[str, Any] | None = None,
     ) -> list[VoiceExemplar]:
         return self.engine.commit_step(
             step,
@@ -399,6 +452,34 @@ class TimelineSession:
             episodes=episodes,
             bypass_gate=bypass_gate,
             timeline_id=self.timeline_id,
+            content_hash=content_hash,
+            checkpoint_metadata=checkpoint_metadata,
+        )
+
+    def get_step_checkpoint(self, step: int) -> StepCheckpoint | None:
+        return self.engine.get_step_checkpoint(step, timeline_id=self.timeline_id)
+
+    def is_step_committed(
+        self,
+        step: int,
+        *,
+        content_hash: str | None = None,
+        metadata_match: dict[str, Any] | None = None,
+    ) -> bool:
+        return self.engine.is_step_committed(
+            step,
+            content_hash=content_hash,
+            metadata_match=metadata_match,
+            timeline_id=self.timeline_id,
+        )
+
+    def last_committed_step(self) -> int | None:
+        return self.engine.last_committed_step(timeline_id=self.timeline_id)
+
+    def list_step_checkpoints(self, *, cutoff_step: int | None = None) -> list[StepCheckpoint]:
+        return self.engine.list_step_checkpoints(
+            timeline_id=self.timeline_id,
+            cutoff_step=cutoff_step,
         )
 
     def consolidate_episodes(self, step: int, **kwargs: Any) -> EpisodeRecord | None:
@@ -1451,6 +1532,8 @@ class CanonArcEngine:
         prev_text: str = "",
         next_text: str = "",
         lang: str | None = None,
+        content_hash: str | None = None,
+        checkpoint_metadata: dict[str, Any] | None = None,
     ) -> StepTransaction:
         return StepTransaction(
             self,
@@ -1468,6 +1551,8 @@ class CanonArcEngine:
             prev_text=prev_text,
             next_text=next_text,
             lang=lang,
+            content_hash=content_hash,
+            checkpoint_metadata=checkpoint_metadata,
         )
 
     # --- State & Episode Mutation ---
@@ -1776,12 +1861,17 @@ class CanonArcEngine:
         *,
         bypass_gate: bool = False,
         timeline_id: str | None = None,
+        content_hash: str | None = None,
+        checkpoint_metadata: dict[str, Any] | None = None,
     ) -> list[VoiceExemplar]:
         tl = timeline_id or self.active_timeline
         for hook in self._hooks:
             hook.on_before_commit(step, tl, delta, exemplars, episodes)
         committed_episodes: list[EpisodeRecord] = []
         indexed: list[VoiceExemplar] = []
+        record_cp = getattr(self.store, "record_step_checkpoint", None)
+        if not callable(record_cp) and (content_hash is not None or checkpoint_metadata is not None):
+            raise NotImplementedError("Active store backend does not support step checkpoints.")
         with self._store_transaction():
             if delta:
                 committed_episodes.extend(self.apply_delta(step, delta, timeline_id=tl))
@@ -1791,9 +1881,77 @@ class CanonArcEngine:
                 indexed = self.index_voice_exemplars(
                     step, exemplars, bypass_gate=bypass_gate, timeline_id=tl
                 )
+            if callable(record_cp):
+                record_cp(
+                    step,
+                    timeline_id=tl,
+                    content_hash=content_hash,
+                    metadata=checkpoint_metadata,
+                )
         for hook in self._hooks:
             hook.on_after_commit(step, tl, committed_episodes, indexed)
         return indexed
+
+    # --- Step Checkpoints (Resumability) ---
+
+    def _require_checkpoint_store(self) -> CheckpointStore:
+        required = (
+            "record_step_checkpoint",
+            "get_step_checkpoint",
+            "get_last_committed_step",
+            "list_step_checkpoints",
+        )
+        if not all(callable(getattr(self.store, name, None)) for name in required):
+            raise NotImplementedError("Active store backend does not support step checkpoints.")
+        return self.store  # type: ignore[return-value]
+
+    def get_step_checkpoint(
+        self,
+        step: int,
+        *,
+        timeline_id: str | None = None,
+    ) -> StepCheckpoint | None:
+        """Returns the lineage-resolved StepCheckpoint for `step`, or None if not committed."""
+        tl = timeline_id or self.active_timeline
+        return self._require_checkpoint_store().get_step_checkpoint(step, timeline_id=tl)
+
+    def is_step_committed(
+        self,
+        step: int,
+        *,
+        content_hash: str | None = None,
+        metadata_match: dict[str, Any] | None = None,
+        timeline_id: str | None = None,
+    ) -> bool:
+        """Returns True if `step` is checkpointed on the timeline lineage (and matches hash/metadata if given)."""
+        cp = self.get_step_checkpoint(step, timeline_id=timeline_id)
+        if cp is None:
+            return False
+        if content_hash is not None and cp.content_hash != content_hash:
+            return False
+        if metadata_match is not None:
+            for key, expected in metadata_match.items():
+                if key not in cp.metadata or cp.metadata[key] != expected:
+                    return False
+        return True
+
+    def last_committed_step(self, *, timeline_id: str | None = None) -> int | None:
+        """Returns the highest checkpointed step along the timeline lineage, or None if none committed."""
+        tl = timeline_id or self.active_timeline
+        return self._require_checkpoint_store().get_last_committed_step(timeline_id=tl)
+
+    def list_step_checkpoints(
+        self,
+        *,
+        timeline_id: str | None = None,
+        cutoff_step: int | None = None,
+    ) -> list[StepCheckpoint]:
+        """Returns lineage-resolved StepCheckpoints in ascending step order."""
+        tl = timeline_id or self.active_timeline
+        return self._require_checkpoint_store().list_step_checkpoints(
+            timeline_id=tl,
+            cutoff_step=cutoff_step,
+        )
 
     # --- Time-Travel Operations ---
 
