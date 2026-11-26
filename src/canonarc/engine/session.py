@@ -380,6 +380,7 @@ class TimelineSession:
         include_edges: bool | None = None,
         include_aliases: bool = True,
         include_inflections: bool | None = None,
+        include_provenance: bool = False,
         lang: str | None = None,
     ) -> tuple[str, BibleExportResult]:
         return self.engine.render_bible(
@@ -391,6 +392,7 @@ class TimelineSession:
             include_edges=include_edges,
             include_aliases=include_aliases,
             include_inflections=include_inflections,
+            include_provenance=include_provenance,
             lang=lang,
         )
 
@@ -405,6 +407,7 @@ class TimelineSession:
         include_edges: bool | None = None,
         include_aliases: bool = True,
         include_inflections: bool | None = None,
+        include_provenance: bool = False,
         lang: str | None = None,
         excel_bom: bool = False,
     ) -> BibleExportResult:
@@ -418,6 +421,7 @@ class TimelineSession:
             include_edges=include_edges,
             include_aliases=include_aliases,
             include_inflections=include_inflections,
+            include_provenance=include_provenance,
             lang=lang,
             excel_bom=excel_bom,
         )
@@ -434,6 +438,7 @@ class TimelineSession:
         batch_size: int = 25,
         dry_run: bool = False,
         column_map: dict[str, str] | None = None,
+        ignore_columns: Sequence[str] | None = None,
     ) -> BibleSyncReport:
         return self.engine.sync_bible(
             path,
@@ -446,6 +451,37 @@ class TimelineSession:
             batch_size=batch_size,
             dry_run=dry_run,
             column_map=column_map,
+            ignore_columns=ignore_columns,
+        )
+
+    def sync_bible_if_changed(
+        self,
+        path: str | Path,
+        *,
+        format: Literal["auto", "csv", "json"] = "auto",
+        step: int = 0,
+        mode: BibleSyncMode = "upsert",
+        target_lang: str | None = None,
+        auto_inflect: bool = True,
+        batch_size: int = 25,
+        dry_run: bool = False,
+        column_map: dict[str, str] | None = None,
+        ignore_columns: Sequence[str] | None = None,
+        force: bool = False,
+    ) -> BibleSyncReport:
+        return self.engine.sync_bible_if_changed(
+            path,
+            format=format,
+            step=step,
+            timeline_id=self.timeline_id,
+            mode=mode,
+            target_lang=target_lang,
+            auto_inflect=auto_inflect,
+            batch_size=batch_size,
+            dry_run=dry_run,
+            column_map=column_map,
+            ignore_columns=ignore_columns,
+            force=force,
         )
 
     def bootstrap_bible(

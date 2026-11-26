@@ -60,6 +60,21 @@ _CSV_RESERVED_COLS: frozenset[str] = frozenset(
     }
 )
 
+_CSV_PROVENANCE_COLS: tuple[str, ...] = (
+    "first_seen_step",
+    "first_seen_source",
+)
+
+_CSV_READONLY_COLS: frozenset[str] = frozenset(_CSV_PROVENANCE_COLS)
+
+_PROVENANCE_METADATA_KEYS: tuple[str, ...] = (
+    "source_ref",
+    "chapter_id",
+    "filename",
+    "source_file",
+    "label",
+)
+
 _INFLECTION_SENSITIVE_ATTRS: tuple[str, ...] = (
     "target_name",
     "target_lang",
@@ -90,6 +105,8 @@ class BibleSyncReport(BaseModel):
     step: int
     mode: BibleSyncMode
     dry_run: bool = False
+    skipped: bool = False
+    content_hash: str | None = None
     created_entities: list[str] = Field(default_factory=list)
     updated_entities: list[str] = Field(default_factory=list)
     removed_entities: list[str] = Field(default_factory=list)
@@ -118,6 +135,12 @@ class BibleSyncReport(BaseModel):
 
     def summary(self) -> str:
         prefix = "[DRY RUN] " if self.dry_run else ""
+        if self.skipped:
+            return (
+                f"{prefix}[SKIPPED - unchanged] Bible sync "
+                f"({self.format}, mode={self.mode}, timeline={self.timeline_id}, step={self.step}): "
+                f"{self.source}"
+            )
         parts = [
             f"{prefix}Bible sync ({self.format}, mode={self.mode}, timeline={self.timeline_id}, step={self.step}):",
             (

@@ -96,6 +96,7 @@ class EntityRecord(BaseModel):
     )
     valid_from_step: int = 0
     valid_to_step: int | None = None
+    first_seen_step: int | None = None
     # Causal provenance (Pitfall 2) & state trajectory (Pitfall 5)
     caused_by_episode_id: str | None = None
     reason: str | None = None
@@ -139,6 +140,7 @@ class DirectedEdgeRecord(BaseModel):
     )
     valid_from_step: int = 0
     valid_to_step: int | None = None
+    first_seen_step: int | None = None
     # Causal provenance (Pitfall 2) & state trajectory (Pitfall 5)
     caused_by_episode_id: str | None = None
     reason: str | None = None

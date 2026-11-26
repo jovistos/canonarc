@@ -38,6 +38,7 @@ from .bible import (
     export_bible,
     render_bible,
     sync_bible,
+    sync_bible_if_changed,
 )
 from .embedders import (
     CallableEmbedder,
@@ -128,7 +129,7 @@ from .presets import (
     TierProfile,
     TranslationPreset,
 )
-from .store import CausalStore, CheckpointStore, MemoryStore, TimelineBranchConflictError
+from .store import CausalStore, CheckpointStore, MemoryStore, MetadataStore, TimelineBranchConflictError
 from .text_masking import (
     COMMON_MARKUP_PATTERNS,
     COMMON_PLACEHOLDER_PATTERNS,
@@ -233,6 +234,7 @@ __all__ = [
     "LLMVoiceQualityScorer",
     "MemoryStore",
     "MentionResolver",
+    "MetadataStore",
     "NearDuplicateEntityRule",
     "OfflineNgramEmbedder",
     "OllamaEmbedder",
@@ -292,4 +294,5 @@ __all__ = [
     "score_voice_candidates_batch",
     "strip_ignored_spans",
     "sync_bible",
+    "sync_bible_if_changed",
 ]

@@ -30,6 +30,7 @@ from ..bible import (
     export_bible as _export_bible,
     render_bible as _render_bible,
     sync_bible as _sync_bible,
+    sync_bible_if_changed as _sync_bible_if_changed,
 )
 from ..embedders import Embedder
 from ..episodic import EpisodeConsolidator, EpisodeRanker
@@ -968,6 +969,7 @@ class CanonArcEngine:
         include_edges: bool | None = None,
         include_aliases: bool = True,
         include_inflections: bool | None = None,
+        include_provenance: bool = False,
         lang: str | None = None,
     ) -> tuple[str, BibleExportResult]:
         return _render_bible(
@@ -980,6 +982,7 @@ class CanonArcEngine:
             include_edges=include_edges,
             include_aliases=include_aliases,
             include_inflections=include_inflections,
+            include_provenance=include_provenance,
             lang=lang,
         )
 
@@ -995,6 +998,7 @@ class CanonArcEngine:
         include_edges: bool | None = None,
         include_aliases: bool = True,
         include_inflections: bool | None = None,
+        include_provenance: bool = False,
         lang: str | None = None,
         excel_bom: bool = False,
     ) -> BibleExportResult:
@@ -1009,6 +1013,7 @@ class CanonArcEngine:
             include_edges=include_edges,
             include_aliases=include_aliases,
             include_inflections=include_inflections,
+            include_provenance=include_provenance,
             lang=lang,
             excel_bom=excel_bom,
         )
@@ -1026,6 +1031,7 @@ class CanonArcEngine:
         batch_size: int = 25,
         dry_run: bool = False,
         column_map: dict[str, str] | None = None,
+        ignore_columns: Sequence[str] | None = None,
     ) -> BibleSyncReport:
         return _sync_bible(
             self,
@@ -1039,6 +1045,39 @@ class CanonArcEngine:
             batch_size=batch_size,
             dry_run=dry_run,
             column_map=column_map,
+            ignore_columns=ignore_columns,
+        )
+
+    def sync_bible_if_changed(
+        self,
+        path: str | Path,
+        *,
+        format: Literal["auto", "csv", "json"] = "auto",
+        step: int = 0,
+        timeline_id: str | None = None,
+        mode: BibleSyncMode = "upsert",
+        target_lang: str | None = None,
+        auto_inflect: bool = True,
+        batch_size: int = 25,
+        dry_run: bool = False,
+        column_map: dict[str, str] | None = None,
+        ignore_columns: Sequence[str] | None = None,
+        force: bool = False,
+    ) -> BibleSyncReport:
+        return _sync_bible_if_changed(
+            self,
+            path,
+            format=format,
+            step=step,
+            timeline_id=timeline_id,
+            mode=mode,
+            target_lang=target_lang,
+            auto_inflect=auto_inflect,
+            batch_size=batch_size,
+            dry_run=dry_run,
+            column_map=column_map,
+            ignore_columns=ignore_columns,
+            force=force,
         )
 
     def bootstrap_bible(

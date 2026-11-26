@@ -197,6 +197,9 @@ ranked_revisions AS (
         COUNT(*) OVER (
             PARTITION BY record_type, subject_key
         ) AS revision_count,
+        MIN(CASE WHEN is_tombstone = 0 THEN step END) OVER (
+            PARTITION BY record_type, subject_key
+        ) AS first_seen_step,
         LEAD(payload) OVER (
             PARTITION BY record_type, subject_key
             ORDER BY depth ASC, step DESC, revision_id DESC
@@ -219,6 +222,7 @@ SELECT
     source_id,
     target_id,
     valid_from_step,
+    first_seen_step,
     payload,
     revision_count,
     prior_payload,

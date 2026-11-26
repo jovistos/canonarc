@@ -82,17 +82,31 @@ class _GraphStoreMixin:
         for row in rows:
             payload_dict = json.loads(row["payload"])
             rev_offset = 0
+            stored_first_seen: int | None = None
             if isinstance(payload_dict, dict):
                 raw_offset = payload_dict.pop("_revision_count_offset", 0)
                 if isinstance(raw_offset, (int, float)):
                     rev_offset = int(raw_offset)
+                raw_first_seen = payload_dict.pop("_first_seen_step", None)
+                if isinstance(raw_first_seen, (int, float)):
+                    stored_first_seen = int(raw_first_seen)
             prior_payload = None
             prior_step = None
             if row["prior_payload"] is not None and not row["prior_is_tombstone"]:
                 prior_payload = json.loads(row["prior_payload"])
                 if isinstance(prior_payload, dict):
                     prior_payload.pop("_revision_count_offset", None)
+                    prior_payload.pop("_first_seen_step", None)
                 prior_step = row["prior_step"]
+            computed_first_seen = row["first_seen_step"]
+            if stored_first_seen is not None and computed_first_seen is not None:
+                eff_first_seen: int | None = min(int(computed_first_seen), stored_first_seen)
+            elif stored_first_seen is not None:
+                eff_first_seen = stored_first_seen
+            elif computed_first_seen is not None:
+                eff_first_seen = int(computed_first_seen)
+            else:
+                eff_first_seen = row["valid_from_step"]
             results.append(
                 {
                     "record_type": row["record_type"],
@@ -101,6 +115,7 @@ class _GraphStoreMixin:
                     "source_id": row["source_id"],
                     "target_id": row["target_id"],
                     "valid_from_step": row["valid_from_step"],
+                    "first_seen_step": eff_first_seen,
                     "payload": payload_dict,
                     "revision_count": row["revision_count"] + rev_offset,
                     "prior_payload": prior_payload,
@@ -129,6 +144,7 @@ class _GraphStoreMixin:
             state=p.get("state", {}),
             private_state=p.get("private_state", {}),
             valid_from_step=rev["valid_from_step"],
+            first_seen_step=rev.get("first_seen_step", rev["valid_from_step"]),
             caused_by_episode_id=p.get("caused_by_episode_id"),
             reason=p.get("reason"),
             prior_state=prior_state,
@@ -148,6 +164,7 @@ class _GraphStoreMixin:
             relation_type=rev.get("relation_type") or default_relation,
             state=state,
             valid_from_step=rev["valid_from_step"],
+            first_seen_step=rev.get("first_seen_step", rev["valid_from_step"]),
             caused_by_episode_id=caused_by,
             reason=reason,
             prior_state=prior_state,
