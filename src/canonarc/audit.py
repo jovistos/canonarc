@@ -9,8 +9,16 @@ from pydantic import BaseModel, Field
 from rapidfuzz import fuzz
 
 from .embedders import _CJK_CHAR_RE
-from .models import AliasRecord, DirectedEdgeRecord, EntityRecord, EpisodeRecord
+from .models import (
+    AliasRecord,
+    DirectedEdgeRecord,
+    EntityRecord,
+    EpisodeRecord,
+    ResolvedMention,
+    StepContext,
+)
 from .presets import DEFAULT_SCHEMA_POLICY, DomainPreset, SchemaPolicy
+from .resolver import DefaultLexicalResolver, _VOWELS
 
 if TYPE_CHECKING:
     from .engine import CanonArcEngine
@@ -116,6 +124,57 @@ class AuditReport(BaseModel):
                 lines.append(f"      suggestion: {issue.suggestion}")
         return "\n".join(lines)
 
+    def format_repair_instructions(
+        self,
+        *,
+        min_severity: AuditSeverity = "error",
+        max_issues: int | None = None,
+        header: str | None = (
+            "Fix the following terminology/continuity errors in your translation "
+            "while preserving everything else:"
+        ),
+        include_snippets: bool = True,
+    ) -> str:
+        """Formats failed issues at or above min_severity as a compact LLM-ready repair bullet list."""
+        threshold = _SEVERITY_RANK[min_severity]
+        filtered = [i for i in self.issues if _SEVERITY_RANK[i.severity] >= threshold]
+        if not filtered:
+            return ""
+
+        filtered.sort(key=lambda i: _SEVERITY_RANK[i.severity], reverse=True)
+
+        deduped: list[AuditIssue] = []
+        seen_term_subjects: set[str] = set()
+        term_codes = {"exonym_leak", "target_term_mismatch", "target_term_missing"}
+        for issue in filtered:
+            if issue.subject_key and issue.code in term_codes:
+                if issue.subject_key in seen_term_subjects:
+                    continue
+                seen_term_subjects.add(issue.subject_key)
+            deduped.append(issue)
+
+        if max_issues is not None and max_issues >= 0:
+            deduped = deduped[:max_issues]
+        if not deduped:
+            return ""
+
+        lines: list[str] = []
+        if header:
+            lines.append(header)
+        for issue in deduped:
+            subj = f"[{issue.subject_key}] " if issue.subject_key else ""
+            body = (
+                issue.suggestion.strip()
+                if issue.suggestion and issue.suggestion.strip()
+                else issue.message.strip()
+            )
+            snippet = issue.evidence.get("snippet") if include_snippets else None
+            if isinstance(snippet, str) and snippet.strip():
+                lines.append(f"- {subj}{body} (at: {snippet!r})")
+            else:
+                lines.append(f"- {subj}{body}")
+        return "\n".join(lines)
+
 
 @dataclass(frozen=True)
 class AuditContext:
@@ -132,6 +191,7 @@ class AuditContext:
     mutated_edges: tuple[DirectedEdgeRecord, ...] = ()
     episodes: tuple[EpisodeRecord, ...] = ()
     all_episode_ids: frozenset[str] = frozenset()
+    resolved_mentions: tuple[ResolvedMention, ...] = ()
     policy: SchemaPolicy = DEFAULT_SCHEMA_POLICY
     lang: str | None = None
 
@@ -279,6 +339,367 @@ class ExonymLeakRule:
                     suggestion=f"Replace '{canonical}' with '{target_name}' (or its appropriate inflected form).",
                 )
             )
+
+        return issues
+
+
+class TargetTermComplianceRule:
+    """Verifies that entities mentioned in source_text appear in target_text using their locked target_name (or valid inflections)."""
+
+    name: str = "target_term_compliance"
+    required_tiers: frozenset[int] = frozenset({1})
+
+    def __init__(
+        self,
+        *,
+        mismatch_severity: AuditSeverity = "error",
+        missing_severity: AuditSeverity = "warning",
+        case_sensitive: bool = False,
+        fuzzy_stem_threshold: float | None = 85.0,
+        near_miss_threshold: float = 62.0,
+        allow_partial_target_match: bool = True,
+        kinds: Sequence[str] | None = None,
+        snippet_radius: int = 30,
+    ) -> None:
+        self.mismatch_severity: AuditSeverity = mismatch_severity
+        self.missing_severity: AuditSeverity = missing_severity
+        self.case_sensitive = case_sensitive
+        self.fuzzy_stem_threshold = fuzzy_stem_threshold
+        self.near_miss_threshold = near_miss_threshold
+        self.allow_partial_target_match = allow_partial_target_match
+        self.kinds: frozenset[str] | None = (
+            frozenset(k.strip().lower() for k in kinds if k.strip())
+            if kinds is not None
+            else None
+        )
+        self.snippet_radius = snippet_radius
+
+    @staticmethod
+    def _effective_target_lang(entity: EntityRecord, ctx_lang: str | None) -> str | None:
+        if ctx_lang and ctx_lang.strip():
+            return ctx_lang.strip().lower()
+        raw = entity.base_attributes.get("target_lang") or entity.base_attributes.get("lang")
+        if isinstance(raw, str) and raw.strip():
+            return raw.strip().lower()
+        return None
+
+    @staticmethod
+    def _word_matches_token(
+        ref_word_lower: str,
+        raw_token_spans: Sequence[tuple[str, str, int, int]],
+        *,
+        fuzzy_stem_threshold: float | None,
+    ) -> bool:
+        if not ref_word_lower:
+            return False
+        # 1. Exact token match
+        for _, lower_tok, _, _ in raw_token_spans:
+            if lower_tok == ref_word_lower:
+                return True
+
+        if _CJK_CHAR_RE.match(ref_word_lower[0]):
+            return False
+
+        # 2. Short-name inflection stems (3-6 chars) via DefaultLexicalResolver
+        if 3 <= len(ref_word_lower) <= 6:
+            stems = DefaultLexicalResolver._short_name_stems(ref_word_lower)
+            for raw_tok, lower_tok, _, _ in raw_token_spans:
+                if not raw_tok or not raw_tok[0].isupper():
+                    continue
+                for stem, allowed_suffixes in stems:
+                    if lower_tok.startswith(stem) and len(lower_tok) > len(stem):
+                        if lower_tok[len(stem) :] in allowed_suffixes:
+                            return True
+
+        # 3. Conservative leading-stem + rapidfuzz inflection match (for >= 5 char names, e.g. Julijan -> Julijanu, Poaro -> Poaroa)
+        if fuzzy_stem_threshold is not None and len(ref_word_lower) >= 5:
+            stem = (
+                ref_word_lower[:-1]
+                if ref_word_lower[-1] in _VOWELS
+                else ref_word_lower
+            )
+            if len(stem) >= 4:
+                for raw_tok, lower_tok, _, _ in raw_token_spans:
+                    if not raw_tok or not raw_tok[0].isupper():
+                        continue
+                    if lower_tok.startswith(stem) and len(lower_tok) <= len(ref_word_lower) + 4:
+                        if float(fuzz.ratio(ref_word_lower, lower_tok)) >= fuzzy_stem_threshold:
+                            return True
+        return False
+
+    def _matches_target(
+        self,
+        target_name: str,
+        accepted_forms: Sequence[str],
+        source_cue: str,
+        target_text: str,
+        raw_token_spans: Sequence[tuple[str, str, int, int]],
+    ) -> bool:
+        flags = 0 if self.case_sensitive else re.IGNORECASE
+        target_words = [w for w in re.findall(r"\w+", target_name) if len(w) >= 3]
+        source_words = re.findall(r"\w+", source_cue)
+        require_full_multiword = len(target_words) >= 2 and len(source_words) >= 2
+
+        # 1. Exact word-boundary match against target_name or accepted target aliases/inflections.
+        # When both source_cue and target_name are multi-word (e.g. "Hercule Poirot" -> "Erkil Poaro"),
+        # ignore single-word aliases (e.g. "Poaroa") so "Herkul Poaro" doesn't falsely pass via surname alone.
+        for form in accepted_forms:
+            if not form:
+                continue
+            if require_full_multiword and len(re.findall(r"\w+", form)) < 2:
+                continue
+            if re.search(_phrase_pattern(form), target_text, flags):
+                return True
+
+        # 2. Single-word stem/inflection match across accepted forms (only when not requiring full multi-word)
+        if not require_full_multiword:
+            for form in accepted_forms:
+                if " " not in form and self._word_matches_token(
+                    form.lower(),
+                    raw_token_spans,
+                    fuzzy_stem_threshold=self.fuzzy_stem_threshold,
+                ):
+                    return True
+
+        # 3. Multi-word target_name token-by-token stem/inflection match
+        if len(target_words) >= 2:
+            if self.allow_partial_target_match and not require_full_multiword:
+                # Source only used a single-word alias (e.g. 'Poirot'); matching any significant token ('Poaro'/'Poaroa') suffices
+                if any(
+                    self._word_matches_token(
+                        w.lower(),
+                        raw_token_spans,
+                        fuzzy_stem_threshold=self.fuzzy_stem_threshold,
+                    )
+                    for w in target_words
+                ):
+                    return True
+            else:
+                # Multi-word source cue (e.g. 'Hercule Poirot'): every significant token must match
+                # so 'Herkul Poaro' does NOT falsely pass for 'Erkil Poaro'
+                if all(
+                    self._word_matches_token(
+                        w.lower(),
+                        raw_token_spans,
+                        fuzzy_stem_threshold=self.fuzzy_stem_threshold,
+                    )
+                    for w in target_words
+                ):
+                    return True
+
+        return False
+
+    def _find_suspected_variant(
+        self,
+        canonical: str,
+        target_name: str,
+        target_text: str,
+        raw_token_spans: Sequence[tuple[str, str, int, int]],
+    ) -> tuple[str, int, int, float] | None:
+        """Scans capitalized token windows in target_text for a likely wrong transliteration/spelling."""
+        if not raw_token_spans:
+            return None
+        refs = [r.strip().lower() for r in (target_name, canonical) if r and r.strip()]
+        if not refs:
+            return None
+
+        target_word_count = max(1, len(re.findall(r"\w+", target_name)))
+        window_sizes = sorted({1, target_word_count})
+
+        best: tuple[str, int, int, float] | None = None
+        n_tokens = len(raw_token_spans)
+        for win in window_sizes:
+            if win > n_tokens:
+                continue
+            for idx in range(n_tokens - win + 1):
+                slice_spans = raw_token_spans[idx : idx + win]
+                # Require capitalized proper-noun signal
+                if not any(tok and tok[0].isupper() for tok, _, _, _ in slice_spans):
+                    continue
+                if win > 1:
+                    # Only join adjacent tokens separated by whitespace/punctuation (not across sentences)
+                    start = slice_spans[0][2]
+                    end = slice_spans[-1][3]
+                    cand_raw = target_text[start:end]
+                    if re.search(r"[.!?\n;:]", cand_raw):
+                        continue
+                    # For multi-word window, require first token capitalized
+                    if not slice_spans[0][0][0].isupper():
+                        continue
+                else:
+                    cand_raw, _, start, end = slice_spans[0]
+
+                cand_lower = cand_raw.strip().lower()
+                if len(cand_lower) < 3:
+                    continue
+
+                for ref in refs:
+                    ref_wc = max(1, len(re.findall(r"\w+", ref)))
+                    if win != ref_wc:
+                        continue
+                    max_len_diff = max(3, len(ref) // 2)
+                    if abs(len(cand_lower) - len(ref)) > max_len_diff:
+                        continue
+                    score = float(fuzz.ratio(cand_lower, ref))
+                    if score >= self.near_miss_threshold:
+                        if best is None or score > best[3] or (score == best[3] and len(cand_raw) > len(best[0])):
+                            best = (cand_raw, start, end, score)
+        return best
+
+    def check(self, ctx: AuditContext) -> list[AuditIssue]:
+        if not ctx.source_text.strip() or not ctx.target_text.strip():
+            return []
+
+        aliases_by_entity: dict[str, list[AliasRecord]] = {}
+        for a in ctx.aliases:
+            if a.alias.strip():
+                aliases_by_entity.setdefault(a.entity_id, []).append(a)
+
+        mentions_by_entity: dict[str, list[ResolvedMention]] = {}
+        for rm in ctx.resolved_mentions:
+            mentions_by_entity.setdefault(rm.entity_id, []).append(rm)
+
+        raw_token_spans = [
+            (m.group(0), m.group(0).lower(), m.start(), m.end())
+            for m in re.finditer(r"\w+", ctx.target_text)
+        ]
+
+        issues: list[AuditIssue] = []
+        for entity in ctx.entities:
+            if entity.base_attributes.get("allow_omission"):
+                continue
+            if self.kinds is not None and entity.kind.strip().lower() not in self.kinds:
+                continue
+
+            canonical = entity.canonical_name.strip()
+            raw_target = entity.base_attributes.get("target_name")
+            if not canonical or not isinstance(raw_target, str) or not raw_target.strip():
+                continue
+            target_name = raw_target.strip()
+            target_lang = self._effective_target_lang(entity, ctx.lang)
+            ent_aliases = aliases_by_entity.get(entity.entity_id, [])
+
+            # 1. Determine if entity was mentioned in source_text
+            source_cue: str | None = None
+            ent_mentions = mentions_by_entity.get(entity.entity_id)
+            if ent_mentions:
+                source_cue = ent_mentions[0].surface_text.strip() or ent_mentions[0].matched_phrase
+            else:
+                source_cues = [canonical]
+                for a in ent_aliases:
+                    if a.kind == "inflection":
+                        continue
+                    if target_lang is not None and a.lang and a.lang.strip().lower() == target_lang:
+                        continue
+                    source_cues.append(a.alias.strip())
+                for cue in source_cues:
+                    if cue and re.search(_phrase_pattern(cue), ctx.source_text, re.IGNORECASE):
+                        source_cue = cue
+                        break
+
+            if not source_cue:
+                continue
+
+            # 2. Respect allow_source_name and avoid double-reporting verbatim exonym leaks
+            if entity.base_attributes.get("allow_source_name"):
+                if re.search(_phrase_pattern(canonical), ctx.target_text, re.IGNORECASE):
+                    continue
+            elif canonical.lower() != target_name.lower():
+                if not re.search(_phrase_pattern(canonical), target_name, re.IGNORECASE):
+                    if re.search(_phrase_pattern(canonical), ctx.target_text, 0):
+                        continue
+
+            # 3. Build accepted target-side surface forms
+            accepted_forms: list[str] = [target_name]
+            seen_forms = {target_name.lower()}
+            for a in ent_aliases:
+                al_str = a.alias.strip()
+                if not al_str or al_str.lower() in seen_forms:
+                    continue
+                al_lang = a.lang.strip().lower() if a.lang and a.lang.strip() else None
+                is_target_inflection = a.kind == "inflection" and (
+                    target_lang is None or al_lang is None or al_lang == target_lang
+                )
+                is_target_lang_alias = target_lang is not None and al_lang == target_lang
+                if is_target_inflection or is_target_lang_alias:
+                    seen_forms.add(al_str.lower())
+                    accepted_forms.append(al_str)
+
+            if self._matches_target(
+                target_name, accepted_forms, source_cue, ctx.target_text, raw_token_spans
+            ):
+                continue
+
+            # 4. Classify failure: suspected wrong spelling/transliteration (error) vs pure omission (warning)
+            near_miss = self._find_suspected_variant(
+                canonical, target_name, ctx.target_text, raw_token_spans
+            )
+            inflection_examples = [f for f in accepted_forms[1:5]]
+            inflection_hint = (
+                f" (or valid inflections such as {', '.join(inflection_examples)})"
+                if inflection_examples
+                else " (or its appropriate inflected form)"
+            )
+
+            if near_miss is not None:
+                variant_str, start, end, score = near_miss
+                snippet = _extract_snippet(ctx.target_text, start, end, self.snippet_radius)
+                issues.append(
+                    AuditIssue(
+                        code="target_term_mismatch",
+                        rule_name=self.name,
+                        severity=self.mismatch_severity,
+                        step=ctx.step,
+                        timeline_id=ctx.timeline_id,
+                        subject_key=entity.entity_id,
+                        entity_ids=[entity.entity_id],
+                        message=(
+                            f"Source mentioned '{source_cue}' ({entity.entity_id}), but locked "
+                            f"target_name '{target_name}' was not found in target_text "
+                            f"(suspected wrong spelling/transliteration: '{variant_str}')."
+                        ),
+                        evidence={
+                            "canonical_name": canonical,
+                            "matched_source_cue": source_cue,
+                            "expected_target_name": target_name,
+                            "accepted_target_forms": accepted_forms[:8],
+                            "suspected_variant": variant_str,
+                            "variant_similarity": round(score, 2),
+                            "snippet": snippet,
+                        },
+                        suggestion=(
+                            f"Replace '{variant_str}' with locked target form '{target_name}'"
+                            f"{inflection_hint}."
+                        ),
+                    )
+                )
+            else:
+                issues.append(
+                    AuditIssue(
+                        code="target_term_missing",
+                        rule_name=self.name,
+                        severity=self.missing_severity,
+                        step=ctx.step,
+                        timeline_id=ctx.timeline_id,
+                        subject_key=entity.entity_id,
+                        entity_ids=[entity.entity_id],
+                        message=(
+                            f"Source mentioned '{source_cue}' ({entity.entity_id}), but locked "
+                            f"target_name '{target_name}' was not found in target_text."
+                        ),
+                        evidence={
+                            "canonical_name": canonical,
+                            "matched_source_cue": source_cue,
+                            "expected_target_name": target_name,
+                            "accepted_target_forms": accepted_forms[:8],
+                            "suspected_variant": None,
+                        },
+                        suggestion=(
+                            f"Ensure '{source_cue}' is rendered as '{target_name}'"
+                            f"{inflection_hint} unless intentionally pronominalized."
+                        ),
+                    )
+                )
 
         return issues
 
@@ -656,9 +1077,10 @@ class RegisterVocabularyDriftRule:
 
 def default_audit_rules(preset: DomainPreset | None = None) -> list[AuditRule]:
     """Returns the default built-in AuditRule suite."""
-    _ = preset  # Reserved for future preset-specific defaults; ExonymLeakRule is a no-op without target_text.
+    _ = preset  # Reserved for future preset-specific defaults; lexical rules are no-ops without target_text.
     return [
         ExonymLeakRule(),
+        TargetTermComplianceRule(),
         NearDuplicateEntityRule(),
         UnexplainedRegisterFlipRule(),
         RegisterVocabularyDriftRule(),
@@ -767,6 +1189,79 @@ def run_audit_step(
         source_text=source_text,
         target_text=target_text,
         timeline_id=tl,
+        lang=lang,
+    )
+    active_rules = _select_rules(
+        engine, rules, include_rules=include_rules, exclude_rules=exclude_rules
+    )
+    min_rank = _SEVERITY_RANK[min_severity]
+
+    issues: list[AuditIssue] = []
+    for rule in active_rules:
+        for issue in rule.check(ctx):
+            if _SEVERITY_RANK[issue.severity] >= min_rank:
+                issues.append(issue)
+
+    return AuditReport(
+        timeline_id=tl,
+        steps_audited=[step],
+        issues=issues,
+        rules_executed=[r.name for r in active_rules],
+    )
+
+
+def run_audit_draft(
+    engine: CanonArcEngine,
+    step: int,
+    *,
+    source_text: str = "",
+    target_text: str = "",
+    context: StepContext | None = None,
+    timeline_id: str | None = None,
+    rules: Sequence[AuditRule] | None = None,
+    include_rules: Sequence[str] | None = None,
+    exclude_rules: Sequence[str] | None = None,
+    min_severity: AuditSeverity = "info",
+    lang: str | None = None,
+    include_all_timeline_entities: bool = False,
+) -> AuditReport:
+    """Audits a pre-commit draft translation against the pre-commit state (step - 1 / StepContext)."""
+    tl = timeline_id or (context.timeline_id if context is not None else engine.active_timeline)
+    cutoff_step = max(0, step - 1)
+    all_entities, all_aliases, all_edges = _load_graph_state(engine, tl, cutoff_step)
+
+    if context is not None and not include_all_timeline_entities:
+        # Use entities already resolved/active in tx.context (plus related_entities) and their aliases
+        ctx_entity_map: dict[str, EntityRecord] = {e.entity_id: e for e in context.entities}
+        for rel in context.related_entities:
+            ctx_entity_map.setdefault(rel.entity_id, rel)
+        entities = tuple(ctx_entity_map.values())
+        active_ids = set(ctx_entity_map.keys())
+        aliases = tuple(a for a in all_aliases if a.entity_id in active_ids)
+        edges = tuple(context.active_edges)
+        resolved_mentions = tuple(context.resolved_mentions)
+    else:
+        entities = tuple(all_entities)
+        aliases = tuple(all_aliases)
+        edges = tuple(all_edges)
+        resolved_mentions = tuple(context.resolved_mentions) if context is not None else ()
+
+    ctx = AuditContext(
+        timeline_id=tl,
+        step=step,
+        source_text=source_text,
+        target_text=target_text,
+        entities=entities,
+        new_entities=(),
+        aliases=aliases,
+        edges=edges,
+        mutated_edges=(),
+        episodes=tuple(context.episodes) if context is not None else (),
+        all_episode_ids=frozenset(
+            ep.episode_id for ep in (context.episodes if context is not None else ()) if ep.episode_id
+        ),
+        resolved_mentions=resolved_mentions,
+        policy=engine._policy,
         lang=lang,
     )
     active_rules = _select_rules(

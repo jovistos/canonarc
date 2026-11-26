@@ -314,13 +314,21 @@ print(report.summary())
 
 ### Pluggable QA & Continuity Audit
 
-Run fast, deterministic, zero-LLM continuity and localization checks after each step or across an entire timeline (catches untranslated `canonical_name` leaks, alias-hijack/fuzzy duplicate entities, unexplained register flips, and mixed register vocabularies):
+Run fast, deterministic, zero-LLM continuity and localization checks either **pre-commit** on a draft translation inside `step_transaction` (for automatic retry loops) or **post-commit** after each step / across an entire timeline. Built-in rules catch untranslated `canonical_name` leaks, wrong target spellings/transliterations (e.g. `"Febi"` instead of locked `"Fibi"` or `"Herkul Poaro"` instead of `"Erkil Poaro"`), missing target terms, alias-hijack/fuzzy duplicate entities, unexplained register flips, and mixed register vocabularies:
 
 ```python
 from canonarc import CallableAuditRule, AuditIssue
 
-# Single-step audit (built-in rules run automatically; Tier 2/3 rules auto-skip under LEXICON_ONLY)
-report = engine.audit_step(step=2, source_text=chunk_en, target_text=chunk_sr)
+# Pre-commit draft auditing + LLM-ready repair loop inside step_transaction
+with engine.step_transaction(step=2, text=chunk_en, lang="sr") as tx:
+    draft = translate(chunk_en, tx.context)
+    report = tx.audit_draft(draft)
+    if repair := report.format_repair_instructions():
+        draft = retry_translate(chunk_en, draft, repair)
+    tx.extract_and_commit(draft)
+
+# Post-commit single-step audit (Tier 2/3 rules auto-skip under LEXICON_ONLY)
+report = engine.audit_step(step=2, source_text=chunk_en, target_text=chunk_sr, lang="sr")
 if not report.passed:
     print(report.summary())
 

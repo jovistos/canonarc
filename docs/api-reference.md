@@ -59,6 +59,7 @@ Supports Python context management (`with CanonArcEngine("save.sqlite") as engin
 
 ### Transaction & Mutation Methods
 - `step_transaction(step: int, text: str = "", mentions: Sequence[str] = (), top_k_voice: int | None = None, top_k_episodes: int | None = None, pov_entity_ids: Sequence[str] | None = None, pov_mode: Literal["any", "all"] = "any", edge_types: Sequence[str] | None = None, location_id: str | None = None, timeline_id: str | None = None, rerun_clean: bool = True) -> StepTransaction`: Context manager for clean read-and-commit workflows. Supports:
+  - `tx.audit_draft(target_text, *, source_text=None, rules=None, include_rules=None, exclude_rules=None, min_severity="info", lang=None, include_all_timeline_entities=False) -> AuditReport`: Audits a pre-commit draft translation against the pre-commit state (`tx.context` / `step - 1`) before `tx.commit()` or `tx.extract_and_commit()`, enabling deterministic retry loops via `report.format_repair_instructions()`.
   - `tx.extract_and_commit(scene_text, *, compact_schema=False, known_entity_scope="scene", max_roster_entities=None, ...)`: Runs the configured `DeltaExtractor`, normalizes IDs, and stages the `StepDelta` (zero-LLM-call no-op when Tier 3 is disabled, e.g., `TierProfile.LEXICON_ONLY`).
   - `tx.harvest_voice(text, *, source_text="", lang=None, prev_text=None, next_text=None, scorer=None, min_quality=None, require_speaker=True, infer_addressee=True, extra_metadata=None, stage=True) -> list[VoiceExemplar]`: Runs Gate-1 extraction, attaches active dyadic edge/persona metadata (overlaying any staged `StepDelta` in the same transaction), scores candidates with Gate-2 `VoiceQualityScorer`, emits `on_gate_rejected("gate2", ...)` for rejections, and stages passing `VoiceExemplar`s for atomic commit (zero-work no-op when Tier 5 is disabled).
 - `apply_delta(step: int, delta: StepDelta, timeline_id: str | None = None) -> list[EpisodeRecord]`: Directly applies state deltas, episodes, and inform actions. When `delta.is_flashback=True`, skips overwriting existing entities/edges while still indexing episodes and new entities.
@@ -284,7 +285,8 @@ class AuditReport(BaseModel):
     rules_executed: list[str] = []
     # Properties / helpers: report.passed, report.error_count, report.warning_count,
     # report.info_count, report.has_issues_at_or_above(min_severity),
-    # report.by_severity(sev), report.by_code(code), report.summary()
+    # report.by_severity(sev), report.by_code(code), report.summary(),
+    # report.format_repair_instructions(min_severity="error", max_issues=None, header=..., include_snippets=True)
 ```
 
 ---
@@ -295,8 +297,9 @@ class AuditReport(BaseModel):
 - `MentionResolver`: Pluggable entity/coreference resolution protocol (`resolve(text, explicit_mentions, entities, aliases) -> list[ResolvedMention]`). Defaults to `DefaultLexicalResolver(fuzzy_threshold=88.0)`, which uses word-boundary matching and optional `rapidfuzz` inflection matching.
 - `EpisodeRanker` / `EpisodicScoringPolicy`: Pluggable Tier 6 episodic memory ranker (`DefaultEpisodeRanker`) decoupled from `VoiceBank`, configurable via `SchemaPolicy.episodic_policy`.
 - `EngineHooks` / `BaseEngineHooks`: Middleware callbacks (`on_before_commit`, `on_after_commit`, `on_rollback`, `on_branch`, `on_gate_rejected`).
-- `AuditRule` / `CallableAuditRule` (`canonarc.audit`): Pluggable QA rule protocol (`name`, `required_tiers`, `check(ctx: AuditContext) -> Sequence[AuditIssue]`). Built-in rules (`default_audit_rules()`):
+- `AuditRule` / `CallableAuditRule` (`canonarc.audit`): Pluggable QA rule protocol (`name`, `required_tiers`, `check(ctx: AuditContext) -> Sequence[AuditIssue]`). Also exposes `run_audit_draft(...)` for pre-commit draft auditing. Built-in rules (`default_audit_rules()`):
   - `ExonymLeakRule`: Detects untranslated `canonical_name` leakage in `target_text` when `target_name != canonical_name` (case-sensitive CJK/word-boundary matching, source-mention scoping, `base_attributes["allow_source_name"]` opt-out).
+  - `TargetTermComplianceRule`: Verifies that every entity matched in `source_text` with a `target_name` appears in `target_text` via its locked `target_name`, `lang=target_lang` / `kind="inflection"` aliases, short-name stems, or conservative leading-stem fuzzy matching. Emits `target_term_mismatch` (`severity="error"` by default) when a suspected wrong spelling/transliteration is found (e.g. `"Febi"` for `"Fibi"` or `"Herkul Poaro"` for `"Erkil Poaro"`), and `target_term_missing` (`severity="warning"` by default) for pure omissions/pronominalization. Supports `base_attributes["allow_omission"]` and `kinds` filtering.
   - `NearDuplicateEntityRule`: Detects alias/persona/exonym hijacks and `rapidfuzz` name collisions against existing entities (`fuzzy_threshold=88.0`, `same_kind_only=True`, `base_attributes["ignore_duplicate_of"]` opt-out).
   - `UnexplainedRegisterFlipRule`: Flags mutations to `policy.hard_filter_keys` (e.g., `register`) lacking `caused_by_episode_id` and `reason` (skipping step `0`), plus `dangling_causal_episode` errors.
   - `RegisterVocabularyDriftRule`: Detects mixed register vocabularies (e.g., `Vi`/`ti` mixed with `formal`/`informal`) or values outside an explicit `allowed_values` set.
