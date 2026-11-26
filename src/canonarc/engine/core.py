@@ -3,8 +3,6 @@ from __future__ import annotations
 import contextlib
 import contextvars
 import re
-import uuid
-import warnings
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import AbstractContextManager
 from pathlib import Path
@@ -28,20 +26,14 @@ from ..bible import (
     render_bible as _render_bible,
     sync_bible as _sync_bible,
 )
-from ..embedders import (
-    Embedder,
-    EmbedderMismatchError,
-    embed_texts_batch,
-    get_embedder_info,
-)
+from ..embedders import Embedder
 from ..episodic import EpisodeConsolidator, EpisodeRanker
 from ..extractors import DeltaExtractor, JsonCompletionClient
 from ..hooks import EngineHooks
-from ..inflections import InflectionGenerator, InflectionRequest, generate_inflections_batch
+from ..inflections import InflectionGenerator, InflectionRequest
 from ..models import (
     AliasRecord,
     DialogueCandidate,
-    EntityDelta,
     EntityMergeReport,
     EntityRecord,
     EpisodeRecord,
@@ -81,20 +73,33 @@ from .consolidation import (
     consolidate_episodes_impl,
     count_consolidatable_episodes_impl,
 )
+from .embeddings import (
+    check_embedder_compatibility_impl,
+    record_embedder_metadata_impl,
+    reindex_embeddings_impl,
+)
 from .harvesting import (
     extract_dialogue_candidates_with_delta,
     index_voice_exemplars_impl,
     resolve_harvest_metadata,
 )
 from .merging import merge_entities_impl
+from .mutations import apply_delta_impl, commit_step_impl, index_episodes_impl
 from .normalization import (
     build_extraction_messages_impl,
     normalize_delta_impl,
 )
 from .resume import checkpoint_matches, plan_resume_impl
 from .retrieval import retrieve_context_impl
+from .seeding import (
+    build_target_aliases_impl,
+    expand_entity_inflections_impl,
+    make_inflection_request_impl,
+    register_entity_impl,
+    seed_entities_impl,
+)
 from .session import TimelineSession
-from .traces import _ACTIVE_COMMIT_EPISODES, KnownEntityScope
+from .traces import KnownEntityScope
 from .transaction import StepTransaction
 
 
@@ -212,122 +217,15 @@ class CanonArcEngine:
 
     def _check_embedder_compatibility(self) -> None:
         """Verifies that the active embedder matches any embedder/dimension recorded in the store."""
-        get_meta = getattr(self.store, "get_embedding_metadata", None)
-        if not callable(get_meta):
-            return
-        stored_id, stored_dim = get_meta()
-        if stored_id is None and stored_dim is None:
-            return
-        current_id, current_dim = get_embedder_info(self.voice_bank.embedder)
-        id_mismatch = stored_id is not None and stored_id != current_id
-        dim_mismatch = stored_dim is not None and current_dim is not None and stored_dim != current_dim
-        if not id_mismatch and not dim_mismatch:
-            self._embedder_verified = True
-            return
-
-        msg = (
-            f"Store embeddings were created with embedder={stored_id!r}, dim={stored_dim}, "
-            f"but engine was initialized with embedder={current_id!r}, dim={current_dim}."
-        )
-        policy = self._on_embedder_mismatch
-        if policy == "raise":
-            raise EmbedderMismatchError(msg)
-        if policy == "reindex":
-            self.reindex_embeddings()
-            return
-        if policy == "warn":
-            warnings.warn(
-                f"{msg} Call engine.reindex_embeddings() to migrate stored vectors.",
-                UserWarning,
-                stacklevel=3,
-            )
+        check_embedder_compatibility_impl(self)
 
     def _record_embedder_metadata(self, vectors: Sequence[Any]) -> None:
         """Records embedder_id and vector dimension in store_metadata on first write."""
-        if self._embedder_verified or not vectors:
-            return
-        set_meta = getattr(self.store, "set_embedding_metadata", None)
-        get_meta = getattr(self.store, "get_embedding_metadata", None)
-        if not callable(set_meta) or not callable(get_meta):
-            self._embedder_verified = True
-            return
-        dim = len(vectors[0])
-        if dim <= 0:
-            return
-        stored_id, stored_dim = get_meta()
-        current_id, _ = get_embedder_info(self.voice_bank.embedder)
-        if stored_id is None and stored_dim is None:
-            set_meta(current_id, dim)
-            self._embedder_verified = True
-            return
-        if (stored_id is not None and stored_id != current_id) or (
-            stored_dim is not None and stored_dim != dim
-        ):
-            msg = (
-                f"Store embeddings were created with embedder={stored_id!r}, dim={stored_dim}, "
-                f"but active embedder produced embedder={current_id!r}, dim={dim}."
-            )
-            if self._on_embedder_mismatch == "raise":
-                raise EmbedderMismatchError(msg)
-            if self._on_embedder_mismatch == "warn":
-                warnings.warn(
-                    f"{msg} Call engine.reindex_embeddings() to migrate stored vectors.",
-                    UserWarning,
-                    stacklevel=3,
-                )
-        self._embedder_verified = True
+        record_embedder_metadata_impl(self, vectors)
 
     def reindex_embeddings(self, *, batch_size: int = 128) -> dict[str, int]:
         """Re-embeds all stored episodes and voice exemplars in batches using the active embedder."""
-        list_ep = getattr(self.store, "list_all_episodes_for_reembed", None)
-        list_vo = getattr(self.store, "list_all_voice_exemplars_for_reembed", None)
-        upd_ep = getattr(self.store, "update_episode_embeddings", None)
-        upd_vo = getattr(self.store, "update_voice_embeddings", None)
-        set_meta = getattr(self.store, "set_embedding_metadata", None)
-        if not (
-            callable(list_ep)
-            and callable(list_vo)
-            and callable(upd_ep)
-            and callable(upd_vo)
-            and callable(set_meta)
-        ):
-            raise NotImplementedError("Active store backend does not support reindex_embeddings().")
-
-        ep_rows: list[tuple[str, str, str]] = list_ep()
-        vo_rows: list[tuple[str, str, str]] = list_vo()
-        step_size = max(1, batch_size)
-        detected_dim: int | None = None
-
-        ep_updates: list[tuple[str, str, bytes]] = []
-        for i in range(0, len(ep_rows), step_size):
-            chunk = ep_rows[i : i + step_size]
-            vecs = embed_texts_batch(self.voice_bank.embedder, [r[2] for r in chunk])
-            if vecs and detected_dim is None:
-                detected_dim = len(vecs[0])
-            for (tl, eid, _), vec in zip(chunk, vecs):
-                ep_updates.append((tl, eid, vec.tobytes()))
-
-        vo_updates: list[tuple[str, str, bytes]] = []
-        for i in range(0, len(vo_rows), step_size):
-            chunk = vo_rows[i : i + step_size]
-            vecs = embed_texts_batch(self.voice_bank.embedder, [r[2] for r in chunk])
-            if vecs and detected_dim is None:
-                detected_dim = len(vecs[0])
-            for (tl, xid, _), vec in zip(chunk, vecs):
-                vo_updates.append((tl, xid, vec.tobytes()))
-
-        current_id, known_dim = get_embedder_info(self.voice_bank.embedder)
-        final_dim = detected_dim or known_dim
-        if final_dim is None:
-            probe = self.voice_bank.embedder.embed_text("probe")
-            final_dim = len(probe)
-
-        with self._store_transaction():
-            n_ep = upd_ep(ep_updates)
-            n_vo = upd_vo(vo_updates)
-            set_meta(current_id, final_dim)
-        self._embedder_verified = True
-        return {"episodes": n_ep, "voice_exemplars": n_vo}
+        return reindex_embeddings_impl(self, batch_size=batch_size)
 
     def __enter__(self) -> Self:
         return self
@@ -371,26 +269,7 @@ class CanonArcEngine:
         *,
         target_lang: str | None = None,
     ) -> InflectionRequest | None:
-        raw_target = entity.base_attributes.get("target_name")
-        if not isinstance(raw_target, str) or not raw_target.strip():
-            return None
-        raw_lang = (
-            target_lang
-            or entity.base_attributes.get("target_lang")
-            or entity.base_attributes.get("lang")
-        )
-        eff_lang = raw_lang.strip().lower() if isinstance(raw_lang, str) and raw_lang.strip() else None
-        if not eff_lang:
-            return None
-        gender = entity.base_attributes.get("gender")
-        declension = entity.base_attributes.get("declension")
-        return InflectionRequest(
-            name=raw_target.strip(),
-            lang=eff_lang,
-            gender=str(gender) if gender is not None else None,
-            kind=entity.kind,
-            declension=str(declension) if declension is not None else None,
-        )
+        return make_inflection_request_impl(entity, target_lang=target_lang)
 
     def _build_target_aliases(
         self,
@@ -402,69 +281,14 @@ class CanonArcEngine:
         prefetched_forms: Sequence[str] | None = None,
     ) -> list[AliasRecord]:
         """Auto-registers base_attributes['target_name'] and optional one-shot LLM inflections."""
-        raw_target = entity.base_attributes.get("target_name")
-        if not isinstance(raw_target, str) or not raw_target.strip():
-            return []
-        target_name = raw_target.strip()
-        raw_lang = (
-            target_lang
-            or entity.base_attributes.get("target_lang")
-            or entity.base_attributes.get("lang")
+        return build_target_aliases_impl(
+            self,
+            entity,
+            existing_aliases,
+            target_lang=target_lang,
+            auto_inflect=auto_inflect,
+            prefetched_forms=prefetched_forms,
         )
-        eff_lang = raw_lang.strip().lower() if isinstance(raw_lang, str) and raw_lang.strip() else None
-
-        existing_keys: set[str] = set()
-        for a in existing_aliases:
-            s = a.alias.strip() if isinstance(a, AliasRecord) else a.strip()
-            if s:
-                existing_keys.add(s.lower())
-        canonical_lower = entity.canonical_name.strip().lower()
-
-        generated: list[AliasRecord] = []
-
-        def _maybe_add(
-            form: str,
-            *,
-            kind: Literal["permanent", "inflection"] = "permanent",
-            allow_canonical: bool = False,
-        ) -> None:
-            clean = form.strip()
-            if not clean:
-                return
-            key = clean.lower()
-            if key in existing_keys:
-                return
-            if not allow_canonical and key == canonical_lower:
-                return
-            existing_keys.add(key)
-            generated.append(
-                AliasRecord(
-                    alias=clean,
-                    entity_id=entity.entity_id,
-                    kind=kind,
-                    lang=eff_lang,
-                )
-            )
-
-        _maybe_add(target_name, kind="permanent", allow_canonical=eff_lang is not None)
-
-        forms: Sequence[str] = ()
-        if prefetched_forms is not None:
-            forms = prefetched_forms
-        elif auto_inflect and eff_lang and self.inflection_generator is not None:
-            gender = entity.base_attributes.get("gender")
-            declension = entity.base_attributes.get("declension")
-            forms = self.inflection_generator.generate_inflections(
-                target_name,
-                eff_lang,
-                gender=str(gender) if gender is not None else None,
-                kind=entity.kind,
-                declension=str(declension) if declension is not None else None,
-            )
-        for form in forms:
-            _maybe_add(form, kind="inflection")
-
-        return generated
 
     def register_entity(
         self,
@@ -476,15 +300,15 @@ class CanonArcEngine:
         target_lang: str | None = None,
         auto_inflect: bool = True,
     ) -> None:
-        tl = timeline_id or self.active_timeline
-        extra_aliases = self._build_target_aliases(
+        register_entity_impl(
+            self,
             entity,
-            aliases,
+            aliases=aliases,
+            step=step,
+            timeline_id=timeline_id,
             target_lang=target_lang,
             auto_inflect=auto_inflect,
         )
-        all_aliases: list[str | AliasRecord] = [*aliases, *extra_aliases]
-        self.store.register_entity(entity, aliases=all_aliases, step=step, timeline_id=tl)
 
     def seed_entities(
         self,
@@ -496,40 +320,15 @@ class CanonArcEngine:
         auto_inflect: bool = True,
         batch_size: int = 25,
     ) -> None:
-        tl = timeline_id or self.active_timeline
-        prefetched_by_idx: dict[int, list[str]] = {}
-        if auto_inflect and self.inflection_generator is not None:
-            pending_indices: list[int] = []
-            pending_requests: list[InflectionRequest] = []
-            for idx, ent in enumerate(entities):
-                req = self._make_inflection_request(ent, target_lang=target_lang)
-                if req is not None:
-                    pending_indices.append(idx)
-                    pending_requests.append(req)
-            if pending_requests:
-                batched_forms = generate_inflections_batch(
-                    self.inflection_generator,
-                    pending_requests,
-                    batch_size=batch_size,
-                )
-                for idx, forms in zip(pending_indices, batched_forms):
-                    prefetched_by_idx[idx] = forms
-
-        with self._store_transaction():
-            for idx, ent in enumerate(entities):
-                extra_aliases = self._build_target_aliases(
-                    ent,
-                    (),
-                    target_lang=target_lang,
-                    auto_inflect=False,
-                    prefetched_forms=prefetched_by_idx.get(idx),
-                )
-                self.store.register_entity(
-                    ent,
-                    aliases=extra_aliases,
-                    step=step,
-                    timeline_id=tl,
-                )
+        seed_entities_impl(
+            self,
+            entities,
+            step=step,
+            timeline_id=timeline_id,
+            target_lang=target_lang,
+            auto_inflect=auto_inflect,
+            batch_size=batch_size,
+        )
 
     def expand_entity_inflections(
         self,
@@ -540,41 +339,13 @@ class CanonArcEngine:
         timeline_id: str | None = None,
     ) -> list[AliasRecord]:
         """One-shot inflection expansion for an already-registered or Zero-Seed discovered entity."""
-        tl = timeline_id or self.active_timeline
-        if step is None:
-            tl_info = self.store.get_timeline(tl)
-            eff_step = tl_info.head_step if tl_info is not None else 0
-        else:
-            eff_step = step
-
-        entities = self.store.get_all_active_entities(tl, eff_step)
-        entity = next((e for e in entities if e.entity_id == entity_id), None)
-        if entity is None:
-            raise ValueError(f"Entity '{entity_id}' not found on timeline '{tl}' at step {eff_step}.")
-
-        active_aliases = [
-            a for a in self.store.get_all_active_aliases(tl, eff_step) if a.entity_id == entity_id
-        ]
-        new_aliases = self._build_target_aliases(
-            entity,
-            active_aliases,
+        return expand_entity_inflections_impl(
+            self,
+            entity_id,
             target_lang=target_lang,
-            auto_inflect=True,
+            step=step,
+            timeline_id=timeline_id,
         )
-        if new_aliases:
-            self.apply_delta(
-                eff_step,
-                StepDelta(
-                    entities=[
-                        EntityDelta(
-                            entity_id=entity_id,
-                            add_aliases=list(new_aliases),
-                        )
-                    ]
-                ),
-                timeline_id=tl,
-            )
-        return new_aliases
 
     def merge_entities(
         self,
@@ -700,83 +471,7 @@ class CanonArcEngine:
     # --- State & Episode Mutation ---
 
     def apply_delta(self, step: int, delta: StepDelta, *, timeline_id: str | None = None) -> list[EpisodeRecord]:
-        tl = timeline_id or self.active_timeline
-        policy = self._policy
-        has_edges = policy.has_tier(2)
-        has_state = policy.has_tier(3)
-        has_episodes = policy.has_tier(6)
-
-        prepared_episodes: list[EpisodeRecord] = []
-        if has_episodes:
-            for ep in delta.episodes:
-                ep_id = ep.episode_id or f"ep_{step}_{uuid.uuid4().hex[:8]}"
-                updates: dict[str, Any] = {"episode_id": ep_id, "step": step, "timeline_id": tl}
-                if ep.story_time is None and delta.story_time is not None:
-                    updates["story_time"] = delta.story_time
-                if ep.chapter_id is None and delta.chapter_id is not None:
-                    updates["chapter_id"] = delta.chapter_id
-                if ep.scene_id is None and delta.scene_id is not None:
-                    updates["scene_id"] = delta.scene_id
-                prepared_episodes.append(ep.model_copy(update=updates))
-
-        ep_embeddings: dict[str, bytes] = {}
-        if prepared_episodes:
-            vectors = embed_texts_batch(
-                self.voice_bank.embedder, [ep.summary for ep in prepared_episodes]
-            )
-            self._record_embedder_metadata(vectors)
-            for ep, vec in zip(prepared_episodes, vectors):
-                ep_embeddings[ep.episode_id] = vec.tobytes()
-
-        delta_updates: dict[str, Any] = {}
-        if has_episodes:
-            if prepared_episodes:
-                delta_updates["episodes"] = prepared_episodes
-        else:
-            if delta.episodes:
-                delta_updates["episodes"] = []
-            if delta.inform:
-                delta_updates["inform"] = []
-
-        if not has_edges and delta.edges:
-            delta_updates["edges"] = []
-
-        if not has_state and delta.entities:
-            stripped_entities: list[EntityDelta] = []
-            for ed in delta.entities:
-                cleaned = ed.model_copy(
-                    update={
-                        "state": {},
-                        "private_state": {},
-                        "caused_by_episode_id": None,
-                        "reason": None,
-                    }
-                )
-                if (
-                    cleaned.canonical_name is not None
-                    or cleaned.kind is not None
-                    or cleaned.base_attributes
-                    or cleaned.add_aliases
-                    or cleaned.remove_aliases
-                    or cleaned.remove
-                ):
-                    stripped_entities.append(cleaned)
-            delta_updates["entities"] = stripped_entities
-
-        if delta.is_flashback:
-            source_entities = delta_updates.get("entities", delta.entities)
-            existing_ids = {
-                e.entity_id for e in self.store.get_all_active_entities(tl, step)
-            }
-            delta_updates["entities"] = [
-                ed for ed in source_entities if not ed.remove and ed.entity_id not in existing_ids
-            ]
-            delta_updates["edges"] = []
-
-        delta_to_apply = delta.model_copy(update=delta_updates) if delta_updates else delta
-        return self.store.apply_delta(
-            step, delta_to_apply, timeline_id=tl, episode_embeddings=ep_embeddings
-        )
+        return apply_delta_impl(self, step, delta, timeline_id=timeline_id)
 
     def index_episodes(
         self,
@@ -785,19 +480,7 @@ class CanonArcEngine:
         *,
         timeline_id: str | None = None,
     ) -> list[EpisodeRecord]:
-        tl = timeline_id or self.active_timeline
-        if not episodes or not self._policy.has_tier(6):
-            return []
-        indexed: list[EpisodeRecord] = []
-        for ep in episodes:
-            ep_id = ep.episode_id or f"ep_{step}_{uuid.uuid4().hex[:8]}"
-            indexed.append(ep.model_copy(update={"episode_id": ep_id, "step": step, "timeline_id": tl}))
-
-        vectors = embed_texts_batch(self.voice_bank.embedder, [ep.summary for ep in indexed])
-        self._record_embedder_metadata(vectors)
-        to_store = [(item, vec.tobytes()) for item, vec in zip(indexed, vectors)]
-        self.store.insert_episodes(to_store, timeline_id=tl)
-        return indexed
+        return index_episodes_impl(self, step, episodes, timeline_id=timeline_id)
 
     def count_consolidatable_episodes(
         self,
@@ -1110,36 +793,17 @@ class CanonArcEngine:
         content_hash: str | None = None,
         checkpoint_metadata: dict[str, Any] | None = None,
     ) -> list[VoiceExemplar]:
-        tl = timeline_id or self.active_timeline
-        for hook in self._hooks:
-            hook.on_before_commit(step, tl, delta, exemplars, episodes)
-        committed_episodes: list[EpisodeRecord] = []
-        indexed: list[VoiceExemplar] = []
-        record_cp = getattr(self.store, "record_step_checkpoint", None)
-        if not callable(record_cp) and (content_hash is not None or checkpoint_metadata is not None):
-            raise NotImplementedError("Active store backend does not support step checkpoints.")
-        with self._store_transaction():
-            if delta:
-                committed_episodes.extend(self.apply_delta(step, delta, timeline_id=tl))
-            if episodes and self._policy.has_tier(6):
-                committed_episodes.extend(self.index_episodes(step, episodes, timeline_id=tl))
-            if exemplars and self._policy.has_tier(5):
-                indexed = self.index_voice_exemplars(
-                    step, exemplars, bypass_gate=bypass_gate, timeline_id=tl
-                )
-            if callable(record_cp):
-                record_cp(
-                    step,
-                    timeline_id=tl,
-                    content_hash=content_hash,
-                    metadata=checkpoint_metadata,
-                )
-        for hook in self._hooks:
-            hook.on_after_commit(step, tl, committed_episodes, indexed)
-        ep_sink = _ACTIVE_COMMIT_EPISODES.get()
-        if ep_sink is not None:
-            ep_sink.extend(committed_episodes)
-        return indexed
+        return commit_step_impl(
+            self,
+            step,
+            delta,
+            exemplars,
+            episodes,
+            bypass_gate=bypass_gate,
+            timeline_id=timeline_id,
+            content_hash=content_hash,
+            checkpoint_metadata=checkpoint_metadata,
+        )
 
     def _require_checkpoint_store(self) -> CheckpointStore:
         required = (
