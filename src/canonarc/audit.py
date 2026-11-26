@@ -120,6 +120,24 @@ _ROMAN_NUMERAL_RE = re.compile(
 _LETTER_TOKEN_RE = re.compile(r"[^\W\d_]+", re.UNICODE)
 
 
+class DuplicateCandidate(BaseModel):
+    """Structured near-duplicate entity pair ready for inspection or engine.merge_entities()."""
+
+    duplicate_id: str
+    canonical_id: str
+    score: float = Field(description="Similarity score in [0.0, 100.0]")
+    reason: str = Field(description="Human-readable explanation of why the pair collided")
+    duplicate_name: str = ""
+    canonical_name: str = ""
+    duplicate_kind: str = ""
+    canonical_kind: str = ""
+    candidate_field: str = ""
+    matched_against: str = ""
+    matched_value: str = ""
+    step: int = 0
+    timeline_id: str = "main"
+
+
 class AuditIssue(BaseModel):
     """Single continuity or localization QA finding emitted by an AuditRule."""
 
@@ -169,6 +187,28 @@ class AuditReport(BaseModel):
 
     def by_code(self, code: str) -> list[AuditIssue]:
         return [i for i in self.issues if i.code == code]
+
+    def duplicate_candidates(self, *, min_score: float = 0.0) -> list[DuplicateCandidate]:
+        """Extracts typed DuplicateCandidate records from near_duplicate_entity issues.
+
+        Deduplicates repeated (duplicate_id, canonical_id) pairs across multi-step
+        reports by keeping the highest-scoring occurrence, sorted by descending score.
+        """
+        best_by_pair: dict[tuple[str, str], DuplicateCandidate] = {}
+        for issue in self.issues:
+            if issue.code != "near_duplicate_entity":
+                continue
+            cand = _duplicate_candidate_from_issue(issue)
+            if cand is None or cand.score < min_score:
+                continue
+            key = (cand.duplicate_id, cand.canonical_id)
+            prev = best_by_pair.get(key)
+            if prev is None or cand.score > prev.score:
+                best_by_pair[key] = cand
+        return sorted(
+            best_by_pair.values(),
+            key=lambda c: (-c.score, c.duplicate_id, c.canonical_id),
+        )
 
     def summary(self) -> str:
         status = "PASS" if self.passed else "FAIL"
@@ -1225,9 +1265,27 @@ class NearDuplicateEntityRule:
         seen_pairs: set[tuple[str, str]] = set()
 
         if self.check_all_entities:
-            sorted_entities = sorted(
-                ctx.entities, key=lambda e: (e.valid_from_step, e.entity_id)
-            )
+            def _canonical_sort_key(e: EntityRecord) -> tuple[int, int, int, int, int, int, str]:
+                has_target = 1 if isinstance(e.base_attributes.get("target_name"), str) and e.base_attributes["target_name"].strip() else 0
+                alias_count = len(aliases_by_entity.get(e.entity_id, ()))
+                attr_count = len(e.base_attributes)
+                name_len = len(e.canonical_name.strip())
+                first_known_step = (
+                    e.prior_step
+                    if (e.revision_count > 1 and e.prior_step is not None)
+                    else e.valid_from_step
+                )
+                return (
+                    -e.revision_count,
+                    first_known_step,
+                    -has_target,
+                    -alias_count,
+                    -attr_count,
+                    -name_len,
+                    e.entity_id,
+                )
+
+            sorted_entities = sorted(ctx.entities, key=_canonical_sort_key)
             pairs_to_check: list[tuple[EntityRecord, EntityRecord]] = []
             for idx, cand in enumerate(sorted_entities):
                 for prev in sorted_entities[:idx]:
@@ -1276,8 +1334,10 @@ class NearDuplicateEntityRule:
                     evidence={
                         "new_entity_id": cand.entity_id,
                         "new_canonical_name": cand.canonical_name,
+                        "new_kind": cand.kind,
                         "existing_entity_id": existing.entity_id,
                         "existing_canonical_name": existing.canonical_name,
+                        "existing_kind": existing.kind,
                         "candidate_field": c_src,
                         "matched_against": e_src,
                         "matched_value": matched_val,
@@ -1775,3 +1835,77 @@ def run_audit_timeline(
         issues=all_issues,
         rules_executed=[r.name for r in active_rules],
     )
+
+
+def _duplicate_candidate_from_issue(issue: AuditIssue) -> DuplicateCandidate | None:
+    ev = issue.evidence or {}
+    dup_id = str(ev.get("new_entity_id") or (issue.entity_ids[0] if len(issue.entity_ids) >= 1 else "")).strip()
+    canon_id = str(ev.get("existing_entity_id") or (issue.entity_ids[1] if len(issue.entity_ids) >= 2 else "")).strip()
+    if not dup_id or not canon_id or dup_id == canon_id:
+        return None
+    raw_score = ev.get("similarity", 0.0)
+    try:
+        score = float(raw_score)
+    except (TypeError, ValueError):
+        score = 0.0
+    cand_field = str(ev.get("candidate_field") or "")
+    matched_against = str(ev.get("matched_against") or "")
+    matched_value = str(ev.get("matched_value") or "")
+    if cand_field and matched_against:
+        reason = f"{cand_field} matched {matched_against} ({score:.1f}%)"
+    elif matched_against:
+        reason = f"matched {matched_against} ({score:.1f}%)"
+    else:
+        reason = issue.message
+    return DuplicateCandidate(
+        duplicate_id=dup_id,
+        canonical_id=canon_id,
+        score=round(score, 2),
+        reason=reason,
+        duplicate_name=str(ev.get("new_canonical_name") or ""),
+        canonical_name=str(ev.get("existing_canonical_name") or ""),
+        duplicate_kind=str(ev.get("new_kind") or ""),
+        canonical_kind=str(ev.get("existing_kind") or ""),
+        candidate_field=cand_field,
+        matched_against=matched_against,
+        matched_value=matched_value,
+        step=issue.step,
+        timeline_id=issue.timeline_id,
+    )
+
+
+def find_duplicate_candidates(
+    engine: CanonArcEngine,
+    *,
+    at_step: int | None = None,
+    timeline_id: str | None = None,
+    fuzzy_threshold: float = 88.0,
+    same_kind_only: bool = True,
+) -> list[DuplicateCandidate]:
+    """Finds all near-duplicate entity pairs active at (timeline_id, at_step).
+
+    Unlike the default NearDuplicateEntityRule (which only checks entities newly
+    created at a step), this scans the entire active entity roster at `at_step`
+    (defaulting to the timeline's head_step) and returns typed DuplicateCandidate
+    records ready for review or explicit engine.merge_entities() calls.
+    """
+    tl = timeline_id or engine.active_timeline
+    tl_info = engine.store.get_timeline(tl)
+    if tl_info is None:
+        raise ValueError(f"Timeline '{tl}' does not exist.")
+    eff_step = tl_info.head_step if at_step is None else at_step
+    if eff_step < 0:
+        raise ValueError(f"at_step must be non-negative, got {eff_step}.")
+
+    ctx = build_audit_context(engine, eff_step, timeline_id=tl)
+    rule = NearDuplicateEntityRule(
+        fuzzy_threshold=fuzzy_threshold,
+        same_kind_only=same_kind_only,
+        check_all_entities=True,
+    )
+    issues = rule.check(ctx)
+    candidates = [
+        cand for issue in issues if (cand := _duplicate_candidate_from_issue(issue)) is not None
+    ]
+    candidates.sort(key=lambda c: (-c.score, c.duplicate_id, c.canonical_id))
+    return candidates
