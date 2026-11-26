@@ -10,6 +10,7 @@ from rapidfuzz import fuzz
 
 from .embedders import _CJK_CHAR_RE
 from .models import (
+    ENTITY_KIND_PREFIXES,
     AliasRecord,
     DirectedEdgeRecord,
     EntityRecord,
@@ -32,12 +33,7 @@ _SEVERITY_RANK: dict[AuditSeverity, int] = {
 }
 
 _ENTITY_ID_PREFIXES: tuple[str, ...] = (
-    "char_",
-    "loc_",
-    "item_",
-    "fac_",
-    "term_",
-    "org_",
+    *dict.fromkeys(f"{prefix}_" for prefix in ENTITY_KIND_PREFIXES.values()),
     "ent_",
 )
 
