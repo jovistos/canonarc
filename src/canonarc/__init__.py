@@ -100,7 +100,16 @@ from .presets import (
     TranslationPreset,
 )
 from .store import CausalStore, CheckpointStore, MemoryStore, TimelineBranchConflictError
-from .voice import IngestionGate, VoiceBank
+from .voice import (
+    CallableVoiceQualityScorer,
+    HeuristicVoiceQualityScorer,
+    IngestionGate,
+    LLMVoiceQualityScorer,
+    VoiceBank,
+    VoiceQualityScorer,
+    VoiceScoreResult,
+    score_voice_candidates_batch,
+)
 
 __all__ = [
     "ALL_TIERS",
@@ -125,6 +134,7 @@ __all__ = [
     "CallableEmbedder",
     "CallableExtractor",
     "CallableInflectionGenerator",
+    "CallableVoiceQualityScorer",
     "CanonArcEngine",
     "CausalStore",
     "CheckpointStore",
@@ -145,6 +155,7 @@ __all__ = [
     "EpisodicScoringPolicy",
     "EpistemicMode",
     "ExonymLeakRule",
+    "HeuristicVoiceQualityScorer",
     "InflectionGenerator",
     "InflectionRequest",
     "InformDelta",
@@ -152,6 +163,7 @@ __all__ = [
     "InteractiveFictionPreset",
     "KnownEntityScope",
     "LLMInflectionGenerator",
+    "LLMVoiceQualityScorer",
     "MemoryStore",
     "MentionResolver",
     "NearDuplicateEntityRule",
@@ -176,6 +188,8 @@ __all__ = [
     "UnexplainedRegisterFlipRule",
     "VoiceBank",
     "VoiceExemplar",
+    "VoiceQualityScorer",
+    "VoiceScoreResult",
     "build_batch_inflection_prompt",
     "build_inflection_prompt",
     "compute_step_hash",
@@ -190,5 +204,6 @@ __all__ = [
     "resolve_lmstudio_model",
     "run_audit_step",
     "run_audit_timeline",
+    "score_voice_candidates_batch",
     "sync_bible",
 ]
