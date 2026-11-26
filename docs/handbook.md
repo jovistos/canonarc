@@ -825,6 +825,25 @@ with CanonArcEngine("story_save.sqlite", extractor=extractor) as engine:
     print("Est. USD:", extractor.billable_usage.estimate_cost_usd(model=raw_extractor.model))
 ```
 
+**Bridging LangChain or custom SDKs (`CallableExtractor`):** If your application already manages LLM clients (e.g., LangChain, Anthropic SDK, Google GenAI), pass `messages_fn` so `canonarc` keeps the static `system_prompt` separate from the dynamic `user_prompt` (preserving provider prefix caching even across validation retries) and return `(payload, usage)` to bridge token telemetry into `CachedDeltaExtractor`:
+
+```python
+from canonarc import CachedDeltaExtractor, CallableExtractor, StepDelta
+
+def call_sdk(system_prompt: str, user_prompt: str, schema: dict):
+    # Send system_prompt as SystemMessage and user_prompt as HumanMessage
+    parsed, usage_meta = my_structured_caller.invoke(system_prompt, user_prompt, schema=StepDelta)
+    return parsed, usage_meta  # accepts TokenUsage or OpenAI / Anthropic / LangChain usage dicts
+
+raw_extractor = CallableExtractor(
+    messages_fn=call_sdk,
+    model="gemini-2.5-flash",          # flows into CachedDeltaExtractor cache key & pricing
+    max_retries=2,
+    on_usage=my_ledger.record,         # optional callback (skipped on disk cache hits)
+)
+extractor = CachedDeltaExtractor(raw_extractor, cache_dir=".canonarc_cache")
+```
+
 **Why `engine.normalize_delta()` matters:** Even when an LLM emits natural surface names (`"Arthur"`, `"the old wizard"`) instead of canonical IDs (`"char_arthur"`, `"char_merlin"`), or links an `EdgeDelta.caused_by_episode_id` to a newly created episode in the same step, `normalize_delta()` automatically maps surface names back to canonical IDs and resolves intra-step symbolic episode references before writing to SQLite.
 
 **Long-book entity hygiene (`known_entity_scope`):** In multi-hundred-chunk books, a minor character introduced early may reappear many chapters later under a new epithet not yet in `AliasRecord`—causing them to miss `ctx.entities` and `ctx.related_entities`. Pass `known_entity_scope="characters_compact"` (or `"all_compact"` to include locations/factions/artifacts) to `build_extraction_messages()`, `build_extraction_prompt()`, or `tx.extract_and_commit()` to append a terse 1-line cast roster (`char_elena=Elena/Jelena, char_ivan=Ivan, ...`, ~3–5 tokens per entity) to `user_prompt` without disturbing the cached `system_prompt` prefix. Use `max_roster_entities` to bound the list on very large corpora.

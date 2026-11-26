@@ -406,3 +406,148 @@ def test_step_transaction_forwards_known_entity_scope() -> None:
         assert len(captured_prompts) == 1
         assert "### Other Known Characters" in captured_prompts[0]
         assert "char_ivan=Ivan" in captured_prompts[0]
+
+
+def test_callable_extractor_messages_fn_preserves_split_prefix_and_bridges_usage(
+    tmp_path: Path,
+) -> None:
+    """CallableExtractor(messages_fn=...) preserves split prompts across retries and bridges usage into CachedDeltaExtractor."""
+    captured_calls: list[tuple[str, str, dict[str, Any]]] = []
+    forwarded_usage: list[TokenUsage] = []
+
+    responses: list[tuple[Any, dict[str, Any]]] = [
+        # Attempt 1: invalid JSON, LangChain-style usage_metadata
+        (
+            "not valid json",
+            {
+                "input_tokens": 1200,
+                "output_tokens": 20,
+                "total_tokens": 1220,
+                "input_token_details": {"cache_read": 0},
+            },
+        ),
+        # Attempt 2: valid StepDelta, prefix cache hit + reasoning tokens
+        (
+            StepDelta(entities=[EntityDelta(entity_id="char_elena", state={"mood": "furious"})]),
+            {
+                "input_tokens": 1250,
+                "output_tokens": 80,
+                "total_tokens": 1330,
+                "input_token_details": {"cache_read": 1000},
+                "output_token_details": {"reasoning": 30},
+            },
+        ),
+    ]
+
+    def _messages_fn(
+        system_prompt: str, user_prompt: str, schema: dict[str, Any]
+    ) -> tuple[Any, dict[str, Any]]:
+        captured_calls.append((system_prompt, user_prompt, schema))
+        return responses.pop(0)
+
+    extractor = CallableExtractor(
+        messages_fn=_messages_fn,
+        model="gemini-2.5-flash",
+        max_retries=1,
+        on_usage=forwarded_usage.append,
+    )
+    cached = CachedDeltaExtractor(extractor, cache_dir=tmp_path / "callable_cache")
+    assert cached.model_id == "gemini-2.5-flash"
+
+    with CanonArcEngine(":memory:", extractor=cached) as engine:
+        _seed_entities(engine)
+        scene = "Elena slammed her hand on the table in fury."
+        with engine.step_transaction(step=1, text=scene) as tx:
+            delta = tx.extract_and_commit(scene)
+
+        assert len(delta.entities) == 1
+        assert delta.entities[0].state["mood"] == "furious"
+
+    # Two attempts: split messages preserved, system_prompt byte-identical on retry
+    assert len(captured_calls) == 2
+    sys_1, user_1, schema_1 = captured_calls[0]
+    sys_2, user_2, _ = captured_calls[1]
+    assert "### Target StepDelta JSON Schema:" in sys_1
+    assert "### Known Entity IDs" not in sys_1
+    assert "### Known Entity IDs" in user_1
+    assert "### Target StepDelta JSON Schema:" not in user_1
+    assert "properties" in schema_1
+    assert sys_2 == sys_1
+    assert user_2.startswith(user_1)
+    assert "Previous output failed StepDelta JSON validation" in user_2
+
+    # Usage accumulated across retry and bridged to last_usage, total_usage, on_usage, and CachedDeltaExtractor
+    assert extractor.last_usage.prompt_tokens == 2450
+    assert extractor.last_usage.completion_tokens == 100
+    assert extractor.last_usage.total_tokens == 2550
+    assert extractor.last_usage.cached_prompt_tokens == 1000
+    assert extractor.last_usage.reasoning_tokens == 30
+    assert extractor.last_usage.api_calls == 2
+    assert extractor.last_usage.retry_count == 1
+    assert extractor.last_usage.validation_errors == 1
+    assert extractor.total_usage.prompt_tokens == 2450
+
+    assert len(forwarded_usage) == 1
+    assert forwarded_usage[0].cached_prompt_tokens == 1000
+
+    assert cached.cache_misses == 1
+    assert cached.billable_usage.prompt_tokens == 2450
+    assert cached.billable_usage.cached_prompt_tokens == 1000
+    assert cached.billable_usage.reasoning_tokens == 30
+    assert cached.billable_usage.api_calls == 2
+    assert cached.billable_usage.retry_count == 1
+    assert cached.billable_usage.validation_errors == 1
+    assert cached.billable_usage.estimate_cost_usd(model=cached.model_id)["total_cost_usd"] > 0
+
+    # Disk cache hit on identical split call does not re-invoke messages_fn or on_usage
+    cached_delta = cached.extract_delta_messages(sys_1, user_1, scene)
+    assert cached_delta.entities[0].state["mood"] == "furious"
+    assert len(captured_calls) == 2
+    assert len(forwarded_usage) == 1
+    assert cached.cache_hits == 1
+    assert cached.historical_usage.prompt_tokens == 4900
+
+
+def test_callable_extractor_usage_formats_and_validation() -> None:
+    """Supports Anthropic usage dicts, TokenUsage returns, direct extract_delta with messages_fn, and validates args."""
+    with pytest.raises(ValueError, match="at least one of 'fn' or 'messages_fn'"):
+        CallableExtractor()
+
+    # Anthropic-style usage dict via legacy 2-arg fn
+    def _anthropic_fn(prompt: str, schema: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+        return (
+            {"scene_id": "s_anth"},
+            {
+                "input_tokens": 900,
+                "output_tokens": 120,
+                "cache_read_input_tokens": 700,
+            },
+        )
+
+    ext_anth = CallableExtractor(_anthropic_fn)
+    delta_anth = ext_anth.extract_delta("prompt", "scene")
+    assert delta_anth.scene_id == "s_anth"
+    assert ext_anth.last_usage.prompt_tokens == 900
+    assert ext_anth.last_usage.completion_tokens == 120
+    assert ext_anth.last_usage.total_tokens == 1020
+    assert ext_anth.last_usage.cached_prompt_tokens == 700
+
+    # TokenUsage instance return + messages_fn called via direct extract_delta()
+    seen: list[tuple[str, str]] = []
+
+    def _msg_only(sys_p: str, user_p: str, schema: dict[str, Any]) -> tuple[StepDelta, TokenUsage]:
+        seen.append((sys_p, user_p))
+        return StepDelta(scene_id="s_tok"), TokenUsage(
+            prompt_tokens=400,
+            completion_tokens=50,
+            total_tokens=450,
+            cached_prompt_tokens=300,
+        )
+
+    ext_msg = CallableExtractor(messages_fn=_msg_only, system_prompt="STATIC_SYS")
+    delta_msg = ext_msg.extract_delta("DYNAMIC_USER", "scene")
+    assert delta_msg.scene_id == "s_tok"
+    assert seen == [("STATIC_SYS", "DYNAMIC_USER")]
+    assert ext_msg.total_usage.prompt_tokens == 400
+    assert ext_msg.total_usage.cached_prompt_tokens == 300
+    assert ext_msg.total_usage.api_calls == 1
