@@ -292,7 +292,7 @@ WHERE rn = 1 AND is_tombstone = 0;
 | `extractors/` | `DeltaExtractor`, `JsonCompletionClient`, `CallableExtractor`, `OpenAICompatibleExtractor`, `CachedDeltaExtractor`, and usage tracking |
 | `hooks.py` | `EngineHooks` & `BaseEngineHooks` lifecycle callbacks (commit, rollback, branch, gate rejection) |
 | `presets/` | `TierProfile`, `SchemaPolicy`, `InteractiveFictionPreset`, `TranslationPreset`, and `SimulationPreset` |
-| `bible/` | Lossless CSV/JSON/Markdown Series Bible export and idempotent diff/upsert sync (`export`, `parsers`, `sync`, `models`) |
+| `bible/` | Sequential LLM Series Bible bootstrapping (`builder`), lossless CSV/JSON/Markdown export, and idempotent diff/upsert sync (`export`, `parsers`, `sync`, `models`) |
 | `audit/` | Pluggable deterministic QA & continuity audit engine (`models`, `runner`, `rules_continuity`, `rules_translation`, `text_utils`) |
 | `engine/` | `CanonArcEngine`, `StepTransaction`, `TimelineSession`, retrieval, epistemics, seeding, mutations, embeddings, harvesting, normalization, consolidation, merging, resume, traces |
 | `cli.py` | `canonarc` CLI inspector (`tree`, `inspect`, `diff`, `history`, `export`, `import`, `audit`, `duplicates`, `merge`) |
