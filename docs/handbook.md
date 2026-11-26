@@ -825,6 +825,8 @@ with CanonArcEngine("story_save.sqlite", extractor=extractor) as engine:
 
 **Why `engine.normalize_delta()` matters:** Even when an LLM emits natural surface names (`"Arthur"`, `"the old wizard"`) instead of canonical IDs (`"char_arthur"`, `"char_merlin"`), or links an `EdgeDelta.caused_by_episode_id` to a newly created episode in the same step, `normalize_delta()` automatically maps surface names back to canonical IDs and resolves intra-step symbolic episode references before writing to SQLite.
 
+**Long-book entity hygiene (`known_entity_scope`):** In multi-hundred-chunk books, a minor character introduced early may reappear many chapters later under a new epithet not yet in `AliasRecord`—causing them to miss `ctx.entities` and `ctx.related_entities`. Pass `known_entity_scope="characters_compact"` (or `"all_compact"` to include locations/factions/artifacts) to `build_extraction_messages()`, `build_extraction_prompt()`, or `tx.extract_and_commit()` to append a terse 1-line cast roster (`char_elena=Elena/Jelena, char_ivan=Ivan, ...`, ~3–5 tokens per entity) to `user_prompt` without disturbing the cached `system_prompt` prefix. Use `max_roster_entities` to bound the list on very large corpora.
+
 ### 6.3 Domain Presets & Rendered Prompt Outputs ([`presets.py`](../src/canonarc/presets.py))
 
 `engine.format_context(ctx)` delegates to the active `DomainPreset`. Each preset renders the exact same `StepContext` in a format optimized for its target domain:
@@ -1170,7 +1172,7 @@ Benchmarks across 3K–12K synthetic stories ([`docs/benchmarks.md`](benchmarks.
 1. **Epistemic Witness Leaks:** Small LLMs occasionally include an off-screen character in `EpisodeRecord.witnesses`. *Mitigation:* Always verify witnesses against room occupancy (`location_id`) and audit `epistemic_leak_count` in tests.
 2. **Flashback State Clobbering:** Without `is_flashback=True`, an extractor reading a flashback chunk may overwrite a character's present-day mood with their past mood. *Mitigation:* Prompt for `is_flashback=True` on non-linear scenes.
 3. **Long-Horizon Mood & Location Drift:** Over 18+ sequential chapters, minor misses compound. *Mitigation:* Use `step_transaction(rerun_clean=True)`, periodic `consolidate_episodes()`, and top-$K$ bounded retrieval so per-step prompt tokens stay $O(1)$.
-4. **Surface-Name Hallucination:** Models may invent aliases or use natural names instead of IDs. *Mitigation:* Rely on `engine.normalize_delta()` and keep canonical registries concise in `build_extraction_prompt()`.
+4. **Surface-Name Hallucination & Mid-Book Entity Splits:** Models may emit natural names instead of IDs, or invent duplicate `entity_id`s when an off-screen minor character returns under a new epithet. *Mitigation:* Rely on `engine.normalize_delta()` for known names/aliases and pass `known_entity_scope="characters_compact"` (or `"all_compact"`) to `build_extraction_messages()` / `build_extraction_prompt()` / `tx.extract_and_commit()` so the extractor sees a terse 1-line cast roster for ID reuse.
 
 ### 8.3 Component Mapping (`src/canonarc/`)
 
