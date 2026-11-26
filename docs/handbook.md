@@ -745,7 +745,36 @@ Notice the intuition: a trivial `salience = 1.0` event decays at $\lambda = 0.03
       min_salience=7.0,
   )
   ```
-- **Memory Compaction (`consolidate_episodes`):** Compact older low-salience episodes into a single chapter/act summary episode (reducing SQLite size by up to **78.5%** and speeding up retrieval by ~21% at 1,500 steps):
+- **Automated LLM-Backed Compaction (`consolidate_episodes_auto` & `consolidate_chapter`):** For long-form localization (300–1,000+ chunks) and long-running RPG campaigns, `canonarc` can query eligible low-salience episodes, resolve canonical entity/location names, summarize them via your configured `JsonCompletionClient` (sharing `CachedDeltaExtractor` and `TokenUsage` accounting), and commit the compacted episode in one call:
+  ```python
+  # 1. Zero-LLM readiness check (optional gate)
+  if engine.count_consolidatable_episodes(step=100, before_step=50, chapter_id="ch_1") >= 5:
+      # 2. One-call chapter compaction (reuses engine.extractor automatically)
+      compacted = engine.consolidate_chapter(
+          step=100,
+          chapter_id="ch_1",
+          max_salience=4.0,
+          min_episodes=3,
+          max_participants=5,              # prevents cameo overlap flooding in Tier 6
+          epistemic_merge="intersection",  # optional: strict POV isolation (no secret leakage)
+      )
+
+  # Or compact a sliding step window across chapters (e.g., every 25 RPG turns):
+  engine.consolidate_episodes_auto(
+      step=100,
+      before_step=75,
+      max_salience=4.0,
+      max_episodes_per_batch=30,
+  )
+  ```
+  - **Built-in safety guards:**
+    - `preserve_provenance=True` (default) skips episodes currently referenced by active entity/edge `caused_by_episode_id` pins so causal provenance and `audit_timeline()` stay intact.
+    - `preserve_deceived=True` (default) preserves episodes carrying `"deceived"` false beliefs.
+    - `anchor_step="last_target"` (default in `consolidate_episodes_auto` / `consolidate_chapter`) stamps the summary at the last compacted episode's chronological step rather than `step`, preventing an Act 1 recap from outranking fresh Act 5 events.
+    - **Branch safety:** Raises `TimelineBranchConflictError` *before* calling the LLM if a child timeline forked after the target episodes (override with `force=True`).
+    - **Pluggable / offline summarizers:** Configure `CanonArcEngine(..., episode_consolidator=...)` or pass `consolidator=` with `LLMEpisodeConsolidator(client)`, `CallableEpisodeConsolidator(fn)`, or the zero-LLM `HeuristicEpisodeConsolidator()`.
+
+- **Low-Level Manual Compaction (`consolidate_episodes`):** When you already have a hand-written or externally generated summary string (reducing SQLite size by up to **78.5%** and speeding up retrieval by ~21% at 1,500 steps):
   ```python
   engine.consolidate_episodes(
       step=100,

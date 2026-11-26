@@ -1,13 +1,22 @@
 from __future__ import annotations
 
+import inspect
+import json
 import math
-from collections.abc import Sequence
+from collections import Counter
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Literal, Protocol
+from typing import Any, Literal, Protocol
 
 import numpy as np
 
 from .embedders import Embedder, OfflineNgramEmbedder
+from .extractors import (
+    JsonCompletionClient,
+    TokenUsage,
+    _strip_json_fences,
+    validate_json_completion_client,
+)
 from .models import EpisodeRecord
 
 
@@ -191,3 +200,347 @@ class DefaultEpisodeRanker:
 
         scored.sort(key=lambda item: (item[0], item[1]), reverse=True)
         return [item[2] for item in scored[:top_k]]
+
+
+# --- Tier 6 Episode Consolidation ---
+
+_CONSOLIDATION_SYSTEM_PROMPT = (
+    "You are a precise narrative memory consolidator. "
+    "Compact a chronological list of low-salience narrative episodes into one concise, "
+    "information-dense summary episode.\n"
+    "Rules:\n"
+    "1. Preserve concrete plot facts, named entities, objects, locations, and decisions.\n"
+    "2. Do NOT invent events, motives, or causal links not stated in the input episodes.\n"
+    "3. Select only the primary participants (up to 5) from the provided entity IDs.\n"
+    "4. Return ONLY a valid JSON object with schema:\n"
+    '{"summary": "<1-3 concise sentences>", "salience": <float 4.5-7.5>, '
+    '"key_participant_ids": ["<entity_id>", ...], "location_id": "<location_id or null>"}'
+)
+
+
+@dataclass(frozen=True)
+class ConsolidationSummary:
+    """Structured output produced by an EpisodeConsolidator."""
+
+    summary: str
+    salience: float | None = None
+    key_participant_ids: tuple[str, ...] = ()
+    location_id: str | None = None
+
+
+class EpisodeConsolidator(Protocol):
+    """Protocol for summarizing a batch of Tier 6 episodes into a single compacted episode."""
+
+    def summarize_episodes(
+        self,
+        episodes: Sequence[EpisodeRecord],
+        *,
+        entity_names: Mapping[str, str] = ...,
+        chapter_id: str | None = None,
+    ) -> ConsolidationSummary: ...
+
+
+def build_consolidation_prompt(
+    episodes: Sequence[EpisodeRecord],
+    *,
+    entity_names: Mapping[str, str] | None = None,
+    chapter_id: str | None = None,
+) -> tuple[str, str]:
+    """Builds a prefix-cache-friendly (system_prompt, user_prompt) pair for episode consolidation."""
+    names = entity_names or {}
+    lines: list[str] = []
+    if chapter_id:
+        lines.append(f"Chapter: {chapter_id}")
+    lines.append(f"Episodes to consolidate ({len(episodes)}):")
+    for ep in episodes:
+        meta_bits: list[str] = [f"step={ep.step}"]
+        if ep.chapter_id and ep.chapter_id != chapter_id:
+            meta_bits.append(f"chapter={ep.chapter_id}")
+        if ep.scene_id:
+            meta_bits.append(f"scene={ep.scene_id}")
+        if ep.predicate and ep.predicate != "event":
+            meta_bits.append(f"type={ep.predicate}")
+        meta_bits.append(f"salience={ep.salience:.1f}")
+
+        entry = f"- [{', '.join(meta_bits)}] {ep.summary.strip()}"
+        if ep.participants:
+            part_strs = [
+                f"{names.get(eid, eid)} ({eid}: {role})" if eid in names else f"{eid} ({role})"
+                for eid, role in ep.participants.items()
+            ]
+            entry += f" | participants: {', '.join(part_strs)}"
+        if ep.location_id:
+            loc_name = names.get(ep.location_id)
+            loc_str = f"{loc_name} ({ep.location_id})" if loc_name else ep.location_id
+            entry += f" | location: {loc_str}"
+        lines.append(entry)
+    lines.append("Return ONLY valid JSON.")
+    return _CONSOLIDATION_SYSTEM_PROMPT, "\n".join(lines)
+
+
+def _parse_consolidation_summary(
+    raw: ConsolidationSummary | Mapping[str, Any] | str,
+    episodes: Sequence[EpisodeRecord],
+    *,
+    min_salience: float = 4.5,
+    max_salience: float = 7.5,
+    strict_json: bool = False,
+) -> ConsolidationSummary:
+    """Validates and normalizes a consolidator response against the source episodes."""
+    if isinstance(raw, ConsolidationSummary):
+        summary_text = raw.summary.strip()
+        if not summary_text:
+            raise ValueError("ConsolidationSummary.summary must be non-empty.")
+        clamped_salience = (
+            max(min_salience, min(max_salience, float(raw.salience)))
+            if raw.salience is not None
+            else None
+        )
+        return ConsolidationSummary(
+            summary=summary_text,
+            salience=clamped_salience,
+            key_participant_ids=tuple(raw.key_participant_ids),
+            location_id=raw.location_id,
+        )
+
+    parsed: Any = raw
+    if isinstance(raw, str):
+        cleaned = _strip_json_fences(raw).strip()
+        if not cleaned:
+            raise ValueError("Consolidation response was empty.")
+        if cleaned.startswith("{") or strict_json:
+            parsed = json.loads(cleaned)
+        else:
+            # Plain-text summary fallback when a callable returns raw prose
+            return ConsolidationSummary(summary=cleaned)
+
+    if not isinstance(parsed, Mapping):
+        raise ValueError(f"Unsupported consolidation response type: {type(parsed).__name__}")
+
+    summary_val = parsed.get("summary")
+    if not isinstance(summary_val, str) or not summary_val.strip():
+        raise ValueError("Consolidation JSON must contain a non-empty 'summary' string.")
+    summary_text = summary_val.strip()
+
+    salience_val: float | None = None
+    raw_salience = parsed.get("salience")
+    if raw_salience is not None:
+        try:
+            salience_val = max(min_salience, min(max_salience, float(raw_salience)))
+        except (TypeError, ValueError):
+            salience_val = None
+
+    valid_entities: set[str] = set()
+    valid_locations: set[str] = set()
+    for ep in episodes:
+        valid_entities.update(ep.participants.keys())
+        valid_entities.update(ep.witnesses)
+        if ep.location_id:
+            valid_locations.add(ep.location_id)
+
+    key_participants: list[str] = []
+    seen_parts: set[str] = set()
+    raw_parts = parsed.get("key_participant_ids") or parsed.get("participants") or []
+    if isinstance(raw_parts, (list, tuple)):
+        for item in raw_parts:
+            if isinstance(item, str):
+                eid = item.strip()
+                if eid and eid in valid_entities and eid not in seen_parts:
+                    seen_parts.add(eid)
+                    key_participants.append(eid)
+
+    location_id: str | None = None
+    raw_loc = parsed.get("location_id")
+    if isinstance(raw_loc, str):
+        loc_clean = raw_loc.strip()
+        if loc_clean and (not valid_locations or loc_clean in valid_locations):
+            location_id = loc_clean
+
+    return ConsolidationSummary(
+        summary=summary_text,
+        salience=salience_val,
+        key_participant_ids=tuple(key_participants),
+        location_id=location_id,
+    )
+
+
+class CallableEpisodeConsolidator:
+    """Adapter turning any Python callable into an EpisodeConsolidator."""
+
+    def __init__(
+        self,
+        fn: Callable[..., ConsolidationSummary | Mapping[str, Any] | str],
+        *,
+        min_salience: float = 4.5,
+        max_salience: float = 7.5,
+    ) -> None:
+        self.fn = fn
+        self.min_salience = float(min_salience)
+        self.max_salience = float(max_salience)
+        try:
+            self._params = tuple(inspect.signature(fn).parameters.values())
+        except (TypeError, ValueError):
+            self._params = ()
+
+    def summarize_episodes(
+        self,
+        episodes: Sequence[EpisodeRecord],
+        *,
+        entity_names: Mapping[str, str] = (),  # type: ignore[assignment]
+        chapter_id: str | None = None,
+    ) -> ConsolidationSummary:
+        if not episodes:
+            raise ValueError("Cannot consolidate an empty sequence of episodes.")
+        accepts_var_kw = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in self._params)
+        kw_names = {
+            p.name
+            for p in self._params
+            if p.kind in (inspect.Parameter.POSITIONAL_OR_KEYWORD, inspect.Parameter.KEYWORD_ONLY)
+        }
+        kwargs: dict[str, Any] = {}
+        if accepts_var_kw or "entity_names" in kw_names:
+            kwargs["entity_names"] = dict(entity_names) if isinstance(entity_names, Mapping) else {}
+        if accepts_var_kw or "chapter_id" in kw_names:
+            kwargs["chapter_id"] = chapter_id
+        raw = self.fn(episodes, **kwargs)
+        return _parse_consolidation_summary(
+            raw,
+            episodes,
+            min_salience=self.min_salience,
+            max_salience=self.max_salience,
+        )
+
+
+class HeuristicEpisodeConsolidator:
+    """Zero-LLM deterministic episode consolidator for offline runs and tests."""
+
+    def __init__(
+        self,
+        *,
+        max_chars: int = 600,
+        default_salience: float = 6.0,
+        max_participants: int = 5,
+    ) -> None:
+        self.max_chars = max(80, int(max_chars))
+        self.default_salience = float(default_salience)
+        self.max_participants = max(1, int(max_participants))
+
+    def summarize_episodes(
+        self,
+        episodes: Sequence[EpisodeRecord],
+        *,
+        entity_names: Mapping[str, str] = (),  # type: ignore[assignment]
+        chapter_id: str | None = None,
+    ) -> ConsolidationSummary:
+        if not episodes:
+            raise ValueError("Cannot consolidate an empty sequence of episodes.")
+
+        seen_summaries: set[str] = set()
+        snippets: list[str] = []
+        participant_counts: Counter[str] = Counter()
+        location_counts: Counter[str] = Counter()
+
+        for ep in episodes:
+            clean = " ".join(ep.summary.strip().split())
+            if clean and clean.lower() not in seen_summaries:
+                seen_summaries.add(clean.lower())
+                snippets.append(clean.rstrip(".") + ".")
+            for eid in ep.participants:
+                participant_counts[eid] += 1
+            if ep.location_id:
+                location_counts[ep.location_id] += 1
+
+        prefix = f"[{chapter_id}] " if chapter_id else ""
+        joined = prefix + " ".join(snippets)
+        if len(joined) > self.max_chars:
+            joined = joined[: self.max_chars - 3].rstrip() + "..."
+
+        top_participants = tuple(
+            eid for eid, _ in participant_counts.most_common(self.max_participants)
+        )
+        top_location = location_counts.most_common(1)[0][0] if location_counts else None
+        return ConsolidationSummary(
+            summary=joined,
+            salience=self.default_salience,
+            key_participant_ids=top_participants,
+            location_id=top_location,
+        )
+
+
+class LLMEpisodeConsolidator:
+    """LLM-backed Tier 6 episode consolidator reusing any JsonCompletionClient."""
+
+    def __init__(
+        self,
+        client: JsonCompletionClient,
+        *,
+        max_retries: int = 1,
+        max_tokens: int = 512,
+        temperature: float = 0.0,
+        min_salience: float = 4.5,
+        max_salience: float = 7.5,
+    ) -> None:
+        self.client: JsonCompletionClient = validate_json_completion_client(client)
+        self.max_retries = max(0, int(max_retries))
+        self.max_tokens = max_tokens
+        self.temperature = temperature
+        self.min_salience = float(min_salience)
+        self.max_salience = float(max_salience)
+        self.last_usage: TokenUsage = TokenUsage()
+        self.total_usage: TokenUsage = TokenUsage()
+
+    def summarize_episodes(
+        self,
+        episodes: Sequence[EpisodeRecord],
+        *,
+        entity_names: Mapping[str, str] = (),  # type: ignore[assignment]
+        chapter_id: str | None = None,
+    ) -> ConsolidationSummary:
+        if not episodes:
+            raise ValueError("Cannot consolidate an empty sequence of episodes.")
+
+        names_map = dict(entity_names) if isinstance(entity_names, Mapping) else {}
+        system_prompt, base_user_prompt = build_consolidation_prompt(
+            episodes,
+            entity_names=names_map,
+            chapter_id=chapter_id,
+        )
+        current_prompt = base_user_prompt
+        call_usage = TokenUsage()
+        last_exc: Exception | None = None
+
+        for attempt in range(self.max_retries + 1):
+            raw_content, usage = self.client.call_json_api(
+                current_prompt,
+                system_prompt=system_prompt,
+                max_tokens=self.max_tokens,
+                temperature=self.temperature,
+            )
+            if attempt > 0:
+                usage.retry_count += 1
+            call_usage.add(usage)
+            try:
+                result = _parse_consolidation_summary(
+                    raw_content,
+                    episodes,
+                    min_salience=self.min_salience,
+                    max_salience=self.max_salience,
+                    strict_json=True,
+                )
+                self.last_usage = call_usage
+                self.total_usage.add(call_usage)
+                return result
+            except Exception as exc:  # noqa: BLE001
+                call_usage.validation_errors += 1
+                last_exc = exc
+                current_prompt = (
+                    f"{base_user_prompt}\n\n"
+                    f"Previous output failed JSON validation with error: {exc}\n"
+                    'Return ONLY valid JSON: {"summary": "...", "salience": 6.0, '
+                    '"key_participant_ids": [...], "location_id": null}'
+                )
+
+        self.last_usage = call_usage
+        self.total_usage.add(call_usage)
+        assert last_exc is not None
+        raise last_exc
