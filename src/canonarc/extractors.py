@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import hashlib
+import inspect
 import json
 import os
 import re
@@ -11,7 +12,7 @@ import urllib.request
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Protocol, runtime_checkable
 
 from .models import StepDelta
 
@@ -20,6 +21,39 @@ class DeltaExtractor(Protocol):
     """Protocol for LLM-backed structured StepDelta extraction."""
 
     def extract_delta(self, prompt: str, scene_text: str) -> StepDelta: ...
+
+
+@runtime_checkable
+class JsonCompletionClient(Protocol):
+    """Protocol for any LLM client capable of returning a JSON string and TokenUsage."""
+
+    def call_json_api(
+        self,
+        prompt: str,
+        *,
+        system_prompt: str | None = None,
+        max_tokens: int | None = None,
+        temperature: float | None = None,
+    ) -> tuple[str, TokenUsage]: ...
+
+
+def resolve_client_model(client: Any) -> str:
+    """Safely resolves a model identifier from any JsonCompletionClient or extractor."""
+    model = getattr(client, "model", None) or getattr(client, "model_id", None)
+    if isinstance(model, str) and model.strip():
+        return model.strip()
+    return type(client).__name__
+
+
+def validate_json_completion_client(client: Any) -> JsonCompletionClient:
+    """Validates eagerly that ``client`` (and any CachedDeltaExtractor wrapper) supports call_json_api."""
+    if not isinstance(client, JsonCompletionClient):
+        raise TypeError(
+            f"{type(client).__name__} does not implement JsonCompletionClient.call_json_api()."
+        )
+    if isinstance(client, CachedDeltaExtractor):
+        validate_json_completion_client(client.extractor)
+    return client
 
 
 _CODE_FENCE_RE = re.compile(r"^```(?:json)?\s*\n?(.*?)\n?```$", re.DOTALL | re.IGNORECASE)
@@ -318,13 +352,56 @@ def _coerce_usage(raw_usage: UsageInput, *, latency_ms: float) -> TokenUsage:
     raise TypeError(f"Unsupported usage payload type: {type(raw_usage).__name__}")
 
 
+def _invoke_with_optional_kwargs(
+    fn: Callable[..., Any],
+    *args: Any,
+    max_tokens: int | None = None,
+    temperature: float | None = None,
+) -> Any:
+    kwargs: dict[str, Any] = {}
+    if max_tokens is not None or temperature is not None:
+        try:
+            params: tuple[inspect.Parameter, ...] = tuple(
+                inspect.signature(fn).parameters.values()
+            )
+        except (TypeError, ValueError):
+            params = ()
+        accepts_var_kw = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in params)
+        kw_names = {
+            p.name
+            for p in params
+            if p.kind in (inspect.Parameter.POSITIONAL_OR_KEYWORD, inspect.Parameter.KEYWORD_ONLY)
+        }
+        if max_tokens is not None and (accepts_var_kw or "max_tokens" in kw_names):
+            kwargs["max_tokens"] = max_tokens
+        if temperature is not None and (accepts_var_kw or "temperature" in kw_names):
+            kwargs["temperature"] = temperature
+    return fn(*args, **kwargs)
+
+
+def _coerce_json_content(raw: Any) -> str:
+    if isinstance(raw, str):
+        return raw
+    if isinstance(raw, StepDelta):
+        return raw.model_dump_json()
+    if isinstance(raw, (Mapping, list)):
+        return json.dumps(raw, ensure_ascii=False)
+    raise TypeError(f"Unsupported JSON completion payload type: {type(raw).__name__}")
+
+
 class CallableExtractor:
-    """Adapter turning any (prompt, schema) or (system_prompt, user_prompt, schema) callable into a DeltaExtractor.
+    """Adapter turning any (prompt, schema) or (system_prompt, user_prompt, schema) callable into a DeltaExtractor and JsonCompletionClient.
 
     Automatically strips Markdown JSON fences, validates against StepDelta, supports
     automatic retries or custom repair callbacks on malformed responses, and bridges
     optional TokenUsage or SDK usage dicts (OpenAI, DeepSeek, Anthropic, LangChain)
-    into ``last_usage``, ``total_usage``, and ``CachedDeltaExtractor``.
+    into ``last_usage``, ``total_usage``, ``on_usage``, and ``CachedDeltaExtractor``.
+
+    When used as a ``JsonCompletionClient`` via ``call_json_api()`` (e.g., by
+    ``LLMInflectionGenerator`` or ``LLMVoiceQualityScorer``), ``schema`` defaults to
+    ``{}`` (not ``StepDelta``'s schema) so shared host adapters can distinguish generic
+    JSON completions from StepDelta extraction, and ``max_tokens`` / ``temperature`` are
+    forwarded only when the underlying callable accepts them as keyword arguments.
     """
 
     def __init__(
@@ -442,6 +519,55 @@ class CallableExtractor:
             )
         return self.extract_delta(f"{system_prompt}\n\n{user_prompt}", scene_text)
 
+    def call_json_api(
+        self,
+        prompt: str,
+        *,
+        system_prompt: str | None = None,
+        max_tokens: int | None = None,
+        temperature: float | None = None,
+        schema: dict[str, Any] | None = None,
+    ) -> tuple[str, TokenUsage]:
+        """Executes a single JSON completion through fn/messages_fn and returns (content_str, usage).
+
+        Unlike ``extract_delta()``, this performs a single call without StepDelta validation so
+        callers such as ``LLMInflectionGenerator`` and ``LLMVoiceQualityScorer`` can run their
+        own domain parsers and retry loops while sharing unified ``on_usage`` accounting.
+        """
+        eff_schema: dict[str, Any] = {} if schema is None else schema
+        eff_system = self.system_prompt if system_prompt is None else system_prompt
+
+        t0 = time.perf_counter()
+        if self.messages_fn is not None:
+            raw_result = _invoke_with_optional_kwargs(
+                self.messages_fn,
+                eff_system,
+                prompt,
+                eff_schema,
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
+        else:
+            assert self.fn is not None
+            combined_prompt = f"{eff_system}\n\n{prompt}" if eff_system else prompt
+            raw_result = _invoke_with_optional_kwargs(
+                self.fn,
+                combined_prompt,
+                eff_schema,
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
+        elapsed_ms = (time.perf_counter() - t0) * 1000.0
+
+        raw_payload, raw_usage = _unpack_callable_result(raw_result)
+        usage = _coerce_usage(raw_usage, latency_ms=elapsed_ms)
+        self.last_usage = usage
+        self.total_usage.add(usage)
+        if self.on_usage is not None:
+            self.on_usage(TokenUsage.from_dict(usage.to_dict()))
+        content = _coerce_json_content(raw_payload)
+        return content, usage
+
 
 def resolve_lmstudio_model(
     base_url: str = "http://localhost:1234/v1",
@@ -522,6 +648,7 @@ class OpenAICompatibleExtractor:
             "Respond only with valid JSON conforming to the requested StepDelta schema."
         ),
         headers: dict[str, str] | None = None,
+        on_usage: Callable[[TokenUsage], None] | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         if model is None or str(model).strip().lower() in ("", "auto", "default"):
@@ -545,6 +672,7 @@ class OpenAICompatibleExtractor:
         self.max_retries = max(0, max_retries)
         self.system_prompt = system_prompt
         self.headers = dict(headers) if headers else {}
+        self.on_usage = on_usage
         self.last_usage: TokenUsage = TokenUsage()
         self.total_usage: TokenUsage = TokenUsage()
 
@@ -750,6 +878,8 @@ class OpenAICompatibleExtractor:
         usage = TokenUsage.from_api_usage(body.get("usage"), latency_ms=elapsed_ms)
         self.last_usage = usage
         self.total_usage.add(usage)
+        if self.on_usage is not None:
+            self.on_usage(TokenUsage.from_dict(usage.to_dict()))
         content = str(choices[0].get("message", {}).get("content", ""))
         return content, usage
 
@@ -827,6 +957,33 @@ class CachedDeltaExtractor:
         # Cumulative usage including historical tokens saved by cache hits
         self.historical_usage: TokenUsage = TokenUsage()
         self.step_usage_log: list[dict[str, Any]] = []
+
+    @property
+    def model(self) -> str:
+        """Model identifier alias matching OpenAICompatibleExtractor / CallableExtractor."""
+        return self.model_id
+
+    def call_json_api(
+        self,
+        prompt: str,
+        *,
+        system_prompt: str | None = None,
+        max_tokens: int | None = None,
+        temperature: float | None = None,
+    ) -> tuple[str, TokenUsage]:
+        """Passes generic JSON completions through to the wrapped JsonCompletionClient.
+
+        Note: generic JSON calls are not cached in ``self.cache_dir`` (which is dedicated to
+        StepDelta extractions); callers such as ``LLMInflectionGenerator`` manage their own
+        semantic cache while sharing the wrapped client's ``total_usage`` and ``on_usage``.
+        """
+        client = validate_json_completion_client(self.extractor)
+        return client.call_json_api(
+            prompt,
+            system_prompt=system_prompt,
+            max_tokens=max_tokens,
+            temperature=temperature,
+        )
 
     def compute_cache_key(
         self,
