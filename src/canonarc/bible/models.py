@@ -10,6 +10,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 from ..models import (
+    ENTITY_KIND_HEADINGS,
     ENTITY_KIND_PREFIXES,
     AliasRecord,
     DirectedEdgeRecord,
@@ -24,15 +25,7 @@ BIBLE_SCHEMA_VERSION = 1
 
 _KIND_PREFIXES: dict[str, str] = ENTITY_KIND_PREFIXES
 
-_KIND_HEADINGS: dict[str, str] = {
-    "character": "Characters",
-    "location": "Locations",
-    "faction": "Factions",
-    "organization": "Organizations",
-    "artifact": "Artifacts",
-    "item": "Items",
-    "term": "Terms & Glossary",
-}
+_KIND_HEADINGS: dict[str, str] = ENTITY_KIND_HEADINGS
 
 _CSV_STANDARD_ATTR_COLS: tuple[str, ...] = (
     "target_name",
