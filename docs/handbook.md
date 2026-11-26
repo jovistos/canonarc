@@ -850,6 +850,11 @@ with CanonArcEngine("story_save.sqlite", extractor=extractor) as engine:
         generated_scene = call_your_llm(prompt)
         tx.extract_and_commit(generated_scene)
 
+    # Export a compact, JSON-ready provenance trace for per-step audit logs:
+    # resolved mentions (including alias_kind/lang), injected IDs & counts,
+    # audit_draft() attempts, staged delta, voice harvest counts, committed IDs, and stage usage.
+    step_trace = tx.to_trace_dict()
+
     print("Billable tokens:", extractor.billable_usage.total_tokens)
     print("Est. USD:", extractor.billable_usage.estimate_cost_usd(model=raw_extractor.model))
 ```

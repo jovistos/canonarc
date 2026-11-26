@@ -120,6 +120,10 @@ with engine.step_transaction(step=85, text=scene_text, pov_entity_ids=["char_art
     tx.harvest_voice(generated_scene)
     # Or commit deterministic game-engine deltas directly:
     # tx.commit(delta=my_step_delta, exemplars=candidate_lines)
+
+# 4. Export standardized per-step provenance trace (resolved mentions, injected IDs,
+#    draft audits, staged delta, voice harvest counts, committed IDs, and stage usage)
+trace_dict = tx.to_trace_dict()  # ready for json.dumps() into per-chunk debug logs
 ```
 
 ### 2. Explicit World-State Walkthrough (No LLM Required)
