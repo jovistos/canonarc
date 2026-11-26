@@ -814,15 +814,9 @@ class CanonArcEngine:
         )
 
     def _require_checkpoint_store(self) -> CheckpointStore:
-        required = (
-            "record_step_checkpoint",
-            "get_step_checkpoint",
-            "get_last_committed_step",
-            "list_step_checkpoints",
-        )
-        if not all(callable(getattr(self.store, name, None)) for name in required):
+        if not isinstance(self.store, CheckpointStore):
             raise NotImplementedError("Active store backend does not support step checkpoints.")
-        return self.store  # type: ignore[return-value]
+        return self.store
 
     def get_step_checkpoint(
         self,

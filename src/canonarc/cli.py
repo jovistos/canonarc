@@ -5,7 +5,7 @@ import json
 import sys
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from .audit import infer_audit_export_format
 from .bible import infer_export_format
@@ -228,7 +228,20 @@ def _cmd_audit(args: argparse.Namespace) -> int:
         )
         return 2
 
-    requested_fmt = "json" if (args.json and args.format == "auto") else args.format
+    raw_fmt = "json" if (args.json and args.format == "auto") else str(args.format)
+    if raw_fmt == "auto":
+        requested_fmt: Literal["auto", "text", "json", "jsonl", "csv"] = "auto"
+    elif raw_fmt == "text":
+        requested_fmt = "text"
+    elif raw_fmt == "json":
+        requested_fmt = "json"
+    elif raw_fmt == "jsonl":
+        requested_fmt = "jsonl"
+    elif raw_fmt == "csv":
+        requested_fmt = "csv"
+    else:
+        print(f"Error: unsupported audit export format {raw_fmt!r}.", file=sys.stderr)
+        return 2
     out_target = args.output
     try:
         resolved_fmt = infer_audit_export_format(
@@ -377,13 +390,7 @@ def _cmd_merge(args: argparse.Namespace) -> int:
     return 0
 
 
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="canonarc",
-        description="Inspect and diff canonarc SQLite timeline databases.",
-    )
-    sub = parser.add_subparsers(dest="command", required=True)
-
+def _register_inspection_parsers(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     p_tree = sub.add_parser("tree", help="Render the branching timeline tree.")
     p_tree.add_argument("db_path", help="Path to SQLite database file.")
     p_tree.add_argument("--json", action="store_true", help="Output JSON.")
@@ -415,6 +422,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_hist.add_argument("--json", action="store_true", help="Output JSON.")
     p_hist.set_defaults(func=_cmd_history)
 
+
+def _register_bible_parsers(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     p_export = sub.add_parser("export", help="Export Series Bible to CSV, JSON, or Markdown.")
     p_export.add_argument("db_path", help="Path to SQLite database file.")
     p_export.add_argument("output_path", help="Output file path (or '-' for stdout).")
@@ -498,6 +507,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_import.add_argument("--json", action="store_true", help="Output sync report as JSON.")
     p_import.set_defaults(func=_cmd_import)
 
+
+def _register_audit_and_merge_parsers(sub: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     p_audit = sub.add_parser("audit", help="Run continuity and localization QA audit rules.")
     p_audit.add_argument("db_path", help="Path to SQLite database file.")
     p_audit.add_argument("--timeline", default="main", help="Timeline ID (default: main).")
@@ -595,6 +606,17 @@ def build_parser() -> argparse.ArgumentParser:
     p_merge.add_argument("--dry-run", action="store_true", help="Preview merge without modifying the database.")
     p_merge.add_argument("--json", action="store_true", help="Output merge report as JSON.")
     p_merge.set_defaults(func=_cmd_merge)
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="canonarc",
+        description="Inspect and diff canonarc SQLite timeline databases.",
+    )
+    sub = parser.add_subparsers(dest="command", required=True)
+    _register_inspection_parsers(sub)
+    _register_bible_parsers(sub)
+    _register_audit_and_merge_parsers(sub)
 
     return parser
 

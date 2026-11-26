@@ -6,6 +6,7 @@ import math
 from collections import Counter
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
+from types import MappingProxyType
 from typing import Any, Literal, Protocol
 
 import numpy as np
@@ -228,6 +229,9 @@ class ConsolidationSummary:
     location_id: str | None = None
 
 
+_EMPTY_ENTITY_NAMES: Mapping[str, str] = MappingProxyType({})
+
+
 class EpisodeConsolidator(Protocol):
     """Protocol for summarizing a batch of Tier 6 episodes into a single compacted episode."""
 
@@ -386,7 +390,7 @@ class CallableEpisodeConsolidator:
         self,
         episodes: Sequence[EpisodeRecord],
         *,
-        entity_names: Mapping[str, str] = (),  # type: ignore[assignment]
+        entity_names: Mapping[str, str] = _EMPTY_ENTITY_NAMES,
         chapter_id: str | None = None,
     ) -> ConsolidationSummary:
         if not episodes:
@@ -429,7 +433,7 @@ class HeuristicEpisodeConsolidator:
         self,
         episodes: Sequence[EpisodeRecord],
         *,
-        entity_names: Mapping[str, str] = (),  # type: ignore[assignment]
+        entity_names: Mapping[str, str] = _EMPTY_ENTITY_NAMES,
         chapter_id: str | None = None,
     ) -> ConsolidationSummary:
         if not episodes:
@@ -493,7 +497,7 @@ class LLMEpisodeConsolidator:
         self,
         episodes: Sequence[EpisodeRecord],
         *,
-        entity_names: Mapping[str, str] = (),  # type: ignore[assignment]
+        entity_names: Mapping[str, str] = _EMPTY_ENTITY_NAMES,
         chapter_id: str | None = None,
     ) -> ConsolidationSummary:
         if not episodes:

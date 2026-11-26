@@ -193,24 +193,20 @@ class _EpisodeStoreMixin:
             rows = self.conn.execute(query, params).fetchall()
         return {row["episode_id"] for row in rows}
 
-    def get_lineage_episodes(
-        self,
+    @staticmethod
+    def _build_lineage_episodes_query(
+        *,
         timeline_id: str,
         cutoff_step: int | None,
-        *,
-        episode_id: str | None = None,
-        episode_ids: Sequence[str] | None = None,
-        limit: int | None = None,
-        pov_entity_ids: Sequence[str] | None = None,
-        pov_mode: Literal["any", "all"] = "any",
-        cue_entity_ids: Sequence[str] | None = None,
-        pinned_episode_ids: Sequence[str] | None = None,
-        query_text: str = "",
-    ) -> list[tuple[EpisodeRecord, bytes]]:
-        """Retrieves episodes visible along the lineage with step <= cutoff_step, with resolved epistemic map."""
-        if episode_ids is not None and len(episode_ids) == 0:
-            return []
-
+        episode_id: str | None,
+        episode_ids: Sequence[str] | None,
+        limit: int | None,
+        pov_entity_ids: Sequence[str] | None,
+        pov_mode: Literal["any", "all"],
+        cue_entity_ids: Sequence[str] | None,
+        pinned_episode_ids: Sequence[str] | None,
+        query_text: str,
+    ) -> tuple[str, dict[str, Any]] | None:
         params: dict[str, Any] = {"timeline_id": timeline_id, "cutoff_step": cutoff_step}
         ep_where_clauses: list[str] = []
         if episode_id is not None:
@@ -219,7 +215,7 @@ class _EpisodeStoreMixin:
         if episode_ids is not None:
             ep_list = sorted({eid for eid in episode_ids if eid})
             if not ep_list:
-                return []
+                return None
             ep_in = _bind_in_clause("req_ep", ep_list, params)
             ep_where_clauses.append(f"e.episode_id IN ({ep_in})")
 
@@ -335,6 +331,74 @@ class _EpisodeStoreMixin:
         {order_limit_sql};
         """
         )
+        return ep_query, params
+
+    @staticmethod
+    def _resolve_epistemic_maps(
+        epistemic_rows: Sequence[sqlite3.Row],
+    ) -> tuple[
+        dict[str, dict[str, Literal["direct", "told", "deceived"]]],
+        dict[str, dict[str, str]],
+    ]:
+        known_map: dict[str, dict[str, Literal["direct", "told", "deceived"]]] = {}
+        believed_map: dict[str, dict[str, str]] = {}
+        for row in epistemic_rows:
+            ep_id = row["episode_id"]
+            ent_id = row["entity_id"]
+            raw_mode = row["epistemic"]
+            if raw_mode in ("forgotten", "suppressed"):
+                if ep_id in known_map:
+                    known_map[ep_id].pop(ent_id, None)
+                if ep_id in believed_map:
+                    believed_map[ep_id].pop(ent_id, None)
+                continue
+            if raw_mode == "direct":
+                mode: Literal["direct", "told", "deceived"] = "direct"
+            elif raw_mode == "deceived":
+                mode = "deceived"
+            else:
+                mode = "told"
+            known_map.setdefault(ep_id, {})[ent_id] = mode
+            if mode == "deceived":
+                if row["believed_summary"]:
+                    believed_map.setdefault(ep_id, {})[ent_id] = row["believed_summary"]
+            elif ep_id in believed_map and ent_id in believed_map[ep_id]:
+                believed_map[ep_id].pop(ent_id, None)
+        return known_map, believed_map
+
+    def get_lineage_episodes(
+        self,
+        timeline_id: str,
+        cutoff_step: int | None,
+        *,
+        episode_id: str | None = None,
+        episode_ids: Sequence[str] | None = None,
+        limit: int | None = None,
+        pov_entity_ids: Sequence[str] | None = None,
+        pov_mode: Literal["any", "all"] = "any",
+        cue_entity_ids: Sequence[str] | None = None,
+        pinned_episode_ids: Sequence[str] | None = None,
+        query_text: str = "",
+    ) -> list[tuple[EpisodeRecord, bytes]]:
+        """Retrieves episodes visible along the lineage with step <= cutoff_step, with resolved epistemic map."""
+        if episode_ids is not None and len(episode_ids) == 0:
+            return []
+
+        built = self._build_lineage_episodes_query(
+            timeline_id=timeline_id,
+            cutoff_step=cutoff_step,
+            episode_id=episode_id,
+            episode_ids=episode_ids,
+            limit=limit,
+            pov_entity_ids=pov_entity_ids,
+            pov_mode=pov_mode,
+            cue_entity_ids=cue_entity_ids,
+            pinned_episode_ids=pinned_episode_ids,
+            query_text=query_text,
+        )
+        if built is None:
+            return []
+        ep_query, params = built
 
         with self._lock:
             cursor = self.conn.cursor()
@@ -372,30 +436,7 @@ class _EpisodeStoreMixin:
             cursor.execute(epistemic_query, epistemic_params)
             epistemic_rows = cursor.fetchall()
 
-        known_map: dict[str, dict[str, Literal["direct", "told", "deceived"]]] = {}
-        believed_map: dict[str, dict[str, str]] = {}
-        for row in epistemic_rows:
-            ep_id = row["episode_id"]
-            ent_id = row["entity_id"]
-            raw_mode = row["epistemic"]
-            if raw_mode in ("forgotten", "suppressed"):
-                if ep_id in known_map:
-                    known_map[ep_id].pop(ent_id, None)
-                if ep_id in believed_map:
-                    believed_map[ep_id].pop(ent_id, None)
-                continue
-            if raw_mode == "direct":
-                mode: Literal["direct", "told", "deceived"] = "direct"
-            elif raw_mode == "deceived":
-                mode = "deceived"
-            else:
-                mode = "told"
-            known_map.setdefault(ep_id, {})[ent_id] = mode
-            if mode == "deceived":
-                if row["believed_summary"]:
-                    believed_map.setdefault(ep_id, {})[ent_id] = row["believed_summary"]
-            elif ep_id in believed_map and ent_id in believed_map[ep_id]:
-                believed_map[ep_id].pop(ent_id, None)
+        known_map, believed_map = self._resolve_epistemic_maps(epistemic_rows)
 
         items: list[tuple[EpisodeRecord, bytes]] = []
         seen_ids: set[str] = set()

@@ -305,6 +305,123 @@ class TargetTermComplianceRule:
                             best = (cand_raw, start, end, score)
         return best
 
+    @staticmethod
+    def _find_source_cue(
+        canonical: str,
+        ent_aliases: Sequence[AliasRecord],
+        ent_mentions: Sequence[ResolvedMention] | None,
+        target_lang: str | None,
+        source_text: str,
+    ) -> str | None:
+        if ent_mentions:
+            return ent_mentions[0].surface_text.strip() or ent_mentions[0].matched_phrase
+        source_cues = [canonical]
+        for a in ent_aliases:
+            if a.kind == "inflection":
+                continue
+            if target_lang is not None and a.lang and a.lang.strip().lower() == target_lang:
+                continue
+            source_cues.append(a.alias.strip())
+        for cue in source_cues:
+            if cue and re.search(_phrase_pattern(cue), source_text, re.IGNORECASE):
+                return cue
+        return None
+
+    @staticmethod
+    def _collect_accepted_target_forms(
+        target_name: str,
+        ent_aliases: Sequence[AliasRecord],
+        target_lang: str | None,
+    ) -> list[str]:
+        accepted_forms: list[str] = [target_name]
+        seen_forms = {target_name.lower()}
+        for a in ent_aliases:
+            al_str = a.alias.strip()
+            if not al_str or al_str.lower() in seen_forms:
+                continue
+            al_lang = a.lang.strip().lower() if a.lang and a.lang.strip() else None
+            is_target_inflection = a.kind == "inflection" and (
+                target_lang is None or al_lang is None or al_lang == target_lang
+            )
+            is_target_lang_alias = target_lang is not None and al_lang == target_lang
+            if is_target_inflection or is_target_lang_alias:
+                seen_forms.add(al_str.lower())
+                accepted_forms.append(al_str)
+        return accepted_forms
+
+    def _build_compliance_issue(
+        self,
+        ctx: AuditContext,
+        *,
+        entity: EntityRecord,
+        canonical: str,
+        source_cue: str,
+        target_name: str,
+        accepted_forms: list[str],
+        near_miss: tuple[str, int, int, float] | None,
+        snippet_text: str,
+    ) -> AuditIssue:
+        inflection_examples = accepted_forms[1:5]
+        inflection_hint = (
+            f" (or valid inflections such as {', '.join(inflection_examples)})"
+            if inflection_examples
+            else " (or its appropriate inflected form)"
+        )
+        if near_miss is not None:
+            variant_str, start, end, score = near_miss
+            snippet = _extract_snippet(snippet_text, start, end, self.snippet_radius)
+            return AuditIssue(
+                code="target_term_mismatch",
+                rule_name=self.name,
+                severity=self.mismatch_severity,
+                step=ctx.step,
+                timeline_id=ctx.timeline_id,
+                subject_key=entity.entity_id,
+                entity_ids=[entity.entity_id],
+                message=(
+                    f"Source mentioned '{source_cue}' ({entity.entity_id}), but locked "
+                    f"target_name '{target_name}' was not found in target_text "
+                    f"(suspected wrong spelling/transliteration: '{variant_str}')."
+                ),
+                evidence={
+                    "canonical_name": canonical,
+                    "matched_source_cue": source_cue,
+                    "expected_target_name": target_name,
+                    "accepted_target_forms": accepted_forms[:8],
+                    "suspected_variant": variant_str,
+                    "variant_similarity": round(score, 2),
+                    "snippet": snippet,
+                },
+                suggestion=(
+                    f"Replace '{variant_str}' with locked target form '{target_name}'"
+                    f"{inflection_hint}."
+                ),
+            )
+        return AuditIssue(
+            code="target_term_missing",
+            rule_name=self.name,
+            severity=self.missing_severity,
+            step=ctx.step,
+            timeline_id=ctx.timeline_id,
+            subject_key=entity.entity_id,
+            entity_ids=[entity.entity_id],
+            message=(
+                f"Source mentioned '{source_cue}' ({entity.entity_id}), but locked "
+                f"target_name '{target_name}' was not found in target_text."
+            ),
+            evidence={
+                "canonical_name": canonical,
+                "matched_source_cue": source_cue,
+                "expected_target_name": target_name,
+                "accepted_target_forms": accepted_forms[:8],
+                "suspected_variant": None,
+            },
+            suggestion=(
+                f"Ensure '{source_cue}' is rendered as '{target_name}'"
+                f"{inflection_hint} unless intentionally pronominalized."
+            ),
+        )
+
     def check(self, ctx: AuditContext) -> list[AuditIssue]:
         source_text = ctx.masked_source_text
         target_text = ctx.masked_target_text
@@ -341,23 +458,13 @@ class TargetTermComplianceRule:
             target_lang = self._effective_target_lang(entity, ctx.lang)
             ent_aliases = aliases_by_entity.get(entity.entity_id, [])
 
-            source_cue: str | None = None
-            ent_mentions = mentions_by_entity.get(entity.entity_id)
-            if ent_mentions:
-                source_cue = ent_mentions[0].surface_text.strip() or ent_mentions[0].matched_phrase
-            else:
-                source_cues = [canonical]
-                for a in ent_aliases:
-                    if a.kind == "inflection":
-                        continue
-                    if target_lang is not None and a.lang and a.lang.strip().lower() == target_lang:
-                        continue
-                    source_cues.append(a.alias.strip())
-                for cue in source_cues:
-                    if cue and re.search(_phrase_pattern(cue), source_text, re.IGNORECASE):
-                        source_cue = cue
-                        break
-
+            source_cue = self._find_source_cue(
+                canonical,
+                ent_aliases,
+                mentions_by_entity.get(entity.entity_id),
+                target_lang,
+                source_text,
+            )
             if not source_cue:
                 continue
 
@@ -369,21 +476,9 @@ class TargetTermComplianceRule:
                     if re.search(_phrase_pattern(canonical), target_text, 0):
                         continue
 
-            accepted_forms: list[str] = [target_name]
-            seen_forms = {target_name.lower()}
-            for a in ent_aliases:
-                al_str = a.alias.strip()
-                if not al_str or al_str.lower() in seen_forms:
-                    continue
-                al_lang = a.lang.strip().lower() if a.lang and a.lang.strip() else None
-                is_target_inflection = a.kind == "inflection" and (
-                    target_lang is None or al_lang is None or al_lang == target_lang
-                )
-                is_target_lang_alias = target_lang is not None and al_lang == target_lang
-                if is_target_inflection or is_target_lang_alias:
-                    seen_forms.add(al_str.lower())
-                    accepted_forms.append(al_str)
-
+            accepted_forms = self._collect_accepted_target_forms(
+                target_name, ent_aliases, target_lang
+            )
             if self._matches_target(
                 target_name, accepted_forms, source_cue, target_text, raw_token_spans
             ):
@@ -392,72 +487,18 @@ class TargetTermComplianceRule:
             near_miss = self._find_suspected_variant(
                 canonical, target_name, target_text, raw_token_spans
             )
-            inflection_examples = [f for f in accepted_forms[1:5]]
-            inflection_hint = (
-                f" (or valid inflections such as {', '.join(inflection_examples)})"
-                if inflection_examples
-                else " (or its appropriate inflected form)"
+            issues.append(
+                self._build_compliance_issue(
+                    ctx,
+                    entity=entity,
+                    canonical=canonical,
+                    source_cue=source_cue,
+                    target_name=target_name,
+                    accepted_forms=accepted_forms,
+                    near_miss=near_miss,
+                    snippet_text=snippet_text,
+                )
             )
-
-            if near_miss is not None:
-                variant_str, start, end, score = near_miss
-                snippet = _extract_snippet(snippet_text, start, end, self.snippet_radius)
-                issues.append(
-                    AuditIssue(
-                        code="target_term_mismatch",
-                        rule_name=self.name,
-                        severity=self.mismatch_severity,
-                        step=ctx.step,
-                        timeline_id=ctx.timeline_id,
-                        subject_key=entity.entity_id,
-                        entity_ids=[entity.entity_id],
-                        message=(
-                            f"Source mentioned '{source_cue}' ({entity.entity_id}), but locked "
-                            f"target_name '{target_name}' was not found in target_text "
-                            f"(suspected wrong spelling/transliteration: '{variant_str}')."
-                        ),
-                        evidence={
-                            "canonical_name": canonical,
-                            "matched_source_cue": source_cue,
-                            "expected_target_name": target_name,
-                            "accepted_target_forms": accepted_forms[:8],
-                            "suspected_variant": variant_str,
-                            "variant_similarity": round(score, 2),
-                            "snippet": snippet,
-                        },
-                        suggestion=(
-                            f"Replace '{variant_str}' with locked target form '{target_name}'"
-                            f"{inflection_hint}."
-                        ),
-                    )
-                )
-            else:
-                issues.append(
-                    AuditIssue(
-                        code="target_term_missing",
-                        rule_name=self.name,
-                        severity=self.missing_severity,
-                        step=ctx.step,
-                        timeline_id=ctx.timeline_id,
-                        subject_key=entity.entity_id,
-                        entity_ids=[entity.entity_id],
-                        message=(
-                            f"Source mentioned '{source_cue}' ({entity.entity_id}), but locked "
-                            f"target_name '{target_name}' was not found in target_text."
-                        ),
-                        evidence={
-                            "canonical_name": canonical,
-                            "matched_source_cue": source_cue,
-                            "expected_target_name": target_name,
-                            "accepted_target_forms": accepted_forms[:8],
-                            "suspected_variant": None,
-                        },
-                        suggestion=(
-                            f"Ensure '{source_cue}' is rendered as '{target_name}'"
-                            f"{inflection_hint} unless intentionally pronominalized."
-                        ),
-                    )
-                )
 
         return issues
 
