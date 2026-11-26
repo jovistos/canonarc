@@ -8,7 +8,7 @@ import re
 import time
 import urllib.error
 import urllib.request
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
@@ -222,18 +222,47 @@ class TokenUsage:
         }
 
     @classmethod
-    def from_api_usage(cls, usage_dict: dict[str, Any] | None, *, latency_ms: float = 0.0) -> TokenUsage:
+    def from_api_usage(cls, usage_dict: Mapping[str, Any] | None, *, latency_ms: float = 0.0) -> TokenUsage:
         if not usage_dict:
             return cls(api_calls=1, latency_ms=round(latency_ms, 3))
-        prompt_tokens = int(usage_dict.get("prompt_tokens", 0))
-        completion_tokens = int(usage_dict.get("completion_tokens", 0))
-        total_tokens = int(usage_dict.get("total_tokens", prompt_tokens + completion_tokens))
+        raw_prompt = usage_dict.get("prompt_tokens")
+        if raw_prompt is None:
+            raw_prompt = usage_dict.get("input_tokens", 0)
+        prompt_tokens = int(raw_prompt or 0)
+
+        raw_completion = usage_dict.get("completion_tokens")
+        if raw_completion is None:
+            raw_completion = usage_dict.get("output_tokens", 0)
+        completion_tokens = int(raw_completion or 0)
+
+        raw_total = usage_dict.get("total_tokens")
+        total_tokens = int(prompt_tokens + completion_tokens if raw_total is None else raw_total)
+
         prompt_details = usage_dict.get("prompt_tokens_details") or {}
-        cached_tokens = int(
-            usage_dict.get("prompt_cache_hit_tokens", prompt_details.get("cached_tokens", 0))
-        )
+        input_details = usage_dict.get("input_token_details") or {}
+        raw_cached = usage_dict.get("prompt_cache_hit_tokens")
+        if raw_cached is None:
+            raw_cached = usage_dict.get("cached_prompt_tokens")
+        if raw_cached is None:
+            raw_cached = usage_dict.get("cache_read_input_tokens")
+        if raw_cached is None and isinstance(prompt_details, Mapping):
+            raw_cached = prompt_details.get("cached_tokens")
+        if raw_cached is None and isinstance(input_details, Mapping):
+            raw_cached = input_details.get("cache_read")
+        cached_tokens = int(raw_cached or 0)
+
         comp_details = usage_dict.get("completion_tokens_details") or {}
-        reasoning_tokens = int(comp_details.get("reasoning_tokens", 0))
+        output_details = usage_dict.get("output_token_details") or {}
+        raw_reasoning = usage_dict.get("reasoning_tokens")
+        if raw_reasoning is None and isinstance(comp_details, Mapping):
+            raw_reasoning = comp_details.get("reasoning_tokens")
+        if raw_reasoning is None and isinstance(output_details, Mapping):
+            raw_reasoning = output_details.get("reasoning")
+        reasoning_tokens = int(raw_reasoning or 0)
+
+        eff_latency = latency_ms
+        if eff_latency <= 0 and usage_dict.get("latency_ms") is not None:
+            eff_latency = float(usage_dict["latency_ms"])
         return cls(
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
@@ -241,7 +270,7 @@ class TokenUsage:
             cached_prompt_tokens=cached_tokens,
             reasoning_tokens=reasoning_tokens,
             api_calls=1,
-            latency_ms=round(latency_ms, 3),
+            latency_ms=round(eff_latency, 3),
         )
 
     @classmethod
@@ -263,64 +292,155 @@ class TokenUsage:
         )
 
 
-class CallableExtractor:
-    """Adapter turning any (prompt, schema) -> str | dict | StepDelta callable into a DeltaExtractor.
+RawStepDelta = str | dict[str, Any] | StepDelta
+UsageInput = TokenUsage | Mapping[str, Any] | None
+CallableReturn = RawStepDelta | tuple[RawStepDelta, UsageInput]
 
-    Automatically strips Markdown JSON fences, validates against StepDelta, and supports
-    automatic retries or custom repair callbacks on malformed responses.
+
+def _unpack_callable_result(raw: Any) -> tuple[Any, UsageInput]:
+    if isinstance(raw, tuple) and len(raw) == 2:
+        return raw[0], raw[1]
+    return raw, None
+
+
+def _coerce_usage(raw_usage: UsageInput, *, latency_ms: float) -> TokenUsage:
+    if raw_usage is None:
+        return TokenUsage(api_calls=1, latency_ms=round(latency_ms, 3))
+    if isinstance(raw_usage, TokenUsage):
+        cloned = TokenUsage.from_dict(raw_usage.to_dict())
+        if cloned.api_calls <= 0:
+            cloned.api_calls = 1
+        if cloned.latency_ms <= 0:
+            cloned.latency_ms = round(latency_ms, 3)
+        return cloned
+    if isinstance(raw_usage, Mapping):
+        return TokenUsage.from_api_usage(raw_usage, latency_ms=latency_ms)
+    raise TypeError(f"Unsupported usage payload type: {type(raw_usage).__name__}")
+
+
+class CallableExtractor:
+    """Adapter turning any (prompt, schema) or (system_prompt, user_prompt, schema) callable into a DeltaExtractor.
+
+    Automatically strips Markdown JSON fences, validates against StepDelta, supports
+    automatic retries or custom repair callbacks on malformed responses, and bridges
+    optional TokenUsage or SDK usage dicts (OpenAI, DeepSeek, Anthropic, LangChain)
+    into ``last_usage``, ``total_usage``, and ``CachedDeltaExtractor``.
     """
 
     def __init__(
         self,
-        fn: Callable[[str, dict[str, Any]], str | dict[str, Any] | StepDelta],
+        fn: Callable[[str, dict[str, Any]], CallableReturn] | None = None,
         *,
+        messages_fn: Callable[[str, str, dict[str, Any]], CallableReturn] | None = None,
+        model: str | None = None,
+        system_prompt: str | None = None,
         max_retries: int = 1,
-        repair_fn: Callable[[str, Exception], str | dict[str, Any]] | None = None,
+        repair_fn: Callable[[str, Exception], CallableReturn] | None = None,
+        on_usage: Callable[[TokenUsage], None] | None = None,
     ) -> None:
+        if fn is None and messages_fn is None:
+            raise ValueError("CallableExtractor requires at least one of 'fn' or 'messages_fn'.")
         self.fn = fn
+        self.messages_fn = messages_fn
+        self.model: str | None = model.strip() if isinstance(model, str) and model.strip() else None
+        self.system_prompt: str = system_prompt or ""
         self.max_retries = max(0, max_retries)
         self.repair_fn = repair_fn
+        self.on_usage = on_usage
         self.last_retries: int = 0
         self.last_validation_errors: int = 0
         self.total_retries: int = 0
         self.total_validation_errors: int = 0
+        self.last_usage: TokenUsage = TokenUsage()
+        self.total_usage: TokenUsage = TokenUsage()
 
-    def extract_delta(self, prompt: str, scene_text: str) -> StepDelta:
+    def _extract_with_retries(
+        self,
+        *,
+        base_user_prompt: str,
+        system_prompt: str | None,
+    ) -> StepDelta:
         schema = StepDelta.model_json_schema()
-        current_prompt = prompt
+        current_prompt = base_user_prompt
         last_exc: Exception | None = None
         last_raw_str = ""
         retries_used = 0
         val_errors = 0
+        call_usage = TokenUsage()
 
         for attempt in range(self.max_retries + 1):
-            raw: str | dict[str, Any] | StepDelta
             if attempt > 0:
                 retries_used += 1
                 self.total_retries += 1
+            t0 = time.perf_counter()
             if attempt > 0 and self.repair_fn is not None and last_exc is not None:
-                raw = self.repair_fn(last_raw_str, last_exc)
+                raw_result = self.repair_fn(last_raw_str, last_exc)
+            elif system_prompt is not None and self.messages_fn is not None:
+                raw_result = self.messages_fn(system_prompt, current_prompt, schema)
             else:
-                raw = self.fn(current_prompt, schema)
-            last_raw_str = raw if isinstance(raw, str) else json.dumps(raw, default=str)
+                assert self.fn is not None
+                raw_result = self.fn(current_prompt, schema)
+            elapsed_ms = (time.perf_counter() - t0) * 1000.0
+
+            raw_payload, raw_usage = _unpack_callable_result(raw_result)
+            attempt_usage = _coerce_usage(raw_usage, latency_ms=elapsed_ms)
+            if attempt > 0:
+                attempt_usage.retry_count += 1
+            call_usage.add(attempt_usage)
+
+            last_raw_str = (
+                raw_payload if isinstance(raw_payload, str) else json.dumps(raw_payload, default=str)
+            )
             try:
-                parsed = _coerce_step_delta(raw)
+                parsed = _coerce_step_delta(raw_payload)
                 self.last_retries = retries_used
                 self.last_validation_errors = val_errors
+                self.last_usage = call_usage
+                self.total_usage.add(call_usage)
+                if self.on_usage is not None:
+                    self.on_usage(TokenUsage.from_dict(call_usage.to_dict()))
                 return parsed
             except Exception as exc:  # noqa: BLE001
                 val_errors += 1
+                call_usage.validation_errors += 1
                 self.total_validation_errors += 1
                 self.last_retries = retries_used
                 self.last_validation_errors = val_errors
                 last_exc = exc
                 current_prompt = (
-                    f"{prompt}\n\n"
+                    f"{base_user_prompt}\n\n"
                     f"Previous output failed StepDelta JSON validation with error:\n{exc}\n"
                     "Return ONLY valid JSON matching the StepDelta schema."
                 )
+
+        self.last_usage = call_usage
+        self.total_usage.add(call_usage)
+        if self.on_usage is not None:
+            self.on_usage(TokenUsage.from_dict(call_usage.to_dict()))
         assert last_exc is not None
         raise last_exc
+
+    def extract_delta(self, prompt: str, scene_text: str) -> StepDelta:
+        if self.fn is not None:
+            return self._extract_with_retries(base_user_prompt=prompt, system_prompt=None)
+        return self._extract_with_retries(
+            base_user_prompt=prompt,
+            system_prompt=self.system_prompt,
+        )
+
+    def extract_delta_messages(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        scene_text: str,
+    ) -> StepDelta:
+        """Extracts a StepDelta with separate system and user prompts for prefix-cache reuse."""
+        if self.messages_fn is not None:
+            return self._extract_with_retries(
+                base_user_prompt=user_prompt,
+                system_prompt=system_prompt,
+            )
+        return self.extract_delta(f"{system_prompt}\n\n{user_prompt}", scene_text)
 
 
 def resolve_lmstudio_model(
@@ -650,10 +770,11 @@ class OpenAICompatibleExtractor:
         *,
         system_prompt: str | None = None,
     ) -> StepDelta:
-        call_fn = (
-            self._call_api
-            if system_prompt is None
-            else (lambda cur_prompt, schema: self._call_api(cur_prompt, schema, system_prompt=system_prompt))
+        def _call_with_system(cur_prompt: str, schema: dict[str, Any]) -> str:
+            return self._call_api(cur_prompt, schema, system_prompt=system_prompt)
+
+        call_fn: Callable[[str, dict[str, Any]], CallableReturn] = (
+            self._call_api if system_prompt is None else _call_with_system
         )
         helper = CallableExtractor(call_fn, max_retries=self.max_retries)
         try:
@@ -695,7 +816,7 @@ class CachedDeltaExtractor:
         self.extractor = extractor
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        self.model_id = model_id or getattr(extractor, "model", type(extractor).__name__)
+        self.model_id = model_id or getattr(extractor, "model", None) or type(extractor).__name__
         self.system_prompt = system_prompt or getattr(extractor, "system_prompt", "")
         self.bypass_cache = bypass_cache
 
