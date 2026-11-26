@@ -18,7 +18,9 @@ class CanonArcEngine:
         mention_resolver: MentionResolver | None = None,
         extractor: DeltaExtractor | None = None,
         episode_ranker: EpisodeRanker | None = None,
+        inflection_generator: InflectionGenerator | None = None,
         hooks: Sequence[EngineHooks] = (),
+        audit_rules: Sequence[AuditRule] | None = None,
         on_embedder_mismatch: Literal["raise", "warn", "reindex", "ignore"] = "warn",
     ) -> None: ...
 ```
@@ -35,6 +37,12 @@ Supports Python context management (`with CanonArcEngine("save.sqlite") as engin
 - `sync_bible(path: str | Path, *, format: Literal["auto", "csv", "json"] = "auto", step: int = 0, timeline_id: str | None = None, mode: Literal["upsert", "merge", "replace"] = "upsert", target_lang: str | None = None, auto_inflect: bool = True, dry_run: bool = False, column_map: dict[str, str] | None = None) -> BibleSyncReport`: Diffs a CSV or JSON Series Bible against active state at `(timeline_id, step)` and atomically applies only changed revisions (idempotent re-syncs emit zero revisions). Supports `merge` (non-destructive), `upsert` (default, row-authoritative without tombstoning absent entities), and `replace` (strict mirror with tombstones). Emits warnings for alias collisions, auto-generated IDs, and shadowed revisions when `step < head_step`. Only invokes `inflection_generator` when `target_name`/`target_lang`/`gender`/`declension`/`kind` change.
 
 *(All three methods are also available on `TimelineSession`.)*
+
+### Pluggable QA & Continuity Audit (`canonarc.audit`)
+- `audit_step(step: int, source_text: str = "", target_text: str = "", *, timeline_id: str | None = None, rules: Sequence[AuditRule] | None = None, include_rules: Sequence[str] | None = None, exclude_rules: Sequence[str] | None = None, min_severity: AuditSeverity = "info", lang: str | None = None) -> AuditReport`: Runs deterministic, zero-LLM continuity and localization QA rules against a single committed step (and optional source/target text pair). Automatically skips rules whose `required_tiers` are disabled by the active `SchemaPolicy`.
+- `audit_timeline(*, timeline_id: str | None = None, from_step: int = 0, to_step: int | None = None, texts: Mapping[int, str | tuple[str, str]] | None = None, rules: Sequence[AuditRule] | None = None, include_rules: Sequence[str] | None = None, exclude_rules: Sequence[str] | None = None, min_severity: AuditSeverity = "info", lang: str | None = None) -> AuditReport`: Audits every step in `[from_step..to_step]` on a timeline, optionally passing per-step `target_text` or `(source_text, target_text)` pairs for text-level rules.
+
+*(Both methods are also available on `TimelineSession`.)*
 
 ### Retrieval & Query Methods
 - `retrieve_context(step: int, text: str = "", mentions: Sequence[str] = (), top_k_voice: int | None = None, top_k_episodes: int | None = None, pov_entity_ids: Sequence[str] | None = None, pov_mode: Literal["any", "all"] = "any", edge_types: Sequence[str] | None = None, location_id: str | None = None, inclusive: bool = False, timeline_id: str | None = None, fallback_on_empty_mentions: Literal["all", "pov_only", "none"] = "pov_only", voice_constraints: dict[str, str] | None = None) -> StepContext`: Executes unified retrieval for all active tiers in `SchemaPolicy` at `step` (`top_k_voice` defaults to `3` when Tier 5 is enabled or `0` when disabled; `top_k_episodes` defaults to `5` when Tier 6 is enabled or `0` when disabled). Co-present scene entities (matched in text/mentions, sharing the active `location_id`, or POV fallback) and edges between them populate `entities` and `active_edges`, while 1-hop off-screen social graph neighbors populate `related_entities` and `background_edges`. Optional `voice_constraints` merge on top of edge-derived attributes for Tier 5 hard-filter/soft-boost ranking (e.g., `{"channel": "radio", "urgency": "high"}`).
@@ -249,6 +257,32 @@ class BibleSyncReport(BaseModel):
     # Properties / helpers: report.has_changes, report.summary()
 ```
 
+### `AuditIssue` & `AuditReport`
+```python
+AuditSeverity = Literal["info", "warning", "error"]
+
+class AuditIssue(BaseModel):
+    code: str                            # e.g. "exonym_leak", "near_duplicate_entity", "unexplained_register_flip"
+    rule_name: str
+    severity: AuditSeverity = "warning"
+    step: int
+    timeline_id: str = "main"
+    message: str
+    subject_key: str | None = None
+    entity_ids: list[str] = []
+    evidence: dict[str, Any] = {}
+    suggestion: str | None = None
+
+class AuditReport(BaseModel):
+    timeline_id: str
+    steps_audited: list[int] = []
+    issues: list[AuditIssue] = []
+    rules_executed: list[str] = []
+    # Properties / helpers: report.passed, report.error_count, report.warning_count,
+    # report.info_count, report.has_issues_at_or_above(min_severity),
+    # report.by_severity(sev), report.by_code(code), report.summary()
+```
+
 ---
 
 ## Extension Protocols, Adapters & Policies
@@ -257,6 +291,11 @@ class BibleSyncReport(BaseModel):
 - `MentionResolver`: Pluggable entity/coreference resolution protocol (`resolve(text, explicit_mentions, entities, aliases) -> list[ResolvedMention]`). Defaults to `DefaultLexicalResolver(fuzzy_threshold=88.0)`, which uses word-boundary matching and optional `rapidfuzz` inflection matching.
 - `EpisodeRanker` / `EpisodicScoringPolicy`: Pluggable Tier 6 episodic memory ranker (`DefaultEpisodeRanker`) decoupled from `VoiceBank`, configurable via `SchemaPolicy.episodic_policy`.
 - `EngineHooks` / `BaseEngineHooks`: Middleware callbacks (`on_before_commit`, `on_after_commit`, `on_rollback`, `on_branch`, `on_gate_rejected`).
+- `AuditRule` / `CallableAuditRule` (`canonarc.audit`): Pluggable QA rule protocol (`name`, `required_tiers`, `check(ctx: AuditContext) -> Sequence[AuditIssue]`). Built-in rules (`default_audit_rules()`):
+  - `ExonymLeakRule`: Detects untranslated `canonical_name` leakage in `target_text` when `target_name != canonical_name` (case-sensitive CJK/word-boundary matching, source-mention scoping, `base_attributes["allow_source_name"]` opt-out).
+  - `NearDuplicateEntityRule`: Detects alias/persona/exonym hijacks and `rapidfuzz` name collisions against existing entities (`fuzzy_threshold=88.0`, `same_kind_only=True`, `base_attributes["ignore_duplicate_of"]` opt-out).
+  - `UnexplainedRegisterFlipRule`: Flags mutations to `policy.hard_filter_keys` (e.g., `register`) lacking `caused_by_episode_id` and `reason` (skipping step `0`), plus `dangling_causal_episode` errors.
+  - `RegisterVocabularyDriftRule`: Detects mixed register vocabularies (e.g., `Vi`/`ti` mixed with `formal`/`informal`) or values outside an explicit `allowed_values` set.
 - `TierProfile` & `SchemaPolicy`: `TierProfile` (`LEXICON_ONLY` = Tiers 1+4, `STATE_ONLY` = Tiers 1–4, `FULL` = Tiers 1–6) and frozen `SchemaPolicy` dataclass on `DomainPreset.policy` defining `profile`, optional custom `enabled_tiers`, `active_tiers`, `has_tier(tier)`, convenience factories (`SchemaPolicy.lexicon_only()`, `state_only()`, `full()`, `with_tiers(...)`), `edge_layer_order`, `facade_relation`, `belief_relation`, `hard_filter_keys`, `soft_boost_weights`, `fallback_on_empty_hard_filter`, `hard_filter_mismatch_penalty`, and `episodic_policy`.
 
 ---
@@ -311,4 +350,7 @@ canonarc export story_save.sqlite bible.csv [--format auto|csv|json|md] [--timel
 
 # Sync a CSV or JSON Series Bible into the database (offline; auto_inflect disabled in CLI)
 canonarc import story_save.sqlite bible.csv [--format auto|csv|json] [--timeline main] [--step 0] [--mode upsert|merge|replace] [--target-lang sr] [--column-map SRC=DST] [--dry-run] [--json]
+
+# Run deterministic continuity and localization QA audit rules (exits 1 if --fail-on threshold matched)
+canonarc audit story_save.sqlite [--timeline main] [--step 2 --source s2_en.txt --target s2_sr.txt] [--from-step 0 --to-step 10] [--pairs-jsonl pairs.jsonl] [--rules exonym_leak,near_duplicate_entity] [--exclude-rules ...] [--min-severity info|warning|error] [--fail-on error|warning|none] [--json]
 ```

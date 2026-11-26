@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Any
 
 from .bible import infer_export_format
@@ -181,6 +182,86 @@ def _cmd_import(args: argparse.Namespace) -> int:
     return 0
 
 
+def _load_pairs_jsonl(path: str) -> dict[int, tuple[str, str]]:
+    pairs: dict[int, tuple[str, str]] = {}
+    with Path(path).open("r", encoding="utf-8") as fh:
+        for line_no, raw in enumerate(fh, start=1):
+            stripped = raw.strip()
+            if not stripped:
+                continue
+            obj = json.loads(stripped)
+            if "step" not in obj:
+                raise ValueError(f"{path}:{line_no}: missing required 'step' field.")
+            step = int(obj["step"])
+            src = str(obj.get("source", obj.get("source_text", "")) or "")
+            tgt = str(obj.get("target", obj.get("target_text", "")) or "")
+            pairs[step] = (src, tgt)
+    return pairs
+
+
+def _cmd_audit(args: argparse.Namespace) -> int:
+    include_rules = (
+        [r.strip() for r in args.rules.split(",") if r.strip()] if args.rules else None
+    )
+    exclude_rules = (
+        [r.strip() for r in args.exclude_rules.split(",") if r.strip()]
+        if args.exclude_rules
+        else None
+    )
+    with CanonArcEngine(
+        args.db_path, timeline_id=args.timeline, on_embedder_mismatch="ignore"
+    ) as engine:
+        tl_info = engine.store.get_timeline(args.timeline)
+        if tl_info is None:
+            print(f"Error: timeline '{args.timeline}' not found.", file=sys.stderr)
+            return 1
+
+        if args.step is not None:
+            source_text = (
+                Path(args.source).read_text(encoding="utf-8") if args.source else ""
+            )
+            target_text = (
+                Path(args.target).read_text(encoding="utf-8") if args.target else ""
+            )
+            report = engine.audit_step(
+                args.step,
+                source_text=source_text,
+                target_text=target_text,
+                timeline_id=args.timeline,
+                include_rules=include_rules,
+                exclude_rules=exclude_rules,
+                min_severity=args.min_severity,
+                lang=args.lang,
+            )
+        else:
+            texts: dict[int, tuple[str, str]] | None = None
+            if args.pairs_jsonl:
+                try:
+                    texts = _load_pairs_jsonl(args.pairs_jsonl)
+                except (OSError, ValueError, json.JSONDecodeError) as exc:
+                    print(f"Error reading --pairs-jsonl: {exc}", file=sys.stderr)
+                    return 2
+            report = engine.audit_timeline(
+                timeline_id=args.timeline,
+                from_step=args.from_step,
+                to_step=args.to_step,
+                texts=texts,
+                include_rules=include_rules,
+                exclude_rules=exclude_rules,
+                min_severity=args.min_severity,
+                lang=args.lang,
+            )
+
+    if args.json:
+        print(json.dumps(report.model_dump(), indent=2, ensure_ascii=False))
+    else:
+        print(report.summary())
+
+    if args.fail_on != "none" and report.has_issues_at_or_above(args.fail_on):
+        return 1
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="canonarc",
@@ -266,6 +347,37 @@ def build_parser() -> argparse.ArgumentParser:
     p_import.add_argument("--dry-run", action="store_true", help="Preview diff without modifying the database.")
     p_import.add_argument("--json", action="store_true", help="Output sync report as JSON.")
     p_import.set_defaults(func=_cmd_import)
+
+    p_audit = sub.add_parser("audit", help="Run continuity and localization QA audit rules.")
+    p_audit.add_argument("db_path", help="Path to SQLite database file.")
+    p_audit.add_argument("--timeline", default="main", help="Timeline ID (default: main).")
+    p_audit.add_argument("--step", type=int, default=None, help="Audit a single step (omit to audit timeline range).")
+    p_audit.add_argument("--from-step", type=int, default=0, help="Start step for timeline audit (default: 0).")
+    p_audit.add_argument("--to-step", type=int, default=None, help="End step for timeline audit (default: head).")
+    p_audit.add_argument("--source", default=None, help="Source text file path (used with --step).")
+    p_audit.add_argument("--target", default=None, help="Target text file path (used with --step).")
+    p_audit.add_argument(
+        "--pairs-jsonl",
+        default=None,
+        help="JSONL file with {step, source, target} records for multi-step text auditing.",
+    )
+    p_audit.add_argument("--rules", default=None, help="Comma-separated rule names to include.")
+    p_audit.add_argument("--exclude-rules", default=None, help="Comma-separated rule names to exclude.")
+    p_audit.add_argument(
+        "--min-severity",
+        default="info",
+        choices=["info", "warning", "error"],
+        help="Minimum issue severity to report (default: info).",
+    )
+    p_audit.add_argument(
+        "--fail-on",
+        default="error",
+        choices=["error", "warning", "none"],
+        help="Exit non-zero if issues at or above this severity exist (default: error).",
+    )
+    p_audit.add_argument("--lang", default=None, help="Optional target language tag.")
+    p_audit.add_argument("--json", action="store_true", help="Output audit report as JSON.")
+    p_audit.set_defaults(func=_cmd_audit)
 
     return parser
 

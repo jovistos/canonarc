@@ -292,5 +292,7 @@ WHERE rn = 1 AND is_tombstone = 0;
 | `extractors.py` | `DeltaExtractor`, `CallableExtractor`, and `OpenAICompatibleExtractor` for LLM delta extraction |
 | `hooks.py` | `EngineHooks` & `BaseEngineHooks` lifecycle callbacks (commit, rollback, branch, gate rejection) |
 | `presets.py` | `TierProfile`, `SchemaPolicy`, `InteractiveFictionPreset`, `TranslationPreset`, and `SimulationPreset` |
-| `engine.py` | `CanonArcEngine`, `StepTransaction`, `TimelineSession` (`contextvars`), POV projection & consolidation |
-| `cli.py` | `canonarc` CLI inspector (`tree`, `inspect`, `diff`, `history`) |
+| `bible.py` | Lossless CSV/JSON/Markdown Series Bible export and idempotent diff/upsert sync (`export_bible`, `sync_bible`) |
+| `audit.py` | Pluggable deterministic QA & continuity audit engine (`AuditRule`, `AuditIssue`, `AuditReport`, built-in localization & graph rules) |
+| `engine.py` | `CanonArcEngine`, `StepTransaction`, `TimelineSession` (`contextvars`), POV projection, audit & consolidation |
+| `cli.py` | `canonarc` CLI inspector (`tree`, `inspect`, `diff`, `history`, `export`, `import`, `audit`) |
