@@ -28,13 +28,13 @@ class CanonArcEngine:
 Supports Python context management (`with CanonArcEngine("save.sqlite") as engine:`) as well as concurrency-safe timeline isolation via `engine.session(timeline_id)` (`TimelineSession`) and `with engine.use_timeline(timeline_id):`.
 
 ### Seeding Methods
-- `register_entity(entity: EntityRecord, aliases: Sequence[str | AliasRecord] = (), step: int = 0, timeline_id: str | None = None) -> None`: Registers an entity and its aliases at `step`.
-- `seed_entities(entities: Sequence[EntityRecord], step: int = 0, timeline_id: str | None = None) -> None`: Batch registers entities.
+- `register_entity(entity: EntityRecord, aliases: Sequence[str | AliasRecord] = (), step: int = 0, timeline_id: str | None = None, target_lang: str | None = None, auto_inflect: bool = True) -> None`: Registers an entity and its aliases at `step`. Auto-registers `base_attributes["target_name"]` as `kind="permanent"` and any generated inflected/possessive forms as `kind="inflection"`.
+- `seed_entities(entities: Sequence[EntityRecord], step: int = 0, timeline_id: str | None = None, target_lang: str | None = None, auto_inflect: bool = True, batch_size: int = 25) -> None`: Batch-registers entities in a single store transaction and generates inflections via `generate_inflections_batch(..., batch_size=batch_size)`.
 
 ### Series Bible Import/Export & Sync (`canonarc.bible`)
-- `export_bible(path: str | Path, *, format: Literal["auto", "csv", "json", "md"] = "auto", at_step: int | None = None, timeline_id: str | None = None, kinds: Sequence[str] | None = None, include_state: bool = False, include_edges: bool | None = None, include_aliases: bool = True, lang: str | None = None, excel_bom: bool = False) -> BibleExportResult`: Exports the active Series Bible at `(timeline_id, at_step)` (defaults to timeline head when `at_step=None`) to JSON (lossless entities + aliases + edges), CSV (spreadsheet-friendly entities + `;`-separated aliases + flattened `base_attributes`), or Markdown (export-only human reference doc). When `include_edges=None`, defaults to `policy.has_tier(2)` (`False` in `LEXICON_ONLY`, `True` in `STATE_ONLY`/`FULL`).
-- `render_bible(*, format: Literal["csv", "json", "md"] = "md", at_step: int | None = None, timeline_id: str | None = None, kinds: Sequence[str] | None = None, include_state: bool = False, include_edges: bool | None = None, include_aliases: bool = True, lang: str | None = None) -> tuple[str, BibleExportResult]`: Renders the Series Bible to a string without writing to disk.
-- `sync_bible(path: str | Path, *, format: Literal["auto", "csv", "json"] = "auto", step: int = 0, timeline_id: str | None = None, mode: Literal["upsert", "merge", "replace"] = "upsert", target_lang: str | None = None, auto_inflect: bool = True, dry_run: bool = False, column_map: dict[str, str] | None = None) -> BibleSyncReport`: Diffs a CSV or JSON Series Bible against active state at `(timeline_id, step)` and atomically applies only changed revisions (idempotent re-syncs emit zero revisions). Supports `merge` (non-destructive), `upsert` (default, row-authoritative without tombstoning absent entities), and `replace` (strict mirror with tombstones). Emits warnings for alias collisions, auto-generated IDs, and shadowed revisions when `step < head_step`. Only invokes `inflection_generator` when `target_name`/`target_lang`/`gender`/`declension`/`kind` change.
+- `export_bible(path: str | Path, *, format: Literal["auto", "csv", "json", "md"] = "auto", at_step: int | None = None, timeline_id: str | None = None, kinds: Sequence[str] | None = None, include_state: bool = False, include_edges: bool | None = None, include_aliases: bool = True, include_inflections: bool | None = None, lang: str | None = None, excel_bom: bool = False) -> BibleExportResult`: Exports the active Series Bible at `(timeline_id, at_step)` (defaults to timeline head when `at_step=None`) to JSON (lossless entities + aliases + edges), CSV (spreadsheet-friendly entities + `;`-separated aliases + flattened `base_attributes`), or Markdown (export-only human reference doc). When `include_edges=None`, defaults to `policy.has_tier(2)` (`False` in `LEXICON_ONLY`, `True` in `STATE_ONLY`/`FULL`). When `include_inflections=None`, defaults to `True` for `json` and `False` for `csv`/`md` (hiding `kind="inflection"` grammar forms from human spreadsheets while keeping them in JSON backups and lexical resolution).
+- `render_bible(*, format: Literal["csv", "json", "md"] = "md", at_step: int | None = None, timeline_id: str | None = None, kinds: Sequence[str] | None = None, include_state: bool = False, include_edges: bool | None = None, include_aliases: bool = True, include_inflections: bool | None = None, lang: str | None = None) -> tuple[str, BibleExportResult]`: Renders the Series Bible to a string without writing to disk.
+- `sync_bible(path: str | Path, *, format: Literal["auto", "csv", "json"] = "auto", step: int = 0, timeline_id: str | None = None, mode: Literal["upsert", "merge", "replace"] = "upsert", target_lang: str | None = None, auto_inflect: bool = True, batch_size: int = 25, dry_run: bool = False, column_map: dict[str, str] | None = None) -> BibleSyncReport`: Diffs a CSV or JSON Series Bible against active state at `(timeline_id, step)` and atomically applies only changed revisions (idempotent re-syncs emit zero revisions). Supports `merge` (non-destructive), `upsert` (default, row-authoritative without tombstoning absent entities), and `replace` (strict mirror with tombstones). Emits warnings for alias collisions, auto-generated IDs, and shadowed revisions when `step < head_step`. Only invokes `inflection_generator` when `target_name`/`target_lang`/`gender`/`declension`/`kind` change, batches needed entities via `generate_inflections_batch(..., batch_size=batch_size)`, and preserves existing `kind="inflection"` aliases on unchanged CSV rows.
 
 *(All three methods are also available on `TimelineSession`.)*
 
@@ -111,7 +111,8 @@ class EntityRecord(BaseModel):
 class AliasRecord(BaseModel):
     alias: str
     entity_id: str
-    kind: Literal["permanent", "epithet", "disguise", "title"] = "epithet"
+    kind: Literal["permanent", "epithet", "disguise", "title", "inflection"] = "epithet"
+    lang: str | None = None              # Optional ISO/BCP-47 tag (e.g. 'en', 'sr'); None = universal
     known_to: list[str] | None = None    # None = universal; list[str] = scoped to observers
     persona_name: str | None = None      # Surface identity shown to fooled observers
     valid_from_step: int = 0
@@ -328,6 +329,17 @@ class AuditReport(BaseModel):
 
 ---
 
+## Inflection Generators (`canonarc.inflections`)
+
+- `InflectionRequest`: Frozen dataclass (`name`, `lang`, `gender=None`, `kind="character"`, `declension=None`) for batched morphological inflection requests.
+- `InflectionGenerator` (Protocol): `generate_inflections(name, lang, *, gender=None, kind="character", declension=None) -> list[str]`.
+- `CallableInflectionGenerator(fn, *, use_cache=True)`: Wraps any Python callable with in-memory caching and `generate_inflections_batch(items, *, batch_size=25)`.
+- `LLMInflectionGenerator(extractor, *, cache_dir=None, max_tokens=None, temperature=0.0, max_retries=1, system_prompt=...)`: One-shot and batched (`generate_inflections_batch(items, *, batch_size=25)`) LLM inflection generator with shared per-item memory + disk caching, language-grouped integer-indexed batch prompts, and per-item fallback on dropped IDs.
+- `generate_inflections_batch(generator, items, *, batch_size=25) -> list[list[str]]`: Dispatcher helper that calls `generator.generate_inflections_batch()` when available and falls back to per-item calls for custom generators.
+- `build_inflection_prompt(...)` / `build_batch_inflection_prompt(items)`: Deterministic single-item and batched JSON prompt builders.
+
+---
+
 ## CLI Reference (`canonarc`)
 
 Installed as a console script via `[project.scripts]` (`canonarc.cli:main`):
@@ -346,7 +358,7 @@ canonarc diff story_save.sqlite timeline_a timeline_b --step 85 [--json]
 canonarc history story_save.sqlite char_arthur [--timeline main] [--type entity|edge|alias] [--json]
 
 # Export Series Bible to CSV, JSON, or Markdown (use '-' for stdout)
-canonarc export story_save.sqlite bible.csv [--format auto|csv|json|md] [--timeline main] [--step 0] [--kinds character,term] [--lang sr] [--include-state] [--no-edges] [--no-aliases] [--excel-bom] [--json]
+canonarc export story_save.sqlite bible.csv [--format auto|csv|json|md] [--timeline main] [--step 0] [--kinds character,term] [--lang sr] [--include-state] [--no-edges] [--no-aliases] [--include-inflections|--exclude-inflections] [--excel-bom] [--json]
 
 # Sync a CSV or JSON Series Bible into the database (offline; auto_inflect disabled in CLI)
 canonarc import story_save.sqlite bible.csv [--format auto|csv|json] [--timeline main] [--step 0] [--mode upsert|merge|replace] [--target-lang sr] [--column-map SRC=DST] [--dry-run] [--json]
