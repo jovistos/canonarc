@@ -308,3 +308,112 @@ def test_retrieve_context_voice_constraints_channel_filtering():
     assert len(solo_ctx.voice_exemplars) == 1
     assert solo_ctx.voice_exemplars[0].metadata["channel"] == "radio"
     engine.close()
+
+
+def test_european_balkan_dash_dialogue_and_interjection_stripping():
+    """En-dash/em-dash/quotation-dash dialogue strips narrator beats and routes them to attribution."""
+    from canonarc import CanonArcEngine, EntityRecord
+
+    engine = CanonArcEngine(":memory:")
+    engine.register_entity(EntityRecord(entity_id="char_artur", canonical_name="Artur"), step=0)
+    engine.register_entity(EntityRecord(entity_id="char_elena", canonical_name="Elena"), step=0)
+    engine.register_entity(EntityRecord(entity_id="char_marko", canonical_name="Marko"), step=0)
+
+    scene = (
+        "– Ne znam – reče Artur tiho – šta da radim ako nas čuvari pronađu pre svitanja u ovoj kuli.\n"
+        "— Moraš da odlučiš odmah i povedeš ljude kroz severnu kapiju dok još imamo vremena — odgovori Elena.\n"
+        "Marko se okrenu prema njima:\n"
+        "― Između 10–15 vojnika već patrolira duž zidina, pa moramo krenuti zaista oprezno i bez buke."
+    )
+    candidates = engine.extract_dialogue_candidates(scene, step=1)
+    assert len(candidates) == 3
+
+    # 1. En-dash 3-part line: middle narrator beat stripped from text and used for attribution
+    assert "reče Artur" not in candidates[0].text
+    assert candidates[0].text == "Ne znam šta da radim ako nas čuvari pronađu pre svitanja u ovoj kuli."
+    assert candidates[0].speaker_id == "char_artur"
+
+    # 2. Em-dash 2-part line: trailing beat stripped, previous turn's Artur did NOT bleed into before_win
+    assert "odgovori Elena" not in candidates[1].text
+    assert candidates[1].text == "Moraš da odlučiš odmah i povedeš ljude kroz severnu kapiju dok još imamo vremena"
+    assert candidates[1].speaker_id == "char_elena"
+
+    # 3. Quotation-dash line with narrative lead-in preserved and unspaced range '10–15' intact
+    assert "10–15" in candidates[2].text
+    assert candidates[2].speaker_id == "char_marko"
+    engine.close()
+
+
+def test_dash_dialogue_preserves_rhetorical_aside_ending_in_question():
+    """In-speech parenthetical asides ending with '?' or '!' are not stripped as narrator beats."""
+    gate = IngestionGate(min_words=10, max_words=60, min_distinctiveness=0.40)
+    text = "– Bio je to – zar ne misliš tako? – zaista neobičan i opasan susret u zamku."
+    cands = gate.extract_candidates(text)
+    assert len(cands) == 1
+    assert "zar ne misliš tako?" in cands[0].text
+
+
+def test_serbian_german_quotes_and_attribution_window_no_bleed():
+    """Supports both „…“ and „…” quotes and prevents next „ quote from bleeding into after_win."""
+    from canonarc import CanonArcEngine, EntityRecord
+
+    gate = IngestionGate(min_words=10, max_words=60, min_distinctiveness=0.40)
+
+    # Serbian/Croatian/Polish „…” closing variant (U+201D)
+    sr_right_quote = "Artur šapnu: „Ne mešajte se u opasne stvari koje uopšte ne razumete, inače ćete zažaliti.”"
+    cands_right = gate.extract_candidates(sr_right_quote)
+    assert len(cands_right) == 1
+    assert cands_right[0].text.startswith("Ne mešajte se")
+
+    # Attribution window must stop at opening „ of the next quote
+    scene = (
+        "„Ne verujem da ćemo ikada pronaći izlaz iz ove mračne i zaboravljene tvrđave!“ "
+        "„Elena, moramo odmah požuriti pre nego što stražari zatvore sve gradske kapije večeras!“ viknu Marko."
+    )
+    engine = CanonArcEngine(":memory:")
+    engine.register_entity(EntityRecord(entity_id="char_elena", canonical_name="Elena"), step=0)
+    engine.register_entity(EntityRecord(entity_id="char_marko", canonical_name="Marko"), step=0)
+
+    cands = engine.extract_dialogue_candidates(scene, step=1)
+    assert len(cands) == 2
+    # First quote has no speaker after it; Elena inside the second quote MUST NOT bleed into its attribution
+    assert cands[0].speaker_id is None
+    assert cands[0].addressee_id is None
+    # Second quote is attributed to Marko
+    assert cands[1].speaker_id == "char_marko"
+    engine.close()
+
+
+def test_inward_and_outward_guillemets_and_mixed_quotes():
+    """Handles French/Russian «…», Croatian/German »…«, and mixed „…“ + straight quotes without collisions."""
+    gate = IngestionGate(min_words=10, max_words=60, min_distinctiveness=0.40)
+
+    # French outward guillemets: narrator text between quotes must NOT be matched
+    fr_text = (
+        "«Le vieux parchemin révèle un présage sombre qui menace toute la cité royale.» "
+        "murmura Merlin lentement. "
+        "«Nous devons agir ensemble avant la tombée de la nuit glaciale.»"
+    )
+    fr_cands = gate.extract_candidates(fr_text)
+    assert len(fr_cands) == 2
+    assert all("murmura Merlin" not in c.text for c in fr_cands)
+
+    # Croatian/German inward guillemets »…«
+    hr_text = (
+        "»Stari pergament otkriva mračno proročanstvo koje ugrožava čitavo naše kraljevstvo.« "
+        "reče Artur tiho. "
+        "»Moramo odmah upozoriti stražare na severnim kulama pre nego što padne noć.«"
+    )
+    hr_cands = gate.extract_candidates(hr_text)
+    assert len(hr_cands) == 2
+    assert all("reče Artur" not in c.text for c in hr_cands)
+
+    # Mixed „…“ and straight "..." quotes in the same paragraph must not cross-match
+    mixed = (
+        '„Drevni zapis jasno upozorava na veliku opasnost koja preti našoj tvrđavi.“ '
+        'reče Artur, '
+        '"The ancient parchment reveals an ominous portent that threatens sovereign Camelot."'
+    )
+    mixed_cands = gate.extract_candidates(mixed)
+    assert len(mixed_cands) == 2
+    assert all("reče Artur" not in c.text for c in mixed_cands)

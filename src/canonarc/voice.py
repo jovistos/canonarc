@@ -36,14 +36,48 @@ from .models import DialogueCandidate, EpisodeRecord, StepContext, VoiceExemplar
 from .presets import DEFAULT_SCHEMA_POLICY, SchemaPolicy
 
 # Quoted dialogue patterns across English, European, Balkan, and CJK typographic conventions
+_OUTWARD_GUILLEMET_PATTERN = re.compile(r'«([^»]+)»')
+_INWARD_GUILLEMET_PATTERN = re.compile(r'»([^«]+)«')
+_DASH_DIALOGUE_PATTERN = re.compile(r'(?:^|\n)\s*[—–―]\s*([^\n]+)')
+_DASH_INTERJECTION_SPLIT_RE = re.compile(r'\s+[—–―]\s+')
+_DASH_LINE_PREFIX_RE = re.compile(r'^\s*[—–―]\s*')
+
 DIALOGUE_PATTERNS = [
-    re.compile(r'["“]([^"”]+)["”]'),           # Standard English / curved quotes
-    re.compile(r'„([^“]+)“'),                   # Serbian / Croatian / German
-    re.compile(r'«([^»]+)»'),                   # French / Russian guillemets
-    re.compile(r'「([^」]+)」'),                   # Japanese / Traditional Chinese
-    re.compile(r'『([^』]+)』'),                   # Japanese / Traditional Chinese inner quotes
-    re.compile(r'(?:^|\n)\s*—\s*([^\n]+)'),     # Em-dash dialogue lines
+    re.compile(r'"([^"]+)"'),                   # Straight double quotes
+    re.compile(r'„([^“”]+)[“”]'),               # Serbian / Croatian / Polish / Hungarian / German
+    re.compile(r'“([^”]+)”'),                   # English curved quotes
+    _OUTWARD_GUILLEMET_PATTERN,                 # French / Russian guillemets
+    re.compile(r'「([^」]+)」'),                  # Japanese / Traditional Chinese
+    re.compile(r'『([^』]+)』'),                  # Japanese / Traditional Chinese inner quotes
+    _DASH_DIALOGUE_PATTERN,                     # Em-dash / en-dash / quotation-dash dialogue lines
 ]
+
+
+def _split_dash_dialogue(raw_line: str) -> tuple[str, str]:
+    """Splits a dash-dialogue line into (spoken_dialogue, inline_narrator_beats).
+
+    Handles European/Balkan dash dialogue such as:
+    - 'Ne znam šta da radim — reče Artur.'
+    - 'Ne znam — reče Artur — šta da radim.'
+    Preserves unspaced dashes (e.g. '10–15') and in-speech rhetorical asides
+    ending in '?' or '!'.
+    """
+    stripped = raw_line.strip()
+    parts = [p.strip() for p in _DASH_INTERJECTION_SPLIT_RE.split(stripped)]
+    if len(parts) <= 1:
+        return stripped, ""
+
+    spoken_parts: list[str] = []
+    narrator_parts: list[str] = []
+    for idx, part in enumerate(parts):
+        if not part:
+            continue
+        if idx % 2 == 1 and not part.endswith(("?", "!")):
+            narrator_parts.append(part)
+        else:
+            spoken_parts.append(part)
+
+    return " ".join(spoken_parts).strip(), " ".join(narrator_parts).strip()
 
 
 class IngestionGate:
@@ -69,6 +103,7 @@ class IngestionGate:
         *,
         prev_text: str = "",
         next_text: str = "",
+        is_dash_dialogue: bool = False,
     ) -> tuple[str, str]:
         """Extracts local pre-quote and post-quote attribution clauses."""
         before_raw = text[max(0, start - 140) : start]
@@ -78,10 +113,21 @@ class IngestionGate:
                 head = text[:start]
                 combined_before = f"{prefix} {head}" if head else f"{prefix} "
                 before_raw = combined_before[-140:]
-        for sep in ("\n\n", '"', "”", "“", "»", "」", "』"):
+        for sep in ("\n\n", '"', "”", "“", "»", "«", "」", "』"):
             idx = before_raw.rfind(sep)
             if idx != -1:
                 before_raw = before_raw[idx + len(sep) :]
+        if is_dash_dialogue and before_raw:
+            # Drop any preceding dash-dialogue turn(s) so the previous speaker's
+            # line does not bleed into this turn's attribution window, while
+            # keeping a normal narrative lead-in line (e.g. "Elena uzdahnu:\n").
+            lines = before_raw.splitlines()
+            last_dash_idx = -1
+            for i, line in enumerate(lines):
+                if _DASH_LINE_PREFIX_RE.match(line):
+                    last_dash_idx = i
+            if last_dash_idx != -1:
+                before_raw = "\n".join(lines[last_dash_idx + 1 :])
 
         after_raw = text[end : min(len(text), end + 100)]
         if len(text) - end < 100 and next_text:
@@ -90,7 +136,7 @@ class IngestionGate:
                 tail = text[end:]
                 combined_after = f"{tail} {suffix}" if tail else f" {suffix}"
                 after_raw = combined_after[:100]
-        for sep in ("\n\n", "\n", '"', "”", "“", "«", "「", "『"):
+        for sep in ("\n\n", "\n", '"', "”", "“", "„", "«", "»", "「", "『"):
             idx = after_raw.find(sep)
             if idx != -1:
                 after_raw = after_raw[:idx]
@@ -110,10 +156,41 @@ class IngestionGate:
         """Extracts quoted dialogue spans and applies Gate 1 (length + distinctiveness pre-filter)."""
         candidates: list[DialogueCandidate] = []
         seen_spans: set[str] = set()
+        consumed_quote_delimiters: set[int] = set()
+
+        # Detect inward guillemets (»…«, common in Croatian/Slovenian/German)
+        # vs outward guillemets («…», French/Russian) to prevent matching
+        # narrator text between two outward quotes.
+        first_open_g = text.find("«")
+        first_close_g = text.find("»")
+        use_inward_guillemets = (
+            first_open_g != -1 and first_close_g != -1 and first_close_g < first_open_g
+        )
 
         for pattern in DIALOGUE_PATTERNS:
-            for match in pattern.finditer(text):
-                span = match.group(1).strip()
+            active_pattern = (
+                _INWARD_GUILLEMET_PATTERN
+                if (pattern is _OUTWARD_GUILLEMET_PATTERN and use_inward_guillemets)
+                else pattern
+            )
+            is_dash_pattern = active_pattern is _DASH_DIALOGUE_PATTERN
+
+            for match in active_pattern.finditer(text):
+                if not is_dash_pattern:
+                    if (
+                        match.start() in consumed_quote_delimiters
+                        or (match.end() - 1) in consumed_quote_delimiters
+                    ):
+                        continue
+                    consumed_quote_delimiters.add(match.start())
+                    consumed_quote_delimiters.add(match.end() - 1)
+
+                raw_span = match.group(1).strip()
+                if is_dash_pattern:
+                    span, inline_attribution = _split_dash_dialogue(raw_span)
+                else:
+                    span, inline_attribution = raw_span, ""
+
                 if not span or span in seen_spans:
                     continue
                 seen_spans.add(span)
@@ -165,7 +242,14 @@ class IngestionGate:
                         match.end(),
                         prev_text=prev_text,
                         next_text=next_text,
+                        is_dash_dialogue=is_dash_pattern,
                     )
+                    if inline_attribution:
+                        after_win = (
+                            f"{inline_attribution} {after_win}".strip()
+                            if after_win
+                            else inline_attribution
+                        )
                     speaker_id, addressee_id, speaker_surface = speaker_resolver(
                         before_win, after_win
                     )
