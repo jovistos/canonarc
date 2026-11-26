@@ -108,39 +108,19 @@ class PlaceholderPreservationRule:
             return ctx.ignore_patterns
         return COMMON_PLACEHOLDER_PATTERNS
 
-    def check(self, ctx: AuditContext) -> list[AuditIssue]:
-        if not ctx.source_text.strip() or not ctx.target_text.strip():
-            return []
-
-        patterns = self._resolve_patterns(ctx)
-        if not patterns:
-            return []
-
-        src_hits = _extract_placeholder_hits(ctx.source_text, patterns)
-        tgt_hits = _extract_placeholder_hits(ctx.target_text, patterns)
-        if not src_hits and not tgt_hits:
-            return []
-
-        src_counts: Counter[str] = Counter(tok for tok, _, _, _ in src_hits)
-        tgt_counts: Counter[str] = Counter(tok for tok, _, _, _ in tgt_hits)
-
-        src_pat_by_tok: dict[str, int] = {}
-        for tok, pat_idx, _, _ in src_hits:
-            src_pat_by_tok.setdefault(tok, pat_idx)
-
-        tgt_pat_by_tok: dict[str, int] = {}
-        tgt_first_span: dict[str, tuple[int, int]] = {}
-        for tok, pat_idx, start, end in tgt_hits:
-            tgt_pat_by_tok.setdefault(tok, pat_idx)
-            tgt_first_span.setdefault(tok, (start, end))
-
-        missing: Counter[str] = src_counts - tgt_counts
-        extra: Counter[str] = tgt_counts - src_counts
-
+    def _pair_mutated_placeholders(
+        self,
+        ctx: AuditContext,
+        *,
+        missing: Counter[str],
+        extra: Counter[str],
+        src_counts: Counter[str],
+        tgt_counts: Counter[str],
+        src_pat_by_tok: dict[str, int],
+        tgt_pat_by_tok: dict[str, int],
+        tgt_first_span: dict[str, tuple[int, int]],
+    ) -> list[AuditIssue]:
         issues: list[AuditIssue] = []
-
-        # Pair missing source placeholders with novel extra target placeholders from the same pattern family
-        # to emit a single actionable 'placeholder_mutated' finding (e.g. [[IMG_1]] -> [[SLIKA_1]]).
         novel_extras = [tok for tok in extra if src_counts[tok] == 0]
         candidate_pairs: list[tuple[float, str, str]] = []
         for s_tok in missing:
@@ -182,35 +162,18 @@ class PlaceholderPreservationRule:
                     suggestion=f"Restore exact placeholder '{s_tok}' in place of '{t_tok}'.",
                 )
             )
+        return issues
 
-        for tok, count in missing.items():
-            if count <= 0:
-                continue
-            issues.append(
-                AuditIssue(
-                    code="placeholder_missing",
-                    rule_name=self.name,
-                    severity=self.missing_severity,
-                    step=ctx.step,
-                    timeline_id=ctx.timeline_id,
-                    subject_key=f"placeholder:{tok}",
-                    message=(
-                        f"Placeholder '{tok}' is missing in target_text "
-                        f"(expected {src_counts[tok]}, found {tgt_counts[tok]})."
-                    ),
-                    evidence={
-                        "token": tok,
-                        "expected_count": src_counts[tok],
-                        "actual_count": tgt_counts[tok],
-                        "missing_count": count,
-                    },
-                    suggestion=(
-                        f"Restore missing placeholder '{tok}' "
-                        f"(expected {src_counts[tok]} occurrence(s), found {tgt_counts[tok]})."
-                    ),
-                )
-            )
-
+    def _emit_extra_placeholder_issues(
+        self,
+        ctx: AuditContext,
+        *,
+        extra: Counter[str],
+        src_counts: Counter[str],
+        tgt_counts: Counter[str],
+        tgt_first_span: dict[str, tuple[int, int]],
+    ) -> list[AuditIssue]:
+        issues: list[AuditIssue] = []
         for tok, count in extra.items():
             if count <= 0:
                 continue
@@ -264,6 +227,84 @@ class PlaceholderPreservationRule:
                         suggestion=f"Remove unexpected placeholder '{tok}' not present in source_text.",
                     )
                 )
+        return issues
+
+    def check(self, ctx: AuditContext) -> list[AuditIssue]:
+        if not ctx.source_text.strip() or not ctx.target_text.strip():
+            return []
+
+        patterns = self._resolve_patterns(ctx)
+        if not patterns:
+            return []
+
+        src_hits = _extract_placeholder_hits(ctx.source_text, patterns)
+        tgt_hits = _extract_placeholder_hits(ctx.target_text, patterns)
+        if not src_hits and not tgt_hits:
+            return []
+
+        src_counts: Counter[str] = Counter(tok for tok, _, _, _ in src_hits)
+        tgt_counts: Counter[str] = Counter(tok for tok, _, _, _ in tgt_hits)
+        src_pat_by_tok: dict[str, int] = {}
+        for tok, pat_idx, _, _ in src_hits:
+            src_pat_by_tok.setdefault(tok, pat_idx)
+
+        tgt_pat_by_tok: dict[str, int] = {}
+        tgt_first_span: dict[str, tuple[int, int]] = {}
+        for tok, pat_idx, start, end in tgt_hits:
+            tgt_pat_by_tok.setdefault(tok, pat_idx)
+            tgt_first_span.setdefault(tok, (start, end))
+
+        missing: Counter[str] = src_counts - tgt_counts
+        extra: Counter[str] = tgt_counts - src_counts
+
+        issues = self._pair_mutated_placeholders(
+            ctx,
+            missing=missing,
+            extra=extra,
+            src_counts=src_counts,
+            tgt_counts=tgt_counts,
+            src_pat_by_tok=src_pat_by_tok,
+            tgt_pat_by_tok=tgt_pat_by_tok,
+            tgt_first_span=tgt_first_span,
+        )
+
+        for tok, count in missing.items():
+            if count <= 0:
+                continue
+            issues.append(
+                AuditIssue(
+                    code="placeholder_missing",
+                    rule_name=self.name,
+                    severity=self.missing_severity,
+                    step=ctx.step,
+                    timeline_id=ctx.timeline_id,
+                    subject_key=f"placeholder:{tok}",
+                    message=(
+                        f"Placeholder '{tok}' is missing in target_text "
+                        f"(expected {src_counts[tok]}, found {tgt_counts[tok]})."
+                    ),
+                    evidence={
+                        "token": tok,
+                        "expected_count": src_counts[tok],
+                        "actual_count": tgt_counts[tok],
+                        "missing_count": count,
+                    },
+                    suggestion=(
+                        f"Restore missing placeholder '{tok}' "
+                        f"(expected {src_counts[tok]} occurrence(s), found {tgt_counts[tok]})."
+                    ),
+                )
+            )
+
+        issues.extend(
+            self._emit_extra_placeholder_issues(
+                ctx,
+                extra=extra,
+                src_counts=src_counts,
+                tgt_counts=tgt_counts,
+                tgt_first_span=tgt_first_span,
+            )
+        )
 
         if self.check_order and not issues:
             src_seq = [tok for tok, _, _, _ in src_hits]

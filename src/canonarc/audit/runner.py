@@ -11,6 +11,7 @@ from ..models import (
     StepContext,
 )
 from ..presets import DomainPreset
+from ..store.protocols import fetch_active_graph_state
 from .models import (
     _SEVERITY_RANK,
     AuditContext,
@@ -51,13 +52,7 @@ def _load_graph_state(
     timeline_id: str,
     step: int,
 ) -> tuple[list[EntityRecord], list[AliasRecord], list[DirectedEdgeRecord]]:
-    get_state = getattr(engine.store, "get_active_graph_state", None)
-    if callable(get_state):
-        return get_state(timeline_id, step)
-    entities = engine.store.get_all_active_entities(timeline_id, step)
-    aliases = engine.store.get_all_active_aliases(timeline_id, step)
-    edges = engine.store.get_all_active_edges(timeline_id, step)
-    return entities, aliases, edges
+    return fetch_active_graph_state(engine.store, timeline_id, step)
 
 
 def build_audit_context(
