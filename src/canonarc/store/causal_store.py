@@ -8,13 +8,21 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Self
 
+from .checkpoints import _CheckpointStoreMixin
 from .episodes import _EpisodeStoreMixin
 from .graph import _GraphStoreMixin
+from .migrations import _MigrationStoreMixin
 from .schema import SCHEMA_SQL
 from .timelines import _TimelineStoreMixin
 
 
-class CausalStore(_TimelineStoreMixin, _GraphStoreMixin, _EpisodeStoreMixin):
+class CausalStore(
+    _TimelineStoreMixin,
+    _CheckpointStoreMixin,
+    _GraphStoreMixin,
+    _MigrationStoreMixin,
+    _EpisodeStoreMixin,
+):
     """Manages SQLite storage, recursive lineage resolution, and time-travel operations."""
 
     def __init__(self, db_path: str | Path = ":memory:") -> None:
