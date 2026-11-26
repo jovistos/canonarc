@@ -54,10 +54,18 @@ preset = TranslationPreset(
     empty_text="",                   # Returned when ctx has no entities, edges, episodes, or voice exemplars
     max_voice_per_speaker=2,         # Optional per-speaker Voice Bank cap (preserves rank order)
     max_context_chars=2400,          # Optional total char budget; trims whole lines in reverse priority order
+    entity_grouping="flat",          # "flat" | "cast_and_glossary" | "by_kind"
+    section_headers=None,            # Optional overrides for state, glossary, background_edges, episodes, voice
 )
 ```
 
-When `max_context_chars` is exceeded, whole lines are trimmed cleanly (never mid-line) in reverse priority order so binding translation rules survive longest: **background edges → episodes → voice exemplars → active edges → entities** (with a warning logged if any binding entity or active edge line is truncated).
+- **`entity_grouping`**:
+  - `"flat"` *(default)* renders all scene entities in one binding block.
+  - `"cast_and_glossary"` separates characters + active register edges (`state` header) from non-character entities (`glossary` header) in `FULL`/`STATE_ONLY`, omitting whichever section is empty.
+  - `"by_kind"` groups glossary entities into deterministic `### <Kind>` subsections (`Locations`, `Organizations`, `Artifacts`, `Terminology`, etc., and `Characters` too in `LEXICON_ONLY`) while suppressing redundant inline `[kind]` tags (collision disambiguation is still preserved).
+- **`section_headers`**: Optional mapping overriding any subset of `DEFAULT_TRANSLATION_SECTION_HEADERS` keys (`"state"`, `"glossary"`, `"background_edges"`, `"episodes"`, `"voice"`).
+
+When `max_context_chars` is exceeded, whole lines are trimmed cleanly (never mid-line) in reverse priority order so binding translation rules survive longest: **background edges → episodes → voice exemplars → active edges → glossary entities → character entities** (pruning emptied `### <Kind>` subheadings automatically and logging a warning if any binding line is truncated).
 
 ### Injected Context Format
 ```markdown
