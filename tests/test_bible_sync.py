@@ -496,3 +496,285 @@ def test_organization_kind_prefix_heading_and_audit_alignment(tmp_path: Path) ->
     assert "## Organizations" in md_text
     assert "`org_iron_bank`" in md_text
     engine.close()
+
+
+def test_sync_bible_if_changed_short_circuits_and_tracks_edits(tmp_path: Path) -> None:
+    csv_path = tmp_path / "glossary.csv"
+    csv_path.write_text(
+        "entity_id,kind,canonical_name,target_name\n"
+        "char_arthur,character,Arthur,Artur\n",
+        encoding="utf-8",
+    )
+
+    engine = CanonArcEngine(":memory:")
+    # dry_run must not populate the hash cache
+    dry = engine.sync_bible_if_changed(csv_path, step=0, dry_run=True)
+    assert dry.skipped is False
+    assert dry.has_changes is True
+    assert dry.content_hash is not None
+
+    # First real sync applies changes and stores SHA-256
+    rep1 = engine.sync_bible_if_changed(csv_path, step=0)
+    assert rep1.skipped is False
+    assert rep1.created_entities == ["char_arthur"]
+    assert rep1.content_hash == dry.content_hash
+
+    # Second call with identical file short-circuits
+    rep2 = engine.sync_bible_if_changed(csv_path, step=0)
+    assert rep2.skipped is True
+    assert rep2.has_changes is False
+    assert rep2.content_hash == rep1.content_hash
+    assert "[SKIPPED - unchanged]" in rep2.summary()
+
+    # force=True bypasses cache
+    rep_forced = engine.sync_bible_if_changed(csv_path, step=0, force=True)
+    assert rep_forced.skipped is False
+    assert rep_forced.has_changes is False
+    assert rep_forced.unchanged_entities == ["char_arthur"]
+
+    # Human edits the CSV -> cache misses and diff applies
+    csv_path.write_text(
+        "entity_id,kind,canonical_name,target_name\n"
+        "char_arthur,character,Arthur,Kralj Artur\n",
+        encoding="utf-8",
+    )
+    rep3 = engine.sync_bible_if_changed(csv_path, step=0)
+    assert rep3.skipped is False
+    assert rep3.updated_entities == ["char_arthur"]
+    ent = engine.store.get_active_entity("char_arthur", timeline_id="main", cutoff_step=0)
+    assert ent is not None
+    assert ent.base_attributes["target_name"] == "Kralj Artur"
+
+    # Subsequent unchanged call short-circuits again
+    rep4 = engine.sync_bible_if_changed(csv_path, step=0)
+    assert rep4.skipped is True
+
+    # Cosmetic whitespace-only edit runs diff (no semantic changes) and refreshes hash
+    csv_path.write_text(csv_path.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+    rep5 = engine.sync_bible_if_changed(csv_path, step=0)
+    assert rep5.skipped is False
+    assert rep5.has_changes is False
+    rep6 = engine.sync_bible_if_changed(csv_path, step=0)
+    assert rep6.skipped is True
+    engine.close()
+
+
+def test_sync_bible_if_changed_parameter_and_rollback_invalidation(tmp_path: Path) -> None:
+    csv_path = tmp_path / "glossary.csv"
+    csv_path.write_text(
+        "entity_id,kind,canonical_name,target_name\n"
+        "char_merlin,character,Merlin,Merlin\n",
+        encoding="utf-8",
+    )
+
+    engine = CanonArcEngine(":memory:")
+    rep1 = engine.sync_bible_if_changed(csv_path, step=5, mode="upsert")
+    assert rep1.skipped is False
+    assert rep1.created_entities == ["char_merlin"]
+
+    # Different mode or step must NOT falsely skip
+    rep_mode = engine.sync_bible_if_changed(csv_path, step=5, mode="merge")
+    assert rep_mode.skipped is False
+
+    # Re-sync with upsert at step=5 so cache reflects upsert@5
+    engine.sync_bible_if_changed(csv_path, step=5, mode="upsert")
+    assert engine.sync_bible_if_changed(csv_path, step=5, mode="upsert").skipped is True
+
+    # Rollback to step 3 invalidates the step=5 sync cache
+    engine.rollback_to(3)
+    assert engine.store.get_active_entity("char_merlin", timeline_id="main", cutoff_step=5) is None
+    rep_after_rb = engine.sync_bible_if_changed(csv_path, step=5, mode="upsert")
+    assert rep_after_rb.skipped is False
+    assert rep_after_rb.created_entities == ["char_merlin"]
+
+    # Branching & timeline deletion cleans up branch-scoped sync metadata
+    from canonarc.bible.sync import _bible_sync_metadata_key
+
+    engine.branch(5, "branch_a")
+    session = engine.session("branch_a")
+    assert session.sync_bible_if_changed(csv_path, step=5).skipped is False
+    assert session.sync_bible_if_changed(csv_path, step=5).skipped is True
+    branch_meta_key = _bible_sync_metadata_key("branch_a", csv_path)
+    assert engine.store.get_metadata(branch_meta_key) is not None
+    engine.delete_timeline("branch_a")
+    assert engine.store.get_metadata(branch_meta_key) is None
+    engine.close()
+
+
+def test_export_bible_include_provenance_and_readonly_roundtrip(tmp_path: Path) -> None:
+    from canonarc import EpisodeRecord
+
+    engine = CanonArcEngine(":memory:")
+    # Step 1: register char_arthur with checkpoint source_ref
+    engine.register_entity(
+        EntityRecord(
+            entity_id="char_arthur",
+            kind="character",
+            canonical_name="Arthur",
+            base_attributes={"target_name": "Artur", "chapter_id": "custom_user_attr"},
+        ),
+        step=1,
+    )
+    engine.store.record_step_checkpoint(1, metadata={"source_ref": "ch01_arrival.md"})
+
+    # Step 2: register term_mana with episode chapter_id fallback (no checkpoint)
+    engine.apply_delta(
+        2,
+        StepDelta(
+            entities=[
+                EntityDelta(
+                    entity_id="term_mana",
+                    kind="term",
+                    canonical_name="Mana",
+                    base_attributes={"target_name": "Mana"},
+                )
+            ],
+            episodes=[
+                EpisodeRecord(
+                    episode_id="ep_mana_intro",
+                    step=2,
+                    predicate="revelation",
+                    summary="Mana is first mentioned.",
+                    chapter_id="ch02_academy",
+                )
+            ],
+        ),
+    )
+
+    # Step 4: update char_arthur at a later step (first_seen_step must remain 1!)
+    engine.apply_delta(
+        4,
+        StepDelta(
+            entities=[
+                EntityDelta(
+                    entity_id="char_arthur",
+                    state={"mood": "battle-ready"},
+                )
+            ]
+        ),
+    )
+    engine.store.record_step_checkpoint(4, metadata={"source_ref": "ch04_battle.md"})
+
+    # CSV export with include_provenance=True
+    csv_path = tmp_path / "bible_prov.csv"
+    engine.export_bible(csv_path, at_step=4, include_provenance=True)
+    csv_lines = csv_path.read_text(encoding="utf-8").splitlines()
+    assert csv_lines[0].endswith(",first_seen_step,first_seen_source")
+    assert any("char_arthur" in line and line.endswith(",1,ch01_arrival.md") for line in csv_lines[1:])
+    assert any("term_mana" in line and line.endswith(",2,ch02_academy") for line in csv_lines[1:])
+
+    # Markdown export with include_provenance=True
+    md_text, _ = engine.render_bible(format="md", at_step=4, include_provenance=True)
+    assert "| First Seen |" in md_text
+    assert "`ch01_arrival.md` (step 1)" in md_text
+    assert "`ch02_academy` (step 2)" in md_text
+
+    # JSON export with include_provenance=True
+    json_text, _ = engine.render_bible(format="json", at_step=4, include_provenance=True)
+    doc = json.loads(json_text)
+    by_id = {e["entity_id"]: e for e in doc["entities"]}
+    assert by_id["char_arthur"]["provenance"] == {
+        "first_seen_step": 1,
+        "first_seen_source": "ch01_arrival.md",
+        "valid_from_step": 4,
+    }
+    assert by_id["term_mana"]["provenance"] == {
+        "first_seen_step": 2,
+        "first_seen_source": "ch02_academy",
+        "valid_from_step": 2,
+    }
+
+    # Round-trip sync_bible() ignores read-only provenance columns and preserves user's chapter_id
+    rep = engine.sync_bible(csv_path, step=4, mode="upsert", auto_inflect=False)
+    assert rep.has_changes is False
+    arthur = engine.store.get_active_entity("char_arthur", timeline_id="main", cutoff_step=4)
+    assert arthur is not None
+    assert "first_seen_step" not in arthur.base_attributes
+    assert "first_seen_source" not in arthur.base_attributes
+    assert arthur.base_attributes["chapter_id"] == "custom_user_attr"
+
+    # Editing only first_seen_source in CSV produces zero diff
+    edited = csv_path.read_text(encoding="utf-8").replace("ch01_arrival.md", "edited_by_human.md")
+    csv_path.write_text(edited, encoding="utf-8")
+    rep_edit = engine.sync_bible(csv_path, step=4, mode="upsert", auto_inflect=False)
+    assert rep_edit.has_changes is False
+
+    # Custom ignore_columns drops extra reviewer-only columns cleanly
+    custom_csv = tmp_path / "custom_ignore.csv"
+    custom_csv.write_text(
+        "entity_id,kind,canonical_name,target_name,chapter_id,Reviewer Notes\n"
+        "char_arthur,character,Arthur,Artur,custom_user_attr,Looks good!\n",
+        encoding="utf-8",
+    )
+    rep_ign = engine.sync_bible(
+        custom_csv,
+        step=4,
+        mode="upsert",
+        auto_inflect=False,
+        ignore_columns=["Reviewer Notes"],
+    )
+    assert rep_ign.has_changes is False
+    engine.close()
+
+
+def test_export_snapshot_preserves_first_seen_step(tmp_path: Path) -> None:
+    engine = CanonArcEngine(":memory:")
+    engine.register_entity(
+        EntityRecord(entity_id="char_arthur", kind="character", canonical_name="Arthur"),
+        step=1,
+    )
+    engine.apply_delta(3, StepDelta(entities=[EntityDelta(entity_id="char_arthur", state={"hp": 80})]))
+    engine.apply_delta(5, StepDelta(entities=[EntityDelta(entity_id="char_arthur", state={"hp": 50})]))
+
+    snap_path = tmp_path / "snap.db"
+    engine.export_snapshot(snap_path, at_step=5)
+    engine.close()
+
+    snap_engine = CanonArcEngine(snap_path)
+    arthur = snap_engine.store.get_active_entity("char_arthur", timeline_id="main", cutoff_step=5)
+    assert arthur is not None
+    assert arthur.valid_from_step == 5
+    assert arthur.first_seen_step == 1
+    snap_engine.close()
+
+
+def test_cli_export_provenance_and_import_if_changed(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    db_path = tmp_path / "cli_prov.db"
+    engine = CanonArcEngine(db_path)
+    engine.register_entity(
+        EntityRecord(
+            entity_id="char_arthur",
+            kind="character",
+            canonical_name="Arthur",
+            base_attributes={"target_name": "Artur"},
+        ),
+        step=1,
+    )
+    engine.store.record_step_checkpoint(1, metadata={"source_ref": "ch01.md"})
+    engine.close()
+
+    csv_path = tmp_path / "out.csv"
+    rc = cli_main(["export", str(db_path), str(csv_path), "--include-provenance", "--json"])
+    assert rc == 0
+    capsys.readouterr()
+    assert "first_seen_step,first_seen_source" in csv_path.read_text(encoding="utf-8")
+
+    # First import --if-changed runs (not skipped)
+    rc1 = cli_main(["import", str(db_path), str(csv_path), "--step", "1", "--if-changed", "--json"])
+    assert rc1 == 0
+    out1 = json.loads(capsys.readouterr().out)
+    assert out1["skipped"] is False
+
+    # Second import --if-changed short-circuits
+    rc2 = cli_main(["import", str(db_path), str(csv_path), "--step", "1", "--if-changed", "--json"])
+    assert rc2 == 0
+    out2 = json.loads(capsys.readouterr().out)
+    assert out2["skipped"] is True
+
+    # --force bypasses cache
+    rc3 = cli_main(["import", str(db_path), str(csv_path), "--step", "1", "--if-changed", "--force", "--json"])
+    assert rc3 == 0
+    out3 = json.loads(capsys.readouterr().out)
+    assert out3["skipped"] is False
