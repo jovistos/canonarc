@@ -34,6 +34,7 @@ from .extractors import (
 )
 from .models import DialogueCandidate, EpisodeRecord, StepContext, VoiceExemplar
 from .presets import DEFAULT_SCHEMA_POLICY, SchemaPolicy
+from .text_masking import TextNormalizer, compile_ignore_patterns, strip_ignored_spans
 
 # Quoted dialogue patterns across English, European, Balkan, and CJK typographic conventions
 _OUTWARD_GUILLEMET_PATTERN = re.compile(r'«([^»]+)»')
@@ -89,11 +90,16 @@ class IngestionGate:
         max_words: int = 60,
         min_distinctiveness: float = 0.40,
         min_quality: float = 8.0,
+        *,
+        ignore_patterns: Sequence[str | re.Pattern[str]] = (),
+        text_normalizer: TextNormalizer | None = None,
     ) -> None:
         self.min_words = min_words
         self.max_words = max_words
         self.min_distinctiveness = min_distinctiveness
         self.min_quality = min_quality
+        self.ignore_patterns: tuple[re.Pattern[str], ...] = compile_ignore_patterns(ignore_patterns)
+        self.text_normalizer: TextNormalizer | None = text_normalizer
 
     @staticmethod
     def _attribution_windows(
@@ -152,8 +158,31 @@ class IngestionGate:
         next_text: str = "",
         speaker_resolver: Callable[[str, str], tuple[str | None, str | None, str | None]] | None = None,
         on_rejected: Callable[[str, str, dict[str, Any]], None] | None = None,
+        ignore_patterns: Sequence[str | re.Pattern[str]] | None = None,
+        text_normalizer: TextNormalizer | None = None,
     ) -> list[DialogueCandidate]:
         """Extracts quoted dialogue spans and applies Gate 1 (length + distinctiveness pre-filter)."""
+        extra_patterns = compile_ignore_patterns(ignore_patterns) if ignore_patterns else ()
+        if self.ignore_patterns and extra_patterns:
+            seen_pat = set(self.ignore_patterns)
+            eff_patterns = self.ignore_patterns + tuple(
+                p for p in extra_patterns if p not in seen_pat
+            )
+        else:
+            eff_patterns = extra_patterns or self.ignore_patterns
+        eff_normalizer = text_normalizer if text_normalizer is not None else self.text_normalizer
+
+        if eff_patterns or eff_normalizer is not None:
+            text = strip_ignored_spans(text, eff_patterns, normalizer=eff_normalizer)
+            if source_text:
+                source_text = strip_ignored_spans(
+                    source_text, eff_patterns, normalizer=eff_normalizer
+                )
+            if prev_text:
+                prev_text = strip_ignored_spans(prev_text, eff_patterns, normalizer=eff_normalizer)
+            if next_text:
+                next_text = strip_ignored_spans(next_text, eff_patterns, normalizer=eff_normalizer)
+
         candidates: list[DialogueCandidate] = []
         seen_spans: set[str] = set()
         consumed_quote_delimiters: set[int] = set()

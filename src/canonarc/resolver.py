@@ -8,6 +8,7 @@ from rapidfuzz import fuzz, process
 
 from .embedders import _CJK_CHAR_RE
 from .models import AliasRecord, EntityRecord, ResolvedMention
+from .text_masking import TextNormalizer, apply_text_masking, compile_ignore_patterns
 
 _VOWELS: frozenset[str] = frozenset("aeiouáéíóúàèìòùäëïöüâêîôûāēīōū")
 
@@ -97,9 +98,13 @@ class DefaultLexicalResolver:
         fuzzy_threshold: float | None = 88.0,
         *,
         short_name_inflection: bool = True,
+        ignore_patterns: Sequence[str | re.Pattern[str]] = (),
+        text_normalizer: TextNormalizer | None = None,
     ) -> None:
         self.fuzzy_threshold = fuzzy_threshold
         self.short_name_inflection = short_name_inflection
+        self.ignore_patterns: tuple[re.Pattern[str], ...] = compile_ignore_patterns(ignore_patterns)
+        self.text_normalizer: TextNormalizer | None = text_normalizer
 
     @staticmethod
     def _phrase_pattern(phrase_lower: str) -> str:
@@ -248,6 +253,11 @@ class DefaultLexicalResolver:
                     )
 
         # 2. Word-boundary text scan (longest phrases first to avoid partial shadowing)
+        if text:
+            if self.ignore_patterns or self.text_normalizer is not None:
+                text = apply_text_masking(
+                    text, self.ignore_patterns, normalizer=self.text_normalizer
+                )
         if text:
             text_lower = text.lower()
             candidates: list[tuple[str, str, Literal["canonical", "alias"]]] = []

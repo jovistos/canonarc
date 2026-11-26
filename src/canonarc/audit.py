@@ -21,6 +21,7 @@ from .models import (
 )
 from .presets import DEFAULT_SCHEMA_POLICY, DomainPreset, SchemaPolicy
 from .resolver import DefaultLexicalResolver, _VOWELS
+from .text_masking import TextNormalizer, apply_text_masking, mask_ignored_spans
 
 if TYPE_CHECKING:
     from .engine import CanonArcEngine
@@ -262,6 +263,27 @@ class AuditContext:
     resolved_mentions: tuple[ResolvedMention, ...] = ()
     policy: SchemaPolicy = DEFAULT_SCHEMA_POLICY
     lang: str | None = None
+    ignore_patterns: tuple[re.Pattern[str], ...] = ()
+    text_normalizer: TextNormalizer | None = None
+
+    @property
+    def masked_source_text(self) -> str:
+        """Returns source_text with engine ignore_patterns (and optional text_normalizer) applied."""
+        return apply_text_masking(
+            self.source_text, self.ignore_patterns, normalizer=self.text_normalizer
+        )
+
+    @property
+    def masked_target_text(self) -> str:
+        """Returns target_text with engine ignore_patterns (and optional text_normalizer) applied."""
+        return apply_text_masking(
+            self.target_text, self.ignore_patterns, normalizer=self.text_normalizer
+        )
+
+    @property
+    def target_snippet_text(self) -> str:
+        """Base text whose character offsets match masked_target_text for snippet extraction."""
+        return self.masked_target_text if self.text_normalizer is not None else self.target_text
 
 
 class AuditRule(Protocol):
@@ -339,7 +361,8 @@ class ExonymLeakRule:
         self.snippet_radius = snippet_radius
 
     def check(self, ctx: AuditContext) -> list[AuditIssue]:
-        if not ctx.target_text.strip():
+        target_text = ctx.masked_target_text
+        if not target_text.strip():
             return []
 
         issues: list[AuditIssue] = []
@@ -349,8 +372,9 @@ class ExonymLeakRule:
                 aliases_by_entity.setdefault(a.entity_id, []).append(a.alias.strip())
 
         flags = 0 if self.case_sensitive else re.IGNORECASE
-        source_text = ctx.source_text
+        source_text = ctx.masked_source_text
         has_source = bool(source_text.strip())
+        snippet_text = ctx.target_snippet_text
 
         for entity in ctx.entities:
             if entity.base_attributes.get("allow_source_name"):
@@ -376,7 +400,7 @@ class ExonymLeakRule:
                 ):
                     continue
 
-            matches = list(re.finditer(_phrase_pattern(canonical), ctx.target_text, flags))
+            matches = list(re.finditer(_phrase_pattern(canonical), target_text, flags))
             if not matches:
                 continue
 
@@ -401,7 +425,7 @@ class ExonymLeakRule:
                         "occurrence_count": len(matches),
                         "matched_spans": spans,
                         "snippet": _extract_snippet(
-                            ctx.target_text, first.start(), first.end(), self.snippet_radius
+                            snippet_text, first.start(), first.end(), self.snippet_radius
                         ),
                     },
                     suggestion=f"Replace '{canonical}' with '{target_name}' (or its appropriate inflected form).",
@@ -615,8 +639,11 @@ class TargetTermComplianceRule:
         return best
 
     def check(self, ctx: AuditContext) -> list[AuditIssue]:
-        if not ctx.source_text.strip() or not ctx.target_text.strip():
+        source_text = ctx.masked_source_text
+        target_text = ctx.masked_target_text
+        if not source_text.strip() or not target_text.strip():
             return []
+        snippet_text = ctx.target_snippet_text
 
         aliases_by_entity: dict[str, list[AliasRecord]] = {}
         for a in ctx.aliases:
@@ -629,7 +656,7 @@ class TargetTermComplianceRule:
 
         raw_token_spans = [
             (m.group(0), m.group(0).lower(), m.start(), m.end())
-            for m in re.finditer(r"\w+", ctx.target_text)
+            for m in re.finditer(r"\w+", target_text)
         ]
 
         issues: list[AuditIssue] = []
@@ -661,7 +688,7 @@ class TargetTermComplianceRule:
                         continue
                     source_cues.append(a.alias.strip())
                 for cue in source_cues:
-                    if cue and re.search(_phrase_pattern(cue), ctx.source_text, re.IGNORECASE):
+                    if cue and re.search(_phrase_pattern(cue), source_text, re.IGNORECASE):
                         source_cue = cue
                         break
 
@@ -670,11 +697,11 @@ class TargetTermComplianceRule:
 
             # 2. Respect allow_source_name and avoid double-reporting verbatim exonym leaks
             if entity.base_attributes.get("allow_source_name"):
-                if re.search(_phrase_pattern(canonical), ctx.target_text, re.IGNORECASE):
+                if re.search(_phrase_pattern(canonical), target_text, re.IGNORECASE):
                     continue
             elif canonical.lower() != target_name.lower():
                 if not re.search(_phrase_pattern(canonical), target_name, re.IGNORECASE):
-                    if re.search(_phrase_pattern(canonical), ctx.target_text, 0):
+                    if re.search(_phrase_pattern(canonical), target_text, 0):
                         continue
 
             # 3. Build accepted target-side surface forms
@@ -694,13 +721,13 @@ class TargetTermComplianceRule:
                     accepted_forms.append(al_str)
 
             if self._matches_target(
-                target_name, accepted_forms, source_cue, ctx.target_text, raw_token_spans
+                target_name, accepted_forms, source_cue, target_text, raw_token_spans
             ):
                 continue
 
             # 4. Classify failure: suspected wrong spelling/transliteration (error) vs pure omission (warning)
             near_miss = self._find_suspected_variant(
-                canonical, target_name, ctx.target_text, raw_token_spans
+                canonical, target_name, target_text, raw_token_spans
             )
             inflection_examples = [f for f in accepted_forms[1:5]]
             inflection_hint = (
@@ -711,7 +738,7 @@ class TargetTermComplianceRule:
 
             if near_miss is not None:
                 variant_str, start, end, score = near_miss
-                snippet = _extract_snippet(ctx.target_text, start, end, self.snippet_radius)
+                snippet = _extract_snippet(snippet_text, start, end, self.snippet_radius)
                 issues.append(
                     AuditIssue(
                         code="target_term_mismatch",
@@ -841,8 +868,8 @@ def _char_script(ch: str) -> str | None:
 
 
 def _mask_spans(text: str, pattern: re.Pattern[str]) -> str:
-    """Replaces matched spans with spaces of identical length so character offsets stay aligned."""
-    return pattern.sub(lambda m: " " * (m.end() - m.start()), text)
+    """Replaces matched spans with spaces of identical length (preserving newlines) so character offsets stay aligned."""
+    return mask_ignored_spans(text, (pattern,))
 
 
 class ScriptConsistencyRule:
@@ -937,7 +964,8 @@ class ScriptConsistencyRule:
             for a in ctx.aliases:
                 if a.alias.strip():
                     aliases_by_entity.setdefault(a.entity_id, []).append(a.alias.strip())
-            has_source = bool(ctx.source_text.strip())
+            source_text = ctx.masked_source_text
+            has_source = bool(source_text.strip())
             for entity in ctx.entities:
                 if entity.base_attributes.get("allow_source_name"):
                     continue
@@ -953,7 +981,7 @@ class ScriptConsistencyRule:
                 if has_source:
                     cues = [canonical, *aliases_by_entity.get(entity.entity_id, ())]
                     if not any(
-                        re.search(_phrase_pattern(cue), ctx.source_text, re.IGNORECASE)
+                        re.search(_phrase_pattern(cue), source_text, re.IGNORECASE)
                         for cue in cues
                         if cue
                     ):
@@ -963,14 +991,16 @@ class ScriptConsistencyRule:
         return masked
 
     def check(self, ctx: AuditContext) -> list[AuditIssue]:
-        if not ctx.target_text.strip():
+        target_text = ctx.masked_target_text
+        if not target_text.strip():
             return []
 
         expected = self._resolve_expected_scripts(ctx)
         if not expected:
             return []
 
-        masked = self._mask_exempt_regions(ctx, ctx.target_text)
+        masked = self._mask_exempt_regions(ctx, target_text)
+        snippet_text = ctx.target_snippet_text
         expected_sorted = sorted(expected)
         expected_label = "/".join(expected_sorted)
 
@@ -1042,7 +1072,7 @@ class ScriptConsistencyRule:
                         "mixed_scripts_by_token": scripts_by_tok,
                         "offending_token_count": len(mixed_hits),
                         "snippet": _extract_snippet(
-                            ctx.target_text, first_start, first_end, self.snippet_radius
+                            snippet_text, first_start, first_end, self.snippet_radius
                         ),
                     },
                     suggestion=(
@@ -1078,7 +1108,7 @@ class ScriptConsistencyRule:
                         "offending_token_count": len(hits),
                         "offending_char_count": total_chars,
                         "snippet": _extract_snippet(
-                            ctx.target_text, first_start, first_end, self.snippet_radius
+                            snippet_text, first_start, first_end, self.snippet_radius
                         ),
                     },
                     suggestion=(
@@ -1528,6 +1558,8 @@ def build_audit_context(
         all_episode_ids=all_episode_ids,
         policy=engine._policy,
         lang=lang,
+        ignore_patterns=engine.ignore_patterns,
+        text_normalizer=engine.text_normalizer,
     )
 
 
@@ -1651,6 +1683,8 @@ def run_audit_draft(
         resolved_mentions=resolved_mentions,
         policy=engine._policy,
         lang=lang,
+        ignore_patterns=engine.ignore_patterns,
+        text_normalizer=engine.text_normalizer,
     )
     active_rules = _select_rules(
         engine, rules, include_rules=include_rules, exclude_rules=exclude_rules
