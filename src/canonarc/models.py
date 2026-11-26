@@ -16,6 +16,14 @@ class TimelineInfo(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
+class StepCheckpoint(BaseModel):
+    """Recorded proof that a discrete step was committed on a timeline."""
+    timeline_id: str = "main"
+    step: int
+    content_hash: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
 class EntityRecord(BaseModel):
     """Unified Tier 1 (base_attributes) + Tier 3 (rolling state) entity record."""
     entity_id: str = Field(description="Canonical ID, e.g. 'char_arthur'")
