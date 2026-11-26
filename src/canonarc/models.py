@@ -59,7 +59,7 @@ class AliasRecord(BaseModel):
     """Tier 4: 1-hop alias / coreference / disguise mapping."""
     alias: str = Field(description="Surface string or epithet, e.g. 'the old wizard'")
     entity_id: str = Field(description="Target canonical entity_id, e.g. 'char_merlin'")
-    kind: Literal["permanent", "epithet", "disguise", "title"] = "epithet"
+    kind: Literal["permanent", "epithet", "disguise", "title", "inflection"] = "epithet"
     lang: str | None = Field(
         default=None,
         description="Optional ISO/BCP-47 language tag (e.g. 'en', 'sr', 'ru'); None means language-neutral",

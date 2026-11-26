@@ -37,7 +37,7 @@ from .embedders import (
 from .episodic import DEFAULT_EPISODIC_POLICY, EpisodeRanker
 from .extractors import DeltaExtractor
 from .hooks import EngineHooks
-from .inflections import InflectionGenerator
+from .inflections import InflectionGenerator, InflectionRequest, generate_inflections_batch
 from .models import (
     AliasRecord,
     DialogueCandidate,
@@ -315,6 +315,7 @@ class TimelineSession:
         step: int = 0,
         target_lang: str | None = None,
         auto_inflect: bool = True,
+        batch_size: int = 25,
     ) -> None:
         self.engine.seed_entities(
             entities,
@@ -322,6 +323,7 @@ class TimelineSession:
             timeline_id=self.timeline_id,
             target_lang=target_lang,
             auto_inflect=auto_inflect,
+            batch_size=batch_size,
         )
 
     def expand_entity_inflections(
@@ -557,6 +559,7 @@ class TimelineSession:
         include_state: bool = False,
         include_edges: bool | None = None,
         include_aliases: bool = True,
+        include_inflections: bool | None = None,
         lang: str | None = None,
     ) -> tuple[str, BibleExportResult]:
         return self.engine.render_bible(
@@ -567,6 +570,7 @@ class TimelineSession:
             include_state=include_state,
             include_edges=include_edges,
             include_aliases=include_aliases,
+            include_inflections=include_inflections,
             lang=lang,
         )
 
@@ -580,6 +584,7 @@ class TimelineSession:
         include_state: bool = False,
         include_edges: bool | None = None,
         include_aliases: bool = True,
+        include_inflections: bool | None = None,
         lang: str | None = None,
         excel_bom: bool = False,
     ) -> BibleExportResult:
@@ -592,6 +597,7 @@ class TimelineSession:
             include_state=include_state,
             include_edges=include_edges,
             include_aliases=include_aliases,
+            include_inflections=include_inflections,
             lang=lang,
             excel_bom=excel_bom,
         )
@@ -605,6 +611,7 @@ class TimelineSession:
         mode: BibleSyncMode = "upsert",
         target_lang: str | None = None,
         auto_inflect: bool = True,
+        batch_size: int = 25,
         dry_run: bool = False,
         column_map: dict[str, str] | None = None,
     ) -> BibleSyncReport:
@@ -616,6 +623,7 @@ class TimelineSession:
             mode=mode,
             target_lang=target_lang,
             auto_inflect=auto_inflect,
+            batch_size=batch_size,
             dry_run=dry_run,
             column_map=column_map,
         )
@@ -954,6 +962,33 @@ class CanonArcEngine:
             aliases=aliases,
         )
 
+    def _make_inflection_request(
+        self,
+        entity: EntityRecord,
+        *,
+        target_lang: str | None = None,
+    ) -> InflectionRequest | None:
+        raw_target = entity.base_attributes.get("target_name")
+        if not isinstance(raw_target, str) or not raw_target.strip():
+            return None
+        raw_lang = (
+            target_lang
+            or entity.base_attributes.get("target_lang")
+            or entity.base_attributes.get("lang")
+        )
+        eff_lang = raw_lang.strip().lower() if isinstance(raw_lang, str) and raw_lang.strip() else None
+        if not eff_lang:
+            return None
+        gender = entity.base_attributes.get("gender")
+        declension = entity.base_attributes.get("declension")
+        return InflectionRequest(
+            name=raw_target.strip(),
+            lang=eff_lang,
+            gender=str(gender) if gender is not None else None,
+            kind=entity.kind,
+            declension=str(declension) if declension is not None else None,
+        )
+
     def _build_target_aliases(
         self,
         entity: EntityRecord,
@@ -961,6 +996,7 @@ class CanonArcEngine:
         *,
         target_lang: str | None = None,
         auto_inflect: bool = True,
+        prefetched_forms: Sequence[str] | None = None,
     ) -> list[AliasRecord]:
         """Auto-registers base_attributes['target_name'] and optional one-shot LLM inflections."""
         raw_target = entity.base_attributes.get("target_name")
@@ -983,7 +1019,12 @@ class CanonArcEngine:
 
         generated: list[AliasRecord] = []
 
-        def _maybe_add(form: str, *, allow_canonical: bool = False) -> None:
+        def _maybe_add(
+            form: str,
+            *,
+            kind: Literal["permanent", "inflection"] = "permanent",
+            allow_canonical: bool = False,
+        ) -> None:
             clean = form.strip()
             if not clean:
                 return
@@ -997,14 +1038,17 @@ class CanonArcEngine:
                 AliasRecord(
                     alias=clean,
                     entity_id=entity.entity_id,
-                    kind="permanent",
+                    kind=kind,
                     lang=eff_lang,
                 )
             )
 
-        _maybe_add(target_name, allow_canonical=eff_lang is not None)
+        _maybe_add(target_name, kind="permanent", allow_canonical=eff_lang is not None)
 
-        if auto_inflect and eff_lang and self.inflection_generator is not None:
+        forms: Sequence[str] = ()
+        if prefetched_forms is not None:
+            forms = prefetched_forms
+        elif auto_inflect and eff_lang and self.inflection_generator is not None:
             gender = entity.base_attributes.get("gender")
             declension = entity.base_attributes.get("declension")
             forms = self.inflection_generator.generate_inflections(
@@ -1014,8 +1058,8 @@ class CanonArcEngine:
                 kind=entity.kind,
                 declension=str(declension) if declension is not None else None,
             )
-            for form in forms:
-                _maybe_add(form)
+        for form in forms:
+            _maybe_add(form, kind="inflection")
 
         return generated
 
@@ -1047,15 +1091,42 @@ class CanonArcEngine:
         timeline_id: str | None = None,
         target_lang: str | None = None,
         auto_inflect: bool = True,
+        batch_size: int = 25,
     ) -> None:
-        for ent in entities:
-            self.register_entity(
-                ent,
-                step=step,
-                timeline_id=timeline_id,
-                target_lang=target_lang,
-                auto_inflect=auto_inflect,
-            )
+        tl = timeline_id or self.active_timeline
+        prefetched_by_idx: dict[int, list[str]] = {}
+        if auto_inflect and self.inflection_generator is not None:
+            pending_indices: list[int] = []
+            pending_requests: list[InflectionRequest] = []
+            for idx, ent in enumerate(entities):
+                req = self._make_inflection_request(ent, target_lang=target_lang)
+                if req is not None:
+                    pending_indices.append(idx)
+                    pending_requests.append(req)
+            if pending_requests:
+                batched_forms = generate_inflections_batch(
+                    self.inflection_generator,
+                    pending_requests,
+                    batch_size=batch_size,
+                )
+                for idx, forms in zip(pending_indices, batched_forms):
+                    prefetched_by_idx[idx] = forms
+
+        with self._store_transaction():
+            for idx, ent in enumerate(entities):
+                extra_aliases = self._build_target_aliases(
+                    ent,
+                    (),
+                    target_lang=target_lang,
+                    auto_inflect=False,
+                    prefetched_forms=prefetched_by_idx.get(idx),
+                )
+                self.store.register_entity(
+                    ent,
+                    aliases=extra_aliases,
+                    step=step,
+                    timeline_id=tl,
+                )
 
     def expand_entity_inflections(
         self,
@@ -2262,6 +2333,7 @@ class CanonArcEngine:
         include_state: bool = False,
         include_edges: bool | None = None,
         include_aliases: bool = True,
+        include_inflections: bool | None = None,
         lang: str | None = None,
     ) -> tuple[str, BibleExportResult]:
         """Renders the active Series Bible at `(timeline_id, at_step)` to a CSV, JSON, or Markdown string."""
@@ -2274,6 +2346,7 @@ class CanonArcEngine:
             include_state=include_state,
             include_edges=include_edges,
             include_aliases=include_aliases,
+            include_inflections=include_inflections,
             lang=lang,
         )
 
@@ -2288,6 +2361,7 @@ class CanonArcEngine:
         include_state: bool = False,
         include_edges: bool | None = None,
         include_aliases: bool = True,
+        include_inflections: bool | None = None,
         lang: str | None = None,
         excel_bom: bool = False,
     ) -> BibleExportResult:
@@ -2302,6 +2376,7 @@ class CanonArcEngine:
             include_state=include_state,
             include_edges=include_edges,
             include_aliases=include_aliases,
+            include_inflections=include_inflections,
             lang=lang,
             excel_bom=excel_bom,
         )
@@ -2316,6 +2391,7 @@ class CanonArcEngine:
         mode: BibleSyncMode = "upsert",
         target_lang: str | None = None,
         auto_inflect: bool = True,
+        batch_size: int = 25,
         dry_run: bool = False,
         column_map: dict[str, str] | None = None,
     ) -> BibleSyncReport:
@@ -2329,6 +2405,7 @@ class CanonArcEngine:
             mode=mode,
             target_lang=target_lang,
             auto_inflect=auto_inflect,
+            batch_size=batch_size,
             dry_run=dry_run,
             column_map=column_map,
         )

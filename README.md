@@ -292,16 +292,19 @@ Author or review glossaries and world bibles in spreadsheets, Git-tracked JSON, 
 
 ```python
 # Export active Series Bible at step 0 (or omit at_step for timeline head)
-engine.export_bible("bible.json", at_step=0)                 # Lossless entities, aliases & edges
-engine.export_bible("glossary.csv", at_step=0, excel_bom=True)  # Excel/Sheets-friendly CSV
+# CSV/MD hide auto-generated kind="inflection" aliases by default; JSON includes them for lossless round-trips
+engine.export_bible("bible.json", at_step=0)                 # Lossless entities, aliases (incl. inflections) & edges
+engine.export_bible("glossary.csv", at_step=0, excel_bom=True)  # Clean Excel/Sheets-friendly CSV
 engine.export_bible("bible.md", include_state=True)          # Human-readable Markdown doc
 
 # Sync human edits back with diff-before-write idempotency (supports upsert | merge | replace)
+# Batches LLM inflection generation automatically (batch_size=25) and preserves kind="inflection" on unchanged CSV rows
 report = engine.sync_bible(
     "glossary.csv",
     step=0,
     mode="upsert",
     target_lang="sr",
+    batch_size=25,
     column_map={"Source": "canonical_name", "Target": "target_name"},
     dry_run=False,
 )

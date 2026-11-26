@@ -65,8 +65,11 @@ from .hooks import BaseEngineHooks, EngineHooks
 from .inflections import (
     CallableInflectionGenerator,
     InflectionGenerator,
+    InflectionRequest,
     LLMInflectionGenerator,
+    build_batch_inflection_prompt,
     build_inflection_prompt,
+    generate_inflections_batch,
 )
 from .models import (
     AliasRecord,
@@ -143,6 +146,7 @@ __all__ = [
     "EpistemicMode",
     "ExonymLeakRule",
     "InflectionGenerator",
+    "InflectionRequest",
     "InformDelta",
     "IngestionGate",
     "InteractiveFictionPreset",
@@ -172,11 +176,13 @@ __all__ = [
     "UnexplainedRegisterFlipRule",
     "VoiceBank",
     "VoiceExemplar",
+    "build_batch_inflection_prompt",
     "build_inflection_prompt",
     "compute_step_hash",
     "default_audit_rules",
     "embed_texts_batch",
     "export_bible",
+    "generate_inflections_batch",
     "get_embedder_info",
     "get_model_pricing_per_1m_usd",
     "load_dotenv",

@@ -11,12 +11,14 @@ from canonarc import (
     DefaultLexicalResolver,
     EntityDelta,
     EntityRecord,
+    InflectionRequest,
     LLMInflectionGenerator,
     OpenAICompatibleExtractor,
     ResolvedMention,
     StepDelta,
     TokenUsage,
     TranslationPreset,
+    build_batch_inflection_prompt,
     build_inflection_prompt,
 )
 
@@ -198,10 +200,12 @@ def test_callable_inflection_generator_and_registration_oneshot() -> None:
     assert calls[0] == ("Petar", "sr", "M")
     assert calls[1] == ("Jelena", "sr", "F")
 
-    # Verify aliases stored with lang='sr' and exact match works on possessive/oblique forms
+    # Verify aliases stored with lang='sr', base target_name='permanent', generated forms='inflection'
     stored = {a.alias: a for a in engine.store.get_all_active_aliases("main", 0)}
-    assert "Petrov" in stored and stored["Petrov"].lang == "sr"
-    assert "Jelenin" in stored and stored["Jelenin"].lang == "sr"
+    assert stored["Petar"].kind == "permanent"
+    assert stored["Jelena"].kind == "permanent"
+    assert "Petrov" in stored and stored["Petrov"].lang == "sr" and stored["Petrov"].kind == "inflection"
+    assert "Jelenin" in stored and stored["Jelenin"].lang == "sr" and stored["Jelenin"].kind == "inflection"
 
     # Resolve multiple chunks without any additional generator calls
     for chunk, expected_speaker in [
@@ -308,4 +312,101 @@ def test_zero_seed_expand_entity_inflections_and_custom_resolver_compat() -> Non
     engine.mention_resolver = LegacyResolver()
     ctx = engine.retrieve_context(step=2, text="Marko nodded.", lang="sr")
     assert [e.entity_id for e in ctx.entities] == ["char_marko"]
+    engine.close()
+
+
+def test_llm_inflection_generator_batching_cache_sharing_and_fallback(tmp_path: Path) -> None:
+    """generate_inflections_batch chunks by batch_size, shares cache with single-item calls, and falls back on dropped IDs."""
+    preview = build_batch_inflection_prompt(
+        [InflectionRequest(name="Petar", lang="sr", gender="M")]
+    )
+    assert '"id": 0' in preview and "Petar" in preview
+
+    prompts_seen: list[str] = []
+    drop_id_once = {"dropped": False}
+
+    class BatchStubExtractor(OpenAICompatibleExtractor):
+        def __init__(self) -> None:
+            super().__init__(model="stub-batch-model", api_key="test")
+
+        def call_json_api(self, prompt: str, **kwargs: Any) -> tuple[str, TokenUsage]:
+            prompts_seen.append(prompt)
+            # Batch prompt contains "Input: ["
+            if "Input: [" in prompt:
+                raw_json = prompt.split("Input: ", 1)[1]
+                items = json.loads(raw_json)
+                out_items = []
+                for item in items:
+                    # Simulate LLM omitting id=1 on the very first batch call to test fallback
+                    if not drop_id_once["dropped"] and item["id"] == 1:
+                        drop_id_once["dropped"] = True
+                        continue
+                    nm = item["name"]
+                    out_items.append({"id": item["id"], "forms": [nm, f"{nm}a", f"{nm}u"]})
+                return (
+                    json.dumps({"items": out_items}, ensure_ascii=False),
+                    TokenUsage(prompt_tokens=40, completion_tokens=30, total_tokens=70, api_calls=1),
+                )
+            # Single-item fallback prompt: extract proper name inside single quotes
+            start = prompt.index("'") + 1
+            end = prompt.index("'", start)
+            nm = prompt[start:end]
+            return (
+                json.dumps({"forms": [nm, f"{nm}a", f"{nm}u"]}, ensure_ascii=False),
+                TokenUsage(prompt_tokens=15, completion_tokens=10, total_tokens=25, api_calls=1),
+            )
+
+    cache_dir = tmp_path / "batch_cache"
+    gen = LLMInflectionGenerator(BatchStubExtractor(), cache_dir=cache_dir)
+
+    # 7 unique Serbian names + 1 duplicate -> with batch_size=3:
+    # 3 batch calls (sizes 3, 3, 1 -> last is single-item) + 1 single-item fallback for dropped id=1 = 4 calls
+    reqs = [
+        InflectionRequest(name="Artur", lang="sr", gender="M"),
+        InflectionRequest(name="Petar", lang="sr", gender="M"),
+        InflectionRequest(name="Marko", lang="sr", gender="M"),
+        InflectionRequest(name="Artur", lang="sr", gender="M"),  # duplicate within batch
+        InflectionRequest(name="Jelena", lang="sr", gender="F"),
+        InflectionRequest(name="Milica", lang="sr", gender="F"),
+        InflectionRequest(name="Lazar", lang="sr", gender="M"),
+        InflectionRequest(name="Nikola", lang="sr", gender="M"),
+    ]
+    results = gen.generate_inflections_batch(reqs, batch_size=3)
+    assert len(results) == len(reqs)
+    assert results[0] == ["Artur", "Artura", "Arturu"]
+    assert results[1] == ["Petar", "Petara", "Petaru"]  # recovered via single-item fallback
+    assert results[3] == results[0]  # intra-batch duplicate matched
+    assert results[7] == ["Nikola", "Nikolaa", "Nikolau"]
+    assert gen.api_calls == 4  # 2 multi-item batches + 1 dropped-id fallback + 1 trailing single item
+
+    # Single-item call on a new generator pointing to same cache_dir hits disk cache with 0 API calls
+    gen2 = LLMInflectionGenerator(BatchStubExtractor(), cache_dir=cache_dir)
+    assert gen2.generate_inflections("Jelena", "sr", gender="F") == ["Jelena", "Jelenaa", "Jelenau"]
+    assert gen2.api_calls == 0
+    assert gen2.cache_hits == 1
+
+    # seed_entities() uses batched generation (7 fresh entities with batch_size=3 -> 3 calls instead of 7)
+    drop_id_once["dropped"] = True  # disable drop for clean count
+    gen3 = LLMInflectionGenerator(BatchStubExtractor())
+    engine = CanonArcEngine(":memory:", inflection_generator=gen3)
+    entities = [
+        EntityRecord(
+            entity_id=f"char_{i}",
+            canonical_name=f"Hero{i}",
+            base_attributes={"target_name": f"Junak{i}", "target_lang": "sr", "gender": "M"},
+        )
+        for i in range(7)
+    ]
+    engine.seed_entities(entities, step=0, batch_size=3)
+    assert gen3.api_calls == 3  # ceil(7 / 3) == 3
+
+    aliases = engine.store.get_all_active_aliases("main", 0)
+    by_alias = {a.alias: a for a in aliases}
+    assert by_alias["Junak0"].kind == "permanent"
+    assert by_alias["Junak0a"].kind == "inflection"
+    assert by_alias["Junak6u"].kind == "inflection"
+
+    # DefaultLexicalResolver still resolves kind='inflection' aliases
+    ctx = engine.retrieve_context(step=1, text="Videli smo Junak0a na trgu.", lang="sr")
+    assert [e.entity_id for e in ctx.entities] == ["char_0"]
     engine.close()

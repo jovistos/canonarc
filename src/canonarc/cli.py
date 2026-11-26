@@ -123,6 +123,7 @@ def _cmd_export(args: argparse.Namespace) -> int:
                 include_state=bool(args.include_state),
                 include_edges=not bool(args.no_edges),
                 include_aliases=not bool(args.no_aliases),
+                include_inflections=args.include_inflections,
                 lang=args.lang,
             )
             sys.stdout.write(content)
@@ -136,6 +137,7 @@ def _cmd_export(args: argparse.Namespace) -> int:
             include_state=bool(args.include_state),
             include_edges=not bool(args.no_edges),
             include_aliases=not bool(args.no_aliases),
+            include_inflections=args.include_inflections,
             lang=args.lang,
             excel_bom=bool(args.excel_bom),
         )
@@ -316,6 +318,20 @@ def build_parser() -> argparse.ArgumentParser:
     p_export.add_argument("--include-state", action="store_true", help="Include Tier 3 rolling state.")
     p_export.add_argument("--no-edges", action="store_true", help="Exclude directed edges (JSON/MD).")
     p_export.add_argument("--no-aliases", action="store_true", help="Exclude aliases.")
+    inflect_grp = p_export.add_mutually_exclusive_group()
+    inflect_grp.add_argument(
+        "--include-inflections",
+        dest="include_inflections",
+        action="store_true",
+        default=None,
+        help="Include kind='inflection' aliases (default: true for JSON, false for CSV/MD).",
+    )
+    inflect_grp.add_argument(
+        "--exclude-inflections",
+        dest="include_inflections",
+        action="store_false",
+        help="Exclude kind='inflection' aliases even in JSON exports.",
+    )
     p_export.add_argument("--excel-bom", action="store_true", help="Write UTF-8 BOM for Excel CSV compatibility.")
     p_export.add_argument("--json", action="store_true", help="Output export metadata as JSON.")
     p_export.set_defaults(func=_cmd_export)
