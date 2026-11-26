@@ -14,6 +14,11 @@ from .rules_continuity import (
     RegisterVocabularyDriftRule,
     UnexplainedRegisterFlipRule,
 )
+from .rules_structural import (
+    OmissionGuardRule,
+    PlaceholderPreservationRule,
+    UntranslatedSourceRule,
+)
 from .rules_translation import (
     ExonymLeakRule,
     ScriptConsistencyRule,
@@ -39,10 +44,13 @@ __all__ = [
     "DuplicateCandidate",
     "ExonymLeakRule",
     "NearDuplicateEntityRule",
+    "OmissionGuardRule",
+    "PlaceholderPreservationRule",
     "RegisterVocabularyDriftRule",
     "ScriptConsistencyRule",
     "TargetTermComplianceRule",
     "UnexplainedRegisterFlipRule",
+    "UntranslatedSourceRule",
     "build_audit_context",
     "default_audit_rules",
     "find_duplicate_candidates",

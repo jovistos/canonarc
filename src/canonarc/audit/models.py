@@ -182,7 +182,7 @@ class AuditReport(BaseModel):
         min_severity: AuditSeverity = "error",
         max_issues: int | None = None,
         header: str | None = (
-            "Fix the following terminology/continuity errors in your translation "
+            "Fix the following errors in your translation "
             "while preserving everything else:"
         ),
         include_snippets: bool = True,
