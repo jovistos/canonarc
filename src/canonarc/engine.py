@@ -5,6 +5,7 @@ import contextvars
 import hashlib
 import json
 import re
+import time
 import uuid
 import warnings
 from collections import Counter
@@ -12,6 +13,8 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import AbstractContextManager
 from pathlib import Path
 from typing import Any, Literal, Self
+
+from pydantic import BaseModel, Field
 
 from .audit import (
     AuditReport,
@@ -44,7 +47,7 @@ from .episodic import (
     EpisodeRanker,
     LLMEpisodeConsolidator,
 )
-from .extractors import DeltaExtractor, JsonCompletionClient
+from .extractors import DeltaExtractor, JsonCompletionClient, TokenUsage, resolve_client_model
 from .hooks import EngineHooks
 from .inflections import InflectionGenerator, InflectionRequest, generate_inflections_batch
 from .models import (
@@ -60,11 +63,15 @@ from .models import (
     InformDelta,
     ResolvedMention,
     ResumePlan,
+    StageUsageSummary,
     StepCheckpoint,
     StepContext,
+    StepContextSummary,
     StepDelta,
     TimelineInfo,
+    TransactionUsageSummary,
     VoiceExemplar,
+    VoiceHarvestTrace,
 )
 from .presets import (
     DEFAULT_SCHEMA_POLICY,
@@ -91,6 +98,10 @@ from .voice import (
 
 KnownEntityScope = Literal["scene", "characters_compact", "all_compact"]
 
+_ACTIVE_COMMIT_EPISODES: contextvars.ContextVar[list[EpisodeRecord] | None] = (
+    contextvars.ContextVar("_canonarc_active_commit_episodes", default=None)
+)
+
 
 def compute_step_hash(
     text: str,
@@ -111,6 +122,173 @@ def compute_step_hash(
         payload, sort_keys=True, ensure_ascii=False, separators=(",", ":")
     ).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
+
+
+class DraftAuditTrace(BaseModel):
+    """Recorded pre-commit audit_draft() execution within a StepTransaction."""
+
+    attempt: int
+    label: str | None = None
+    passed: bool
+    error_count: int = 0
+    warning_count: int = 0
+    info_count: int = 0
+    report: AuditReport
+
+
+class StepTransactionTrace(BaseModel):
+    """Standardized, JSON-ready provenance trace for a StepTransaction."""
+
+    schema_version: str = "1.0"
+    timeline_id: str
+    step: int
+    lang: str | None = None
+    rerun_clean: bool = True
+    status: Literal["open", "committed", "skipped", "rolled_back"] = "open"
+    content_hash: str | None = None
+    checkpoint_metadata: dict[str, Any] = Field(default_factory=dict)
+    duration_ms: float | None = None
+    context: StepContextSummary
+    audit_reports: list[DraftAuditTrace] = Field(default_factory=list)
+    extraction_skipped_by_policy: bool = False
+    raw_delta: StepDelta | None = None
+    staged_delta: StepDelta | None = None
+    delta_counts: dict[str, int] = Field(default_factory=dict)
+    staged_extra_episodes: int = 0
+    staged_extra_exemplars: int = 0
+    voice_harvest: VoiceHarvestTrace = Field(default_factory=VoiceHarvestTrace)
+    harvested_voice_count: int = 0
+    committed_episode_ids: list[str] = Field(default_factory=list)
+    indexed_exemplar_ids: list[str] = Field(default_factory=list)
+    error: str | None = None
+    usage: TransactionUsageSummary = Field(default_factory=TransactionUsageSummary)
+
+
+def _get_component_usage_counter(component: Any) -> TokenUsage | None:
+    """Returns the billable/total TokenUsage counter on an extractor, scorer, or generator."""
+    if component is None:
+        return None
+    billable = getattr(component, "billable_usage", None)
+    if isinstance(billable, TokenUsage):
+        return billable
+    total = getattr(component, "total_usage", None)
+    if isinstance(total, TokenUsage):
+        return total
+    return None
+
+
+def _snapshot_component_usage(component: Any) -> TokenUsage | None:
+    counter = _get_component_usage_counter(component)
+    if counter is None:
+        return None
+    return TokenUsage.from_dict(counter.to_dict())
+
+
+def _resolve_component_model(component: Any) -> str:
+    """Resolves model identifier from an extractor, wrapper, voice scorer, or inflection generator."""
+    model = getattr(component, "model", None) or getattr(component, "model_id", None)
+    if isinstance(model, str) and model.strip():
+        return model.strip()
+    inner = getattr(component, "extractor", None)
+    if inner is not None and inner is not component:
+        return _resolve_component_model(inner)
+    return resolve_client_model(component)
+
+
+def _diff_component_usage(
+    stage: str,
+    component: Any,
+    before: TokenUsage | None,
+) -> StageUsageSummary | None:
+    if before is None:
+        return None
+    after = _get_component_usage_counter(component)
+    if after is None:
+        return None
+    delta = TokenUsage(
+        prompt_tokens=max(0, after.prompt_tokens - before.prompt_tokens),
+        completion_tokens=max(0, after.completion_tokens - before.completion_tokens),
+        total_tokens=max(0, after.total_tokens - before.total_tokens),
+        cached_prompt_tokens=max(0, after.cached_prompt_tokens - before.cached_prompt_tokens),
+        reasoning_tokens=max(0, after.reasoning_tokens - before.reasoning_tokens),
+        api_calls=max(0, after.api_calls - before.api_calls),
+        cache_hits=max(0, after.cache_hits - before.cache_hits),
+        cache_misses=max(0, after.cache_misses - before.cache_misses),
+        retry_count=max(0, after.retry_count - before.retry_count),
+        validation_errors=max(0, after.validation_errors - before.validation_errors),
+        latency_ms=round(max(0.0, after.latency_ms - before.latency_ms), 3),
+    )
+    if (
+        delta.api_calls == 0
+        and delta.cache_hits == 0
+        and delta.cache_misses == 0
+        and delta.total_tokens == 0
+    ):
+        return None
+    model = _resolve_component_model(component)
+    cost = float(delta.estimate_cost_usd(model=model)["total_cost_usd"])
+    return StageUsageSummary(
+        stage=stage,
+        model=model,
+        prompt_tokens=delta.prompt_tokens,
+        completion_tokens=delta.completion_tokens,
+        total_tokens=delta.total_tokens,
+        cached_prompt_tokens=delta.cached_prompt_tokens,
+        reasoning_tokens=delta.reasoning_tokens,
+        api_calls=delta.api_calls,
+        cache_hits=delta.cache_hits,
+        cache_misses=delta.cache_misses,
+        retry_count=delta.retry_count,
+        validation_errors=delta.validation_errors,
+        latency_ms=delta.latency_ms,
+        estimated_cost_usd=cost,
+    )
+
+
+def _merge_stage_usage(
+    existing: StageUsageSummary | None,
+    added: StageUsageSummary,
+) -> StageUsageSummary:
+    if existing is None:
+        return added
+    merged_model = existing.model if existing.model == added.model else "mixed"
+    return StageUsageSummary(
+        stage=existing.stage,
+        model=merged_model,
+        prompt_tokens=existing.prompt_tokens + added.prompt_tokens,
+        completion_tokens=existing.completion_tokens + added.completion_tokens,
+        total_tokens=existing.total_tokens + added.total_tokens,
+        cached_prompt_tokens=existing.cached_prompt_tokens + added.cached_prompt_tokens,
+        reasoning_tokens=existing.reasoning_tokens + added.reasoning_tokens,
+        api_calls=existing.api_calls + added.api_calls,
+        cache_hits=existing.cache_hits + added.cache_hits,
+        cache_misses=existing.cache_misses + added.cache_misses,
+        retry_count=existing.retry_count + added.retry_count,
+        validation_errors=existing.validation_errors + added.validation_errors,
+        latency_ms=round(existing.latency_ms + added.latency_ms, 3),
+        estimated_cost_usd=round(existing.estimated_cost_usd + added.estimated_cost_usd, 6),
+    )
+
+
+def _build_transaction_usage_summary(
+    stages: Mapping[str, StageUsageSummary],
+) -> TransactionUsageSummary:
+    stage_copies = {k: v.model_copy(deep=True) for k, v in stages.items()}
+    return TransactionUsageSummary(
+        stages=stage_copies,
+        prompt_tokens=sum(s.prompt_tokens for s in stage_copies.values()),
+        completion_tokens=sum(s.completion_tokens for s in stage_copies.values()),
+        total_tokens=sum(s.total_tokens for s in stage_copies.values()),
+        cached_prompt_tokens=sum(s.cached_prompt_tokens for s in stage_copies.values()),
+        reasoning_tokens=sum(s.reasoning_tokens for s in stage_copies.values()),
+        api_calls=sum(s.api_calls for s in stage_copies.values()),
+        cache_hits=sum(s.cache_hits for s in stage_copies.values()),
+        cache_misses=sum(s.cache_misses for s in stage_copies.values()),
+        retry_count=sum(s.retry_count for s in stage_copies.values()),
+        validation_errors=sum(s.validation_errors for s in stage_copies.values()),
+        latency_ms=round(sum(s.latency_ms for s in stage_copies.values()), 3),
+        estimated_cost_usd=round(sum(s.estimated_cost_usd for s in stage_copies.values()), 6),
+    )
 
 
 class StepTransaction:
@@ -163,8 +341,31 @@ class StepTransaction:
         self._checkpoint_metadata: dict[str, Any] | None = (
             dict(checkpoint_metadata) if checkpoint_metadata is not None else None
         )
+        # Transaction trace instrumentation
+        self._audit_traces: list[DraftAuditTrace] = []
+        self._extraction_skipped_by_policy: bool = False
+        self._voice_candidates_extracted: int = 0
+        self._voice_gate1_rejected: int = 0
+        self._voice_gate2_rejected: int = 0
+        self._voice_harvested_count: int = 0
+        self._voice_harvested_ids: list[str] = []
+        self._staged_extra_exemplars: int = 0
+        self._staged_extra_episodes: int = 0
+        self._stage_usages: dict[str, StageUsageSummary] = {}
+        self._status: Literal["open", "committed", "skipped", "rolled_back"] = "open"
+        self._committed_episode_ids: list[str] = []
+        self._indexed_exemplar_ids: list[str] = []
+        self._error: str | None = None
+        self._started_perf: float | None = None
+        self._duration_ms: float | None = None
+
+    def _record_stage_usage(self, stage: str, component: Any, before: TokenUsage | None) -> None:
+        diff = _diff_component_usage(stage, component, before)
+        if diff is not None:
+            self._stage_usages[stage] = _merge_stage_usage(self._stage_usages.get(stage), diff)
 
     def __enter__(self) -> Self:
+        self._started_perf = time.perf_counter()
         if self.rerun_clean:
             for tl in self.engine.list_timelines():
                 if (
@@ -211,9 +412,10 @@ class StepTransaction:
         min_severity: AuditSeverity = "info",
         lang: str | None = None,
         include_all_timeline_entities: bool = False,
+        label: str | None = None,
     ) -> AuditReport:
         """Audits a pre-commit draft translation against tx.context before commit()/extract_and_commit()."""
-        return _run_audit_draft(
+        report = _run_audit_draft(
             self.engine,
             self.step,
             source_text=self.text if source_text is None else source_text,
@@ -227,6 +429,18 @@ class StepTransaction:
             lang=self.lang if lang is None else lang,
             include_all_timeline_entities=include_all_timeline_entities,
         )
+        self._audit_traces.append(
+            DraftAuditTrace(
+                attempt=len(self._audit_traces) + 1,
+                label=label,
+                passed=report.passed,
+                error_count=report.error_count,
+                warning_count=report.warning_count,
+                info_count=report.info_count,
+                report=report,
+            )
+        )
+        return report
 
     def commit(
         self,
@@ -243,6 +457,8 @@ class StepTransaction:
         self._staged_delta = delta
         self._staged_exemplars.extend(exemplars)
         self._staged_episodes.extend(episodes)
+        self._staged_extra_exemplars += len(exemplars)
+        self._staged_extra_episodes += len(episodes)
         self._bypass_gate = bypass_gate
         if content_hash is not None:
             self._content_hash = content_hash
@@ -272,6 +488,7 @@ class StepTransaction:
         step checkpoint so callers can share one unified loop across fiction and non-fiction.
         """
         if not self.engine._policy.has_tier(3):
+            self._extraction_skipped_by_policy = True
             empty = StepDelta()
             self.last_raw_delta = empty
             self.commit(
@@ -298,13 +515,17 @@ class StepTransaction:
             max_roster_entities=max_roster_entities,
         )
         extract_messages = getattr(active_extractor, "extract_delta_messages", None)
-        if callable(extract_messages):
-            raw_delta = extract_messages(system_prompt, user_prompt, scene_text)
-        else:
-            raw_delta = active_extractor.extract_delta(
-                f"{system_prompt}\n\n{user_prompt}",
-                scene_text,
-            )
+        before_usage = _snapshot_component_usage(active_extractor)
+        try:
+            if callable(extract_messages):
+                raw_delta = extract_messages(system_prompt, user_prompt, scene_text)
+            else:
+                raw_delta = active_extractor.extract_delta(
+                    f"{system_prompt}\n\n{user_prompt}",
+                    scene_text,
+                )
+        finally:
+            self._record_stage_usage("extraction", active_extractor, before_usage)
         self.last_raw_delta = raw_delta
         normalized = self.engine.normalize_delta(raw_delta, step=self.step, timeline_id=self.timeline_id)
         self.commit(
@@ -355,12 +576,14 @@ class StepTransaction:
             lang=effective_lang,
             staged_delta=self._staged_delta,
         )
+        self._voice_candidates_extracted += len(candidates)
         if not candidates:
             return []
 
         eligible: list[DialogueCandidate] = []
         for cand in candidates:
             if require_speaker and not cand.speaker_id:
+                self._voice_gate1_rejected += 1
                 for hook in self.engine._hooks:
                     hook.on_gate_rejected(
                         "gate1",
@@ -399,12 +622,16 @@ class StepTransaction:
             base_metadatas.append(meta)
 
         active_scorer = scorer or self.engine.voice_scorer
-        score_results = score_voice_candidates_batch(
-            active_scorer,
-            scored_candidates,
-            base_metadatas,
-            context=self.context,
-        )
+        before_usage = _snapshot_component_usage(active_scorer)
+        try:
+            score_results = score_voice_candidates_batch(
+                active_scorer,
+                scored_candidates,
+                base_metadatas,
+                context=self.context,
+            )
+        finally:
+            self._record_stage_usage("voice_scoring", active_scorer, before_usage)
 
         gate_min = self.engine.voice_bank.gate.min_quality
         effective_min_quality = gate_min if min_quality is None else float(min_quality)
@@ -432,6 +659,7 @@ class StepTransaction:
                 timeline_id=self.timeline_id,
             )
             if exemplar.quality_score < effective_min_quality:
+                self._voice_gate2_rejected += 1
                 reason_suffix = f" ({score_res.reason})" if score_res.reason else ""
                 for hook in self.engine._hooks:
                     hook.on_gate_rejected(
@@ -451,26 +679,133 @@ class StepTransaction:
 
         if stage and passing:
             self._staged_exemplars.extend(passing)
+            self._voice_harvested_count += len(passing)
+            self._voice_harvested_ids.extend(
+                ex.exemplar_id for ex in passing if ex.exemplar_id
+            )
             if any(ex.quality_score < gate_min for ex in passing):
                 self._bypass_gate = True
         return passing
 
+    def trace(self, *, include_raw_delta: bool = False) -> StepTransactionTrace:
+        """Builds a structured StepTransactionTrace snapshot of this transaction.
+
+        Can be called both inside the ``with`` block (``status='open'``) and after exit
+        (``status='committed' | 'skipped' | 'rolled_back'`` with final committed IDs and duration).
+        """
+        if self._context is None:
+            raise RuntimeError("StepTransaction has not been entered.")
+        duration_ms = self._duration_ms
+        if duration_ms is None and self._started_perf is not None:
+            duration_ms = round((time.perf_counter() - self._started_perf) * 1000.0, 3)
+
+        delta_counts: dict[str, int] = {}
+        if self._staged_delta is not None:
+            delta_counts = {
+                "entities": len(self._staged_delta.entities),
+                "edges": len(self._staged_delta.edges),
+                "episodes": len(self._staged_delta.episodes),
+                "inform": len(self._staged_delta.inform),
+            }
+
+        if self._voice_harvested_count > 0:
+            harvest_ids = (
+                list(self._voice_harvested_ids)
+                if self._voice_harvested_ids
+                else list(self._indexed_exemplar_ids)
+            )
+        else:
+            harvest_ids = []
+        return StepTransactionTrace(
+            timeline_id=self.timeline_id,
+            step=self.step,
+            lang=self.lang,
+            rerun_clean=self.rerun_clean,
+            status=self._status,
+            content_hash=self._content_hash,
+            checkpoint_metadata=dict(self._checkpoint_metadata) if self._checkpoint_metadata else {},
+            duration_ms=duration_ms,
+            context=self._context.to_summary(),
+            audit_reports=[t.model_copy(deep=True) for t in self._audit_traces],
+            extraction_skipped_by_policy=self._extraction_skipped_by_policy,
+            raw_delta=self.last_raw_delta.model_copy(deep=True) if (include_raw_delta and self.last_raw_delta is not None) else None,
+            staged_delta=self._staged_delta.model_copy(deep=True) if self._staged_delta is not None else None,
+            delta_counts=delta_counts,
+            staged_extra_episodes=self._staged_extra_episodes,
+            staged_extra_exemplars=self._staged_extra_exemplars,
+            voice_harvest=VoiceHarvestTrace(
+                candidates_extracted=self._voice_candidates_extracted,
+                gate1_rejected=self._voice_gate1_rejected,
+                gate2_rejected=self._voice_gate2_rejected,
+                staged_count=self._voice_harvested_count,
+                staged_exemplar_ids=harvest_ids,
+            ),
+            harvested_voice_count=self._voice_harvested_count,
+            committed_episode_ids=list(self._committed_episode_ids),
+            indexed_exemplar_ids=list(self._indexed_exemplar_ids),
+            error=self._error,
+            usage=_build_transaction_usage_summary(self._stage_usages),
+        )
+
+    def to_trace_dict(
+        self,
+        *,
+        include_raw_delta: bool = False,
+        exclude_none: bool = True,
+    ) -> dict[str, Any]:
+        """Serializes tx.trace() to a plain JSON-compatible dict for host-app debug logs."""
+        return self.trace(include_raw_delta=include_raw_delta).model_dump(
+            mode="json",
+            exclude_none=exclude_none,
+        )
+
     def __exit__(self, exc_type: object, exc_val: object, exc_tb: object) -> None:
-        if exc_type is None:
-            with self.engine._store_transaction():
-                if self.rerun_clean:
-                    self.engine.rollback_to(self.step - 1, timeline_id=self.timeline_id)
-                if self._committed or self._staged_delta or self._staged_exemplars or self._staged_episodes:
-                    self.engine.commit_step(
-                        self.step,
-                        delta=self._staged_delta,
-                        exemplars=self._staged_exemplars,
-                        episodes=self._staged_episodes,
-                        bypass_gate=self._bypass_gate,
-                        timeline_id=self.timeline_id,
-                        content_hash=self._content_hash,
-                        checkpoint_metadata=self._checkpoint_metadata,
-                    )
+        try:
+            if exc_type is not None:
+                self._status = "rolled_back"
+                exc_name = getattr(exc_type, "__name__", str(exc_type))
+                self._error = f"{exc_name}: {exc_val}"
+                return
+            try:
+                with self.engine._store_transaction():
+                    if self.rerun_clean:
+                        self.engine.rollback_to(self.step - 1, timeline_id=self.timeline_id)
+                    if (
+                        self._committed
+                        or self._staged_delta
+                        or self._staged_exemplars
+                        or self._staged_episodes
+                    ):
+                        inflection_gen = self.engine.inflection_generator
+                        before_inflect = _snapshot_component_usage(inflection_gen)
+                        ep_sink: list[EpisodeRecord] = []
+                        ep_token = _ACTIVE_COMMIT_EPISODES.set(ep_sink)
+                        try:
+                            indexed_ex = self.engine.commit_step(
+                                self.step,
+                                delta=self._staged_delta,
+                                exemplars=self._staged_exemplars,
+                                episodes=self._staged_episodes,
+                                bypass_gate=self._bypass_gate,
+                                timeline_id=self.timeline_id,
+                                content_hash=self._content_hash,
+                                checkpoint_metadata=self._checkpoint_metadata,
+                            )
+                        finally:
+                            _ACTIVE_COMMIT_EPISODES.reset(ep_token)
+                            self._record_stage_usage("inflection", inflection_gen, before_inflect)
+                        self._committed_episode_ids = [ep.episode_id for ep in ep_sink]
+                        self._indexed_exemplar_ids = [ex.exemplar_id for ex in indexed_ex]
+                        self._status = "committed"
+                    else:
+                        self._status = "skipped"
+            except Exception as exc:
+                self._status = "rolled_back"
+                self._error = f"{type(exc).__name__}: {exc}"
+                raise
+        finally:
+            if self._started_perf is not None:
+                self._duration_ms = round((time.perf_counter() - self._started_perf) * 1000.0, 3)
 
 
 class TimelineSession:
@@ -2527,6 +2862,8 @@ class CanonArcEngine:
                                     confidence=m.confidence,
                                     matched_source="alias",
                                     matched_phrase=alias_rec.alias.lower(),
+                                    alias_kind="disguise",
+                                    lang=alias_rec.lang,
                                 )
                             )
                         continue
@@ -3499,6 +3836,9 @@ class CanonArcEngine:
                 )
         for hook in self._hooks:
             hook.on_after_commit(step, tl, committed_episodes, indexed)
+        ep_sink = _ACTIVE_COMMIT_EPISODES.get()
+        if ep_sink is not None:
+            ep_sink.extend(committed_episodes)
         return indexed
 
     # --- Step Checkpoints (Resumability) ---
