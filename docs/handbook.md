@@ -1212,13 +1212,13 @@ canonarc diff arthur_study.sqlite main peaceful_council --step 95
 # 4. Trace Arthur's full revision trajectory across steps
 canonarc history arthur_study.sqlite char_arthur --timeline main
 
-# 5. Export the Series Bible to Markdown, JSON, or Excel-friendly CSV
-canonarc export arthur_study.sqlite bible.md --timeline main --include-state
-canonarc export arthur_study.sqlite glossary.csv --step 0 --excel-bom
+# 5. Export the Series Bible to Markdown, JSON, or Excel-friendly CSV (with optional read-only provenance)
+canonarc export arthur_study.sqlite bible.md --timeline main --include-state --include-provenance
+canonarc export arthur_study.sqlite glossary.csv --step 0 --include-provenance --excel-bom
 
-# 6. Preview and sync edits from a CSV or JSON Bible back into the database
+# 6. Preview and sync edits from a CSV or JSON Bible back into the database (or short-circuit when unchanged)
 canonarc import arthur_study.sqlite glossary.csv --step 0 --dry-run
-canonarc import arthur_study.sqlite glossary.csv --step 0 --mode upsert
+canonarc import arthur_study.sqlite glossary.csv --step 0 --mode upsert --if-changed
 ```
 
 ---
@@ -1250,7 +1250,7 @@ Benchmarks across 3K–12K synthetic stories ([`docs/benchmarks.md`](benchmarks.
 | Subsystem | Primary Code File | Key Classes & Functions | Responsibility |
 | :--- | :--- | :--- | :--- |
 | **Data Models** | [`src/canonarc/models.py`](../src/canonarc/models.py) | `EntityRecord`, `AliasRecord`, `DirectedEdgeRecord`, `EpisodeRecord`, `InformDelta`, `VoiceExemplar`, `StepDelta`, `StepContext`, `ResolvedMention` | Pydantic v2 schemas for Tiers 1–6 & `EpistemicMode` |
-| **Storage & CTE** | [`src/canonarc/store/`](../src/canonarc/store) | `MemoryStore`, `CausalStore`, `TimelineBranchConflictError` | 7-table SQLite schema, recursive lineage CTE, FTS5 pre-filtering, checkpoints, migrations, snapshots, deletions, rollbacks |
+| **Storage & CTE** | [`src/canonarc/store/`](../src/canonarc/store) | `MemoryStore`, `CheckpointStore`, `MetadataStore`, `CausalStore`, `TimelineBranchConflictError` | 7-table SQLite schema, recursive lineage CTE (incl. `first_seen_step`), FTS5 pre-filtering, checkpoints, metadata, migrations, snapshots, deletions, rollbacks |
 | **Embedders** | [`src/canonarc/embedders.py`](../src/canonarc/embedders.py) | `Embedder`, `OfflineNgramEmbedder`, `CallableEmbedder`, `OpenAICompatibleEmbedder`, `OllamaEmbedder`, `EmbedderMismatchError` | CJK-aware signed CRC32 hashing, batch vectorization, mismatch detection & migration |
 | **Voice Bank** | [`src/canonarc/voice/`](../src/canonarc/voice) | `VoiceBank`, `IngestionGate`, `VoiceQualityScorer`, `VoiceScoreResult`, `HeuristicVoiceQualityScorer`, `CallableVoiceQualityScorer`, `LLMVoiceQualityScorer` | Multi-script dialogue regex, Gate 1 Root-TTR, automated Gate 2 scoring & `StepTransaction.harvest_voice()`, multi-party dyadic Round-Robin retrieval |
 | **Episodic Ranker** | [`src/canonarc/episodic.py`](../src/canonarc/episodic.py) | `EpisodeRanker`, `DefaultEpisodeRanker`, `EpisodicScoringPolicy` | Deceived-POV safe 4-signal scorer with salience-modulated exponential decay |
@@ -1260,7 +1260,7 @@ Benchmarks across 3K–12K synthetic stories ([`docs/benchmarks.md`](benchmarks.
 | **Lifecycle Hooks** | [`src/canonarc/hooks.py`](../src/canonarc/hooks.py) | `EngineHooks`, `BaseEngineHooks` | Observability callbacks for commit, rollback, branch, and Gate 1/2 rejections |
 | **Domain Presets** | [`src/canonarc/presets/`](../src/canonarc/presets) | `DomainPreset`, `SchemaPolicy`, `InteractiveFictionPreset`, `TranslationPreset`, `SimulationPreset` | Domain prompt formatters and policy-driven filter/boost weights |
 | **Engine Facade** | [`src/canonarc/engine/`](../src/canonarc/engine) | `CanonArcEngine`, `StepTransaction`, `TimelineSession` | Unified Tier 1–6 retrieval, POV projection, `normalize_delta`, consolidation, `contextvars` sessions |
-| **Series Bible I/O** | [`src/canonarc/bible/`](../src/canonarc/bible) | `BibleBuilder`, `bootstrap_bible`, `BibleSection`, `BibleDraft`, `BibleConflict`, `BibleBootstrapReport`, `export_bible`, `render_bible`, `sync_bible`, `BibleExportResult`, `BibleSyncReport` | Sequential LLM Series Bible bootstrapping (with disk cache, conflict logging & duplicate scan), CSV/JSON/Markdown export, and diff-aware upsert/merge/replace sync |
+| **Series Bible I/O** | [`src/canonarc/bible/`](../src/canonarc/bible) | `BibleBuilder`, `bootstrap_bible`, `BibleSection`, `BibleDraft`, `BibleConflict`, `BibleBootstrapReport`, `export_bible`, `render_bible`, `sync_bible`, `sync_bible_if_changed`, `BibleExportResult`, `BibleSyncReport` | Sequential LLM Series Bible bootstrapping (with disk cache, conflict logging & duplicate scan), CSV/JSON/Markdown export with optional read-only provenance, and change-aware diff/upsert/merge/replace sync |
 | **CLI Inspector** | [`src/canonarc/cli.py`](../src/canonarc/cli.py) | `canonarc tree / inspect / diff / history / export / import` | Terminal & `--json` inspection and Series Bible I/O for `.sqlite` saves |
 
 ### 8.4 Hands-On Study Exercises & Next Steps

@@ -317,13 +317,14 @@ print(boot.summary())                     # draft stats, conflicts, sync diff & 
 
 # Export active Series Bible at step 0 (or omit at_step for timeline head)
 # CSV/MD hide auto-generated kind="inflection" aliases by default; JSON includes them for lossless round-trips
-engine.export_bible("bible.json", at_step=0)                 # Lossless entities, aliases (incl. inflections) & edges
-engine.export_bible("glossary.csv", at_step=0, excel_bom=True)  # Clean Excel/Sheets-friendly CSV
-engine.export_bible("bible.md", include_state=True)          # Human-readable Markdown doc
+engine.export_bible("bible.json", at_step=0)                                        # Lossless entities, aliases (incl. inflections) & edges
+engine.export_bible("glossary.csv", at_step=0, include_provenance=True, excel_bom=True)  # Excel CSV with read-only first_seen_step/source
+engine.export_bible("bible.md", include_state=True, include_provenance=True)        # Human-readable Markdown doc with First Seen column
 
 # Sync human edits back with diff-before-write idempotency (supports upsert | merge | replace)
-# Batches LLM inflection generation automatically (batch_size=25) and preserves kind="inflection" on unchanged CSV rows
-report = engine.sync_bible(
+# Use sync_bible_if_changed() in multi-stage pipelines to short-circuit in < 1 ms via store_metadata SHA-256
+# Read-only provenance columns (first_seen_step, first_seen_source) are automatically ignored during diffs
+report = engine.sync_bible_if_changed(
     "glossary.csv",
     step=0,
     mode="upsert",
@@ -421,8 +422,8 @@ Diff main vs reconciliation_route @ step 85:
 # Additional commands:
 canonarc inspect story_save.sqlite --timeline main --step 85 --pov char_arthur
 canonarc history story_save.sqlite char_arthur --timeline main
-canonarc export story_save.sqlite bible.md --step 85 --include-state
-canonarc import story_save.sqlite glossary.csv --step 0 --dry-run
+canonarc export story_save.sqlite bible.md --step 85 --include-state --include-provenance
+canonarc import story_save.sqlite glossary.csv --step 0 --if-changed --dry-run
 canonarc audit story_save.sqlite --timeline main --fail-on error
 canonarc duplicates story_save.sqlite --timeline main
 canonarc merge story_save.sqlite char_poirot char_hercule_poirot --dry-run
