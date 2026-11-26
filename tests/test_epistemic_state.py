@@ -333,9 +333,12 @@ def test_facade_vs_private_stance_voice_selection_and_irony_prompt():
     prompt = engine.format_context(ctx_omni)
     assert "ignorant: char_percival" in prompt
 
-    # TranslationPreset also preserves epistemic boundaries
+    # TranslationPreset also preserves epistemic boundaries (human names by default, IDs when enabled)
     trans_prompt = TranslationPreset().format_prompt_context(ctx_omni)
-    assert "ignorant: char_percival" in trans_prompt
+    assert "ignorant: Percival" in trans_prompt
+    assert "char_percival" not in trans_prompt
+    trans_prompt_with_ids = TranslationPreset(show_entity_ids=True).format_prompt_context(ctx_omni)
+    assert "ignorant: char_percival" in trans_prompt_with_ids
 
 
 def test_deceived_provenance_redaction_and_multipov_all_isolation():
