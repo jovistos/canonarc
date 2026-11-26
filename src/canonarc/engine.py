@@ -16,6 +16,8 @@ from .audit import (
     AuditReport,
     AuditRule,
     AuditSeverity,
+    DuplicateCandidate,
+    find_duplicate_candidates as _find_duplicate_candidates,
     run_audit_draft as _run_audit_draft,
     run_audit_step as _run_audit_step,
     run_audit_timeline as _run_audit_timeline,
@@ -906,6 +908,20 @@ class TimelineSession:
             exclude_rules=exclude_rules,
             min_severity=min_severity,
             lang=lang,
+        )
+
+    def find_duplicate_candidates(
+        self,
+        *,
+        at_step: int | None = None,
+        fuzzy_threshold: float = 88.0,
+        same_kind_only: bool = True,
+    ) -> list[DuplicateCandidate]:
+        return self.engine.find_duplicate_candidates(
+            at_step=at_step,
+            timeline_id=self.timeline_id,
+            fuzzy_threshold=fuzzy_threshold,
+            same_kind_only=same_kind_only,
         )
 
     def normalize_delta(self, delta: StepDelta, *, step: int | None = None) -> StepDelta:
@@ -3945,4 +3961,25 @@ class CanonArcEngine:
             exclude_rules=exclude_rules,
             min_severity=min_severity,
             lang=lang,
+        )
+
+    def find_duplicate_candidates(
+        self,
+        *,
+        at_step: int | None = None,
+        timeline_id: str | None = None,
+        fuzzy_threshold: float = 88.0,
+        same_kind_only: bool = True,
+    ) -> list[DuplicateCandidate]:
+        """Scans all active entities at (timeline_id, at_step) and returns typed DuplicateCandidate records.
+
+        Defaults to the timeline's head_step when at_step is None. Intended as a read-only
+        discovery bridge into explicit engine.merge_entities(cand.duplicate_id, cand.canonical_id) calls.
+        """
+        return _find_duplicate_candidates(
+            self,
+            at_step=at_step,
+            timeline_id=timeline_id,
+            fuzzy_threshold=fuzzy_threshold,
+            same_kind_only=same_kind_only,
         )

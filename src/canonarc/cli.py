@@ -264,6 +264,50 @@ def _cmd_audit(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_duplicates(args: argparse.Namespace) -> int:
+    with CanonArcEngine(
+        args.db_path, timeline_id=args.timeline, on_embedder_mismatch="ignore"
+    ) as engine:
+        try:
+            candidates = engine.find_duplicate_candidates(
+                at_step=args.step,
+                timeline_id=args.timeline,
+                fuzzy_threshold=args.threshold,
+                same_kind_only=not bool(args.allow_cross_kind),
+            )
+        except ValueError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 1
+    if args.json:
+        print(json.dumps([c.model_dump() for c in candidates], indent=2, ensure_ascii=False))
+    else:
+        if not candidates:
+            print(f"No near-duplicate entities found on timeline '{args.timeline}'.")
+        else:
+            step_label = candidates[0].step
+            print(
+                f"Found {len(candidates)} near-duplicate candidate(s) "
+                f"[timeline={args.timeline}, step={step_label}]:"
+            )
+            for cand in candidates:
+                dup_label = (
+                    f"{cand.duplicate_id} ({cand.duplicate_name})"
+                    if cand.duplicate_name
+                    else cand.duplicate_id
+                )
+                canon_label = (
+                    f"{cand.canonical_id} ({cand.canonical_name})"
+                    if cand.canonical_name
+                    else cand.canonical_id
+                )
+                print(f"  - [{cand.score:.1f}%] {dup_label} -> {canon_label}: {cand.reason}")
+                print(
+                    f"      merge: canonarc merge {args.db_path} "
+                    f"{cand.duplicate_id} {cand.canonical_id}"
+                )
+    return 0
+
+
 def _cmd_merge(args: argparse.Namespace) -> int:
     with CanonArcEngine(
         args.db_path, timeline_id=args.timeline, on_embedder_mismatch="ignore"
@@ -423,6 +467,27 @@ def build_parser() -> argparse.ArgumentParser:
     p_audit.add_argument("--lang", default=None, help="Optional target language tag.")
     p_audit.add_argument("--json", action="store_true", help="Output audit report as JSON.")
     p_audit.set_defaults(func=_cmd_audit)
+
+    p_dups = sub.add_parser(
+        "duplicates",
+        help="Scan all active entities for near-duplicate merge candidates (read-only).",
+    )
+    p_dups.add_argument("db_path", help="Path to SQLite database file.")
+    p_dups.add_argument("--timeline", default="main", help="Timeline ID (default: main).")
+    p_dups.add_argument("--step", type=int, default=None, help="Step to scan (default: head).")
+    p_dups.add_argument(
+        "--threshold",
+        type=float,
+        default=88.0,
+        help="Minimum fuzzy similarity threshold in [0..100] (default: 88.0).",
+    )
+    p_dups.add_argument(
+        "--allow-cross-kind",
+        action="store_true",
+        help="Also compare entity names across different kinds (e.g. character vs location).",
+    )
+    p_dups.add_argument("--json", action="store_true", help="Output candidates as JSON.")
+    p_dups.set_defaults(func=_cmd_duplicates)
 
     p_merge = sub.add_parser(
         "merge",

@@ -8,6 +8,7 @@ import pytest
 from canonarc import (
     AliasRecord,
     CanonArcEngine,
+    DuplicateCandidate,
     EdgeDelta,
     EntityDelta,
     EntityMergeReport,
@@ -317,3 +318,164 @@ def test_cli_merge_command(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -
     rc_err = cli_main(["merge", str(db_path), "char_poirot", "char_hercule_poirot"])
     assert rc_err == 1
     assert "not active" in capsys.readouterr().err
+
+
+def test_find_duplicate_candidates_and_two_line_merge_workflow() -> None:
+    with CanonArcEngine(":memory:") as engine:
+        # Post-glossary step=0: richer entity 'char_darcy' sorts AFTER sparse stub 'char_a_mr_darcy'
+        # alphabetically, but richness tie-breaking should still elect 'char_darcy' as canonical_id.
+        engine.register_entity(
+            EntityRecord(
+                entity_id="char_darcy",
+                kind="character",
+                canonical_name="Fitzwilliam Darcy",
+                base_attributes={"target_name": "Ficvilijam Darsi", "gender": "male"},
+            ),
+            aliases=[AliasRecord(alias="Mr. Darcy", entity_id="char_darcy", kind="epithet")],
+            step=0,
+        )
+        engine.register_entity(
+            EntityRecord(
+                entity_id="char_a_mr_darcy",
+                kind="character",
+                canonical_name="Mr. Darcy",
+            ),
+            step=0,
+        )
+        # Later step adds a fuzzy duplicate of a third entity, then advances head_step to 3
+        engine.register_entity(
+            EntityRecord(entity_id="char_elizabeth", canonical_name="Elizabeth Bennet"),
+            step=1,
+        )
+        engine.register_entity(
+            EntityRecord(entity_id="char_elizabth", canonical_name="Elizabth Bennet"),
+            step=2,
+        )
+        engine.apply_delta(
+            3,
+            StepDelta(
+                entities=[EntityDelta(entity_id="char_elizabeth", state={"mood": "composed"})]
+            ),
+        )
+
+        # Default audit_step at head_step=3 misses older duplicates because check_all_entities=False
+        default_audit = engine.audit_step(3, include_rules=["near_duplicate_entity"])
+        assert default_audit.issues == []
+
+        # find_duplicate_candidates() defaults to head_step and scans the full active roster
+        candidates = engine.find_duplicate_candidates()
+        assert len(candidates) == 2
+        assert all(isinstance(c, DuplicateCandidate) for c in candidates)
+
+        # Sorted by descending score: exact alias collision (100.0) before fuzzy name match
+        exact, fuzzy = candidates
+        assert exact.duplicate_id == "char_a_mr_darcy"
+        assert exact.canonical_id == "char_darcy"
+        assert exact.score == 100.0
+        assert exact.duplicate_kind == "character"
+        assert exact.canonical_kind == "character"
+        assert "alias:Mr. Darcy" in exact.reason
+        assert exact.step == 3
+
+        assert fuzzy.duplicate_id == "char_elizabth"
+        assert fuzzy.canonical_id == "char_elizabeth"
+        assert 90.0 <= fuzzy.score < 100.0
+
+        # Explicit at_step=0 finds only the post-glossary duplicate
+        step0_cands = engine.find_duplicate_candidates(at_step=0)
+        assert [(c.duplicate_id, c.canonical_id) for c in step0_cands] == [
+            ("char_a_mr_darcy", "char_darcy")
+        ]
+
+        # 2-line explicit merge workflow
+        for cand in candidates:
+            engine.merge_entities(cand.duplicate_id, cand.canonical_id)
+
+        assert engine.find_duplicate_candidates() == []
+
+        # Validation errors
+        with pytest.raises(ValueError, match="does not exist"):
+            engine.find_duplicate_candidates(timeline_id="missing_tl")
+        with pytest.raises(ValueError, match="non-negative"):
+            engine.find_duplicate_candidates(at_step=-1)
+
+
+def test_audit_report_duplicate_candidates_and_session_isolation() -> None:
+    with CanonArcEngine(":memory:") as engine:
+        engine.register_entity(
+            EntityRecord(entity_id="char_arthur", canonical_name="Arthur Pendragon"),
+            step=0,
+        )
+        engine.register_entity(
+            EntityRecord(entity_id="char_arthur_typo", canonical_name="Arther Pendragon"),
+            step=1,
+        )
+        engine.register_entity(
+            EntityRecord(entity_id="char_arthur_dup", canonical_name="Arthur Pendragon"),
+            step=2,
+        )
+
+        report = engine.audit_timeline(include_rules=["near_duplicate_entity"])
+        all_cands = report.duplicate_candidates()
+        assert len(all_cands) >= 2
+        assert all_cands[0].score == 100.0
+        assert all_cands[0].duplicate_id == "char_arthur_dup"
+        assert all_cands[0].canonical_id == "char_arthur"
+
+        # min_score filters out fuzzy matches
+        exact_only = report.duplicate_candidates(min_score=100.0)
+        assert [(c.duplicate_id, c.canonical_id) for c in exact_only] == [
+            ("char_arthur_dup", "char_arthur")
+        ]
+
+        # Branch isolation via TimelineSession.find_duplicate_candidates()
+        branch = engine.session("main").branch(at_step=2, name="cleaned")
+        branch.merge_entities("char_arthur_dup", "char_arthur", step=3)
+        branch.merge_entities("char_arthur_typo", "char_arthur", step=3)
+
+        assert branch.find_duplicate_candidates() == []
+        assert len(engine.session("main").find_duplicate_candidates()) >= 2
+
+
+def test_cli_duplicates_command(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    db_path = tmp_path / "dups.db"
+    with CanonArcEngine(db_path) as engine:
+        engine.register_entity(
+            EntityRecord(entity_id="char_poirot", kind="character", canonical_name="Hercule Poirot"),
+            step=0,
+        )
+        engine.register_entity(
+            EntityRecord(entity_id="char_poirot_2", kind="character", canonical_name="Hercules Poirot"),
+            step=1,
+        )
+        engine.register_entity(
+            EntityRecord(entity_id="loc_poirot", kind="location", canonical_name="Hercule Poirot"),
+            step=1,
+        )
+
+    # Default human output (same_kind_only=True)
+    rc = cli_main(["duplicates", str(db_path)])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "char_poirot_2" in out
+    assert "char_poirot" in out
+    assert "canonarc merge" in out
+    assert "loc_poirot" not in out
+
+    # JSON output with --allow-cross-kind catches loc_poirot too
+    rc_json = cli_main(["duplicates", str(db_path), "--allow-cross-kind", "--json"])
+    assert rc_json == 0
+    payload = json.loads(capsys.readouterr().out)
+    dup_ids = {item["duplicate_id"] for item in payload}
+    assert "char_poirot_2" in dup_ids
+    assert "loc_poirot" in dup_ids
+
+    # After merging both duplicates, CLI reports no duplicates
+    assert cli_main(["merge", str(db_path), "char_poirot_2", "char_poirot"]) == 0
+    assert (
+        cli_main(["merge", str(db_path), "loc_poirot", "char_poirot", "--allow-kind-mismatch"])
+        == 0
+    )
+    capsys.readouterr()
+    assert cli_main(["duplicates", str(db_path)]) == 0
+    assert "No near-duplicate entities found" in capsys.readouterr().out
