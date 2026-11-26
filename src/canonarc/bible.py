@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 
 from .inflections import InflectionRequest, generate_inflections_batch
 from .models import (
+    ENTITY_KIND_PREFIXES,
     AliasRecord,
     DirectedEdgeRecord,
     EdgeDelta,
@@ -31,19 +32,13 @@ BibleSyncMode = Literal["upsert", "merge", "replace"]
 
 BIBLE_SCHEMA_VERSION = 1
 
-_KIND_PREFIXES: dict[str, str] = {
-    "character": "char",
-    "location": "loc",
-    "artifact": "item",
-    "item": "item",
-    "faction": "fac",
-    "term": "term",
-}
+_KIND_PREFIXES: dict[str, str] = ENTITY_KIND_PREFIXES
 
 _KIND_HEADINGS: dict[str, str] = {
     "character": "Characters",
     "location": "Locations",
     "faction": "Factions",
+    "organization": "Organizations",
     "artifact": "Artifacts",
     "item": "Items",
     "term": "Terms & Glossary",

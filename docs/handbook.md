@@ -134,7 +134,7 @@ erDiagram
 **Reading the ER Diagram (`||--o{` means "one-to-many", i.e., one left record can link to zero or many right records):**
 
 - **The 6 Nodes (Core Records):**
-  - **`ENTITY_RECORD`** — A thing in the story world: character, location, faction, artifact, or term (e.g., *Arthur*, *Merlin*, *Excalibur*).
+  - **`ENTITY_RECORD`** — A thing in the story world: character, location, faction, organization, artifact, or term (e.g., *Arthur*, *Merlin*, *Excalibur*).
   - **`ALIAS_RECORD`** — An alternate name, title, epithet, or disguise resolving to an entity (e.g., `"the old wizard"` or `"the grey pilgrim"` $\to$ *Merlin*).
   - **`DIRECTED_EDGE`** — A one-way, typed relationship from one entity to another (e.g., `Arthur --[stance]--> Merlin`).
   - **`VOICE_EXEMPLAR`** — A vetted historical dialogue line in the Tier 5 Voice Bank (text, speaker, addressee, register, tone).
@@ -170,7 +170,7 @@ erDiagram
 ```
 
 ### Tier 1: Base Entity Attributes (`EntityRecord.base_attributes`)
-Entities represent characters, factions, locations, artifacts, or glossary terms (`kind: str = "character"`). Tier 1 attributes are seeded at `step = 0` and hold baseline invariants:
+Entities represent characters, factions, organizations, locations, artifacts, or glossary terms (`kind: str = "character"`). Tier 1 attributes are seeded at `step = 0` and hold baseline invariants:
 - Grammatical gender, declension class, and target-language exonyms (`"Arthur"` $\to$ `"Artur"`).
 - Character archetypes, titles, and persistent physical traits.
 

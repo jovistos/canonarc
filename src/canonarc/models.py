@@ -6,6 +6,16 @@ from pydantic import BaseModel, Field
 
 EpistemicMode = Literal["direct", "told", "deceived", "forgotten", "suppressed"]
 
+ENTITY_KIND_PREFIXES: dict[str, str] = {
+    "character": "char",
+    "location": "loc",
+    "artifact": "item",
+    "item": "item",
+    "faction": "fac",
+    "organization": "org",
+    "term": "term",
+}
+
 
 class TimelineInfo(BaseModel):
     """Metadata for a timeline branch."""
@@ -63,7 +73,10 @@ class ResumePlan(BaseModel):
 class EntityRecord(BaseModel):
     """Unified Tier 1 (base_attributes) + Tier 3 (rolling state) entity record."""
     entity_id: str = Field(description="Canonical ID, e.g. 'char_arthur'")
-    kind: str = Field(default="character", description="'character', 'faction', 'location', 'artifact', 'term'")
+    kind: str = Field(
+        default="character",
+        description="'character', 'faction', 'organization', 'location', 'artifact', 'term'",
+    )
     canonical_name: str = Field(description="Primary display name, e.g. 'Arthur'")
     base_attributes: dict[str, Any] = Field(
         default_factory=dict,

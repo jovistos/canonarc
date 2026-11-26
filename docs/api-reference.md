@@ -119,7 +119,7 @@ class ResumePlan(BaseModel):
 ```python
 class EntityRecord(BaseModel):
     entity_id: str
-    kind: str = "character"
+    kind: str = "character"              # Standard kinds: 'character', 'location', 'faction', 'organization', 'artifact', 'item', 'term'
     canonical_name: str
     base_attributes: dict[str, Any] = {}
     state: dict[str, Any] = {}
@@ -133,6 +133,7 @@ class EntityRecord(BaseModel):
     prior_step: int | None = None
     revision_count: int = 1
 ```
+Standard auto-generated ID prefixes (shared across `canonarc.bible` and `canonarc.audit` via `canonarc.models.ENTITY_KIND_PREFIXES`): `char_`, `loc_`, `fac_`, `org_`, `item_` (`artifact`/`item`), and `term_`.
 
 ### `AliasRecord`
 ```python

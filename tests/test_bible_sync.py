@@ -468,3 +468,31 @@ def test_inflection_export_hiding_csv_roundtrip_and_batched_sync(tmp_path: Path)
     assert arthur_aliases["Artura"] == "inflection"
     assert arthur_aliases["Arturu"] == "inflection"
     engine.close()
+
+
+def test_organization_kind_prefix_heading_and_audit_alignment(tmp_path: Path) -> None:
+    from canonarc.audit import _ENTITY_ID_PREFIXES, _entity_id_slug
+    from canonarc.bible import _KIND_HEADINGS, _KIND_PREFIXES
+
+    # Every prefix in bible._KIND_PREFIXES is recognized by audit._ENTITY_ID_PREFIXES
+    for prefix in _KIND_PREFIXES.values():
+        assert f"{prefix}_" in _ENTITY_ID_PREFIXES
+    assert _KIND_PREFIXES["organization"] == "org"
+    assert _KIND_HEADINGS["organization"] == "Organizations"
+
+    csv_path = tmp_path / "orgs.csv"
+    csv_path.write_text(
+        "kind,canonical_name,target_name\n"
+        "organization,Iron Bank,Gvozdena banka\n",
+        encoding="utf-8",
+    )
+
+    engine = CanonArcEngine(":memory:")
+    report = engine.sync_bible(csv_path, step=0)
+    assert report.created_entities == ["org_iron_bank"]
+    assert _entity_id_slug("org_iron_bank") == "iron bank"
+
+    md_text, _ = engine.render_bible(format="md", at_step=0)
+    assert "## Organizations" in md_text
+    assert "`org_iron_bank`" in md_text
+    engine.close()
