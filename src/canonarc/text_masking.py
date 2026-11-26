@@ -20,6 +20,12 @@ MARKUP_PRINTF_PLACEHOLDERS: re.Pattern[str] = re.compile(
     r"%(?:\([^)\s]+\))?[#0\- +]?(?:\d+|\*)?(?:\.(?:\d+|\*))?[hlL]?[diouxXeEfFgGcrsa%]"
 )
 
+COMMON_PLACEHOLDER_PATTERNS: tuple[re.Pattern[str], ...] = (
+    MARKUP_BRACKET_PLACEHOLDERS,
+    MARKUP_BRACE_PLACEHOLDERS,
+    MARKUP_PRINTF_PLACEHOLDERS,
+)
+
 COMMON_MARKUP_PATTERNS: tuple[re.Pattern[str], ...] = (
     MARKUP_HTML_COMMENTS,
     MARKUP_MARKDOWN_IMAGES,
