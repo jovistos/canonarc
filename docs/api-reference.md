@@ -370,8 +370,11 @@ class EntityMergeReport(BaseModel):
 
 ## Extractors & Token Telemetry (`canonarc.extractors`)
 
-- `DeltaExtractor` (Protocol): `extract_delta(prompt: str, scene_text: str) -> StepDelta`.
-- `CallableExtractor(fn, *, max_retries=1, repair_fn=None)`: Wraps any `(prompt: str, schema: dict) -> str | dict | StepDelta` callable with `<think>` block stripping, Markdown JSON fence stripping, Pydantic validation, and automatic validation-error retry prompts.
+- `DeltaExtractor` (Protocol): `extract_delta(prompt: str, scene_text: str) -> StepDelta` (extractors may also implement `extract_delta_messages(system_prompt: str, user_prompt: str, scene_text: str) -> StepDelta` for prefix-cache-friendly split prompts).
+- `CallableExtractor(fn=None, *, messages_fn=None, model=None, system_prompt=None, max_retries=1, repair_fn=None, on_usage=None)`:
+  - Wraps either a 2-arg `(prompt: str, schema: dict)` callable (`fn`) or a 3-arg `(system_prompt: str, user_prompt: str, schema: dict)` callable (`messages_fn`) with `<think>` block stripping, Markdown JSON fence stripping, Pydantic validation, and automatic validation-error retry prompts.
+  - Implements `extract_delta_messages(...)` so LangChain and custom SDK wrappers receive split `(system_prompt, user_prompt)` messages with `system_prompt` kept byte-identical across retries for provider prompt caching.
+  - Callables may return either `str | dict | StepDelta` or a `(payload, usage)` tuple (accepting `TokenUsage` or OpenAI/DeepSeek/Anthropic/LangChain usage dicts), automatically populating `last_usage`, `total_usage`, optional `on_usage(TokenUsage)` callback, and `CachedDeltaExtractor` cache keys (`model`) and usage logs.
 - `OpenAICompatibleExtractor(*, model="gpt-4o-mini", api_key=None, base_url="https://api.openai.com/v1", temperature=0.0, max_tokens=None, reasoning_effort=None, response_format=None, use_json_object_format=True, timeout=120.0, max_retries=1, system_prompt=..., headers=None)`:
   - Zero-dependency HTTP client for OpenAI-compatible `/chat/completions` endpoints with transient HTTP retry (`429`, `5xx`), automatic fallback when an endpoint rejects `response_format={"type": "json_object"}`, and `last_usage` / `total_usage` (`TokenUsage`) tracking.
   - **Convenience Factory Methods:**
@@ -380,7 +383,7 @@ class EntityMergeReport(BaseModel):
     - `OpenAICompatibleExtractor.from_deepseek(*, model=None, api_key=None, ...)`: Pre-configured for the DeepSeek API (`DEEPSEEK_API_KEY`).
 - `CachedDeltaExtractor(extractor, cache_dir, *, model_id=None, system_prompt=None, bypass_cache=False)`:
   - Content-addressed SHA-256 disk-caching wrapper around any `DeltaExtractor`. Tracks both `billable_usage` (0 tokens on cache hits) and `historical_usage` (`TokenUsage`).
-- `TokenUsage`: Dataclass recording `prompt_tokens`, `completion_tokens`, `total_tokens`, `cached_prompt_tokens`, `reasoning_tokens`, `api_calls`, `cache_hits`, `cache_misses`, `retry_count`, `validation_errors`, `latency_ms`, and `.estimate_cost_usd(...)`.
+- `TokenUsage`: Dataclass recording `prompt_tokens`, `completion_tokens`, `total_tokens`, `cached_prompt_tokens`, `reasoning_tokens`, `api_calls`, `cache_hits`, `cache_misses`, `retry_count`, `validation_errors`, `latency_ms`, `.estimate_cost_usd(...)`, and `.from_api_usage(usage_dict)` (normalizing OpenAI, DeepSeek, Anthropic, and LangChain `usage_metadata` dicts).
 - `load_dotenv(dotenv_path=".env", *, override=False) -> dict[str, str]`: Zero-dependency `.env` loader.
 
 ---
