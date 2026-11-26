@@ -58,6 +58,9 @@ from .store import CausalStore, CheckpointStore, MemoryStore, TimelineBranchConf
 from .voice import IngestionGate, VoiceBank
 
 
+KnownEntityScope = Literal["scene", "characters_compact", "all_compact"]
+
+
 def compute_step_hash(
     text: str,
     *,
@@ -197,6 +200,9 @@ class StepTransaction:
         bypass_gate: bool = False,
         prev_text: str | None = None,
         next_text: str | None = None,
+        compact_schema: bool = False,
+        known_entity_scope: KnownEntityScope = "scene",
+        max_roster_entities: int | None = None,
         content_hash: str | None = None,
         checkpoint_metadata: dict[str, Any] | None = None,
     ) -> StepDelta:
@@ -211,6 +217,9 @@ class StepTransaction:
             scene_text,
             prev_text=effective_prev,
             next_text=effective_next,
+            compact_schema=compact_schema,
+            known_entity_scope=known_entity_scope,
+            max_roster_entities=max_roster_entities,
         )
         extract_messages = getattr(active_extractor, "extract_delta_messages", None)
         if callable(extract_messages):
@@ -601,6 +610,8 @@ class TimelineSession:
         prev_text: str = "",
         next_text: str = "",
         compact_schema: bool = False,
+        known_entity_scope: KnownEntityScope = "scene",
+        max_roster_entities: int | None = None,
     ) -> tuple[str, str]:
         return self.engine.build_extraction_messages(
             ctx,
@@ -608,6 +619,8 @@ class TimelineSession:
             prev_text=prev_text,
             next_text=next_text,
             compact_schema=compact_schema,
+            known_entity_scope=known_entity_scope,
+            max_roster_entities=max_roster_entities,
         )
 
     def build_extraction_prompt(
@@ -618,6 +631,8 @@ class TimelineSession:
         prev_text: str = "",
         next_text: str = "",
         compact_schema: bool = False,
+        known_entity_scope: KnownEntityScope = "scene",
+        max_roster_entities: int | None = None,
     ) -> str:
         return self.engine.build_extraction_prompt(
             ctx,
@@ -625,6 +640,8 @@ class TimelineSession:
             prev_text=prev_text,
             next_text=next_text,
             compact_schema=compact_schema,
+            known_entity_scope=known_entity_scope,
+            max_roster_entities=max_roster_entities,
         )
 
 
@@ -2190,6 +2207,76 @@ class CanonArcEngine:
         """Formats StepContext into prompt text using the active DomainPreset."""
         return self.preset.format_prompt_context(ctx)
 
+    def _format_compact_entity_roster(
+        self,
+        ctx: StepContext,
+        *,
+        seen_entity_ids: set[str],
+        scope: KnownEntityScope,
+        max_roster_entities: int | None = None,
+    ) -> tuple[str, str] | None:
+        """Builds a terse cast/entity roster for out-of-scene active entities on ctx.timeline_id."""
+        if scope == "scene":
+            return None
+        if max_roster_entities is not None and max_roster_entities < 0:
+            raise ValueError("max_roster_entities must be non-negative.")
+
+        cutoff_step = max(0, ctx.step - 1)
+        active_entities = self.store.get_all_active_entities(ctx.timeline_id, cutoff_step)
+        candidates: list[EntityRecord] = []
+        for e in active_entities:
+            if e.entity_id.startswith("masked:") or e.entity_id in seen_entity_ids:
+                continue
+            if scope == "characters_compact" and e.kind != "character":
+                continue
+            candidates.append(e)
+
+        if not candidates or max_roster_entities == 0:
+            return None
+
+        if max_roster_entities is not None and len(candidates) > max_roster_entities:
+            candidates.sort(key=lambda e: (-e.revision_count, -e.valid_from_step, e.entity_id))
+            candidates = candidates[:max_roster_entities]
+
+        # Append-stable ordering (valid_from_step, entity_id) preserves prefix cache across steps.
+        candidates.sort(key=lambda e: (e.valid_from_step, e.entity_id))
+
+        def _entry_str(ent: EntityRecord) -> str:
+            names: list[str] = []
+            canon = ent.canonical_name.strip()
+            if canon:
+                names.append(canon)
+            target_name = ent.base_attributes.get("target_name")
+            if isinstance(target_name, str) and target_name.strip():
+                tname = target_name.strip()
+                if not any(n.lower() == tname.lower() for n in names):
+                    names.append(tname)
+            label = "/".join(names) if names else ent.entity_id
+            return f"{ent.entity_id}={label}"
+
+        if scope == "characters_compact":
+            header = (
+                "### Other Known Characters (reference only — NOT necessarily in this scene; "
+                "reuse these exact entity_ids if any reappear under a new name or epithet):"
+            )
+            body = ", ".join(_entry_str(e) for e in candidates)
+            return header, body
+
+        # scope == "all_compact": group by kind with characters first
+        grouped: dict[str, list[EntityRecord]] = {}
+        for e in candidates:
+            grouped.setdefault(e.kind or "entity", []).append(e)
+        kind_order = sorted(grouped.keys(), key=lambda k: (0 if k == "character" else 1, k))
+        lines = [
+            f"{kind}: {', '.join(_entry_str(e) for e in grouped[kind])}"
+            for kind in kind_order
+        ]
+        header = (
+            "### Other Known Entities (reference only — NOT necessarily in this scene; "
+            "reuse these exact entity_ids if any reappear under a new name or epithet):"
+        )
+        return header, "\n".join(lines)
+
     def build_extraction_messages(
         self,
         ctx: StepContext,
@@ -2198,14 +2285,32 @@ class CanonArcEngine:
         prev_text: str = "",
         next_text: str = "",
         compact_schema: bool = False,
+        known_entity_scope: KnownEntityScope = "scene",
+        max_roster_entities: int | None = None,
     ) -> tuple[str, str]:
         """Builds prefix-cache-friendly (system_prompt, user_prompt) extraction messages.
 
         Static content (preset extraction instructions and the StepDelta JSON schema) is placed
         in ``system_prompt`` so provider prompt caches and local KV caches reuse it across steps,
-        while dynamic per-step context (known entity IDs, recent episodes, halo, and scene text)
-        is placed in ``user_prompt``.
+        while dynamic per-step context (known entity IDs, optional compact cast roster, recent
+        episodes, halo, and scene text) is placed in ``user_prompt``.
+
+        Args:
+            known_entity_scope:
+                - ``"scene"`` (default): Only entities in ``ctx.entities`` and ``ctx.related_entities``.
+                - ``"characters_compact"``: Scene/related entities plus a terse 1-line roster of all
+                  other active ``kind == "character"`` entities on ``ctx.timeline_id``.
+                - ``"all_compact"``: Scene/related entities plus a terse kind-grouped roster of all
+                  other active entities on ``ctx.timeline_id``.
+            max_roster_entities:
+                Optional cap on the number of out-of-scene entities included in the compact roster.
         """
+        if known_entity_scope not in ("scene", "characters_compact", "all_compact"):
+            raise ValueError(
+                f"Unsupported known_entity_scope: {known_entity_scope!r}. "
+                "Expected 'scene', 'characters_compact', or 'all_compact'."
+            )
+
         schema_json = (
             json.dumps(StepDelta.model_json_schema(), separators=(",", ":"))
             if compact_schema
@@ -2236,6 +2341,16 @@ class CanonArcEngine:
             "### Known Entity IDs (use exact entity_id values, not display names):",
             "\n".join(entity_lines) if entity_lines else "(none)",
         ]
+        compact_roster = self._format_compact_entity_roster(
+            ctx,
+            seen_entity_ids=seen_entity_ids,
+            scope=known_entity_scope,
+            max_roster_entities=max_roster_entities,
+        )
+        if compact_roster is not None:
+            roster_header, roster_body = compact_roster
+            user_parts.append(roster_header)
+            user_parts.append(roster_body)
         if episode_lines:
             user_parts.append("### Recent Episode IDs (for caused_by_episode_id or InformDelta):")
             user_parts.append("\n".join(episode_lines))
@@ -2267,6 +2382,8 @@ class CanonArcEngine:
         prev_text: str = "",
         next_text: str = "",
         compact_schema: bool = False,
+        known_entity_scope: KnownEntityScope = "scene",
+        max_roster_entities: int | None = None,
     ) -> str:
         """Builds a single-string extraction prompt with static rules and schema first for prefix-cache friendliness."""
         system_prompt, user_prompt = self.build_extraction_messages(
@@ -2275,6 +2392,8 @@ class CanonArcEngine:
             prev_text=prev_text,
             next_text=next_text,
             compact_schema=compact_schema,
+            known_entity_scope=known_entity_scope,
+            max_roster_entities=max_roster_entities,
         )
         return f"{system_prompt}\n\n{user_prompt}"
 
