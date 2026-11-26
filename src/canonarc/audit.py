@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, Protocol
@@ -45,6 +46,77 @@ _TV_REGISTER_TOKENS: frozenset[str] = frozenset(
 _GENERIC_REGISTER_TOKENS: frozenset[str] = frozenset(
     {"formal", "informal", "casual", "polite", "intimate", "familiar"}
 )
+
+_SCRIPT_ALIASES: dict[str, str] = {
+    "latin": "latin",
+    "latn": "latin",
+    "cyrillic": "cyrillic",
+    "cyrl": "cyrillic",
+    "greek": "greek",
+    "grek": "greek",
+    "arabic": "arabic",
+    "arab": "arabic",
+    "hebrew": "hebrew",
+    "hebr": "hebrew",
+    "devanagari": "devanagari",
+    "deva": "devanagari",
+    "han": "han",
+    "cjk": "han",
+    "hani": "han",
+    "hans": "han",
+    "hant": "han",
+    "hiragana": "hiragana",
+    "hira": "hiragana",
+    "katakana": "katakana",
+    "kana": "katakana",
+    "hangul": "hangul",
+    "hang": "hangul",
+    "thai": "thai",
+    "armenian": "armenian",
+    "armn": "armenian",
+    "georgian": "georgian",
+    "geor": "georgian",
+    "bengali": "bengali",
+    "beng": "bengali",
+    "tamil": "tamil",
+    "taml": "tamil",
+}
+
+_SUPPORTED_SCRIPTS: frozenset[str] = frozenset(_SCRIPT_ALIASES.values())
+
+_UNAMBIGUOUS_LANG_SCRIPTS: dict[str, tuple[str, ...]] = {
+    "ru": ("cyrillic",),
+    "uk": ("cyrillic",),
+    "bg": ("cyrillic",),
+    "be": ("cyrillic",),
+    "mk": ("cyrillic",),
+    "el": ("greek",),
+    "ar": ("arabic",),
+    "fa": ("arabic",),
+    "ur": ("arabic",),
+    "he": ("hebrew",),
+    "iw": ("hebrew",),
+    "hi": ("devanagari",),
+    "th": ("thai",),
+    "ko": ("hangul",),
+    "ja": ("han", "hiragana", "katakana"),
+    "hy": ("armenian",),
+    "ka": ("georgian",),
+    "bn": ("bengali",),
+    "ta": ("tamil",),
+}
+
+_URL_OR_EMAIL_RE = re.compile(
+    r"(?:https?://\S+|www\.\S+|\b[\w.+-]+@[\w-]+\.[\w.-]+\b)",
+    re.IGNORECASE,
+)
+_MARKUP_OR_PLACEHOLDER_RE = re.compile(
+    r"</?[A-Za-z][^>\n]*>|\{[^{}\s]+\}|%(?:\([^)\s]+\))?[#0\- +]?(?:\d+|\*)?(?:\.(?:\d+|\*))?[hlL]?[diouxXeEfFgGcrsa%]"
+)
+_ROMAN_NUMERAL_RE = re.compile(
+    r"^M{0,3}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})$"
+)
+_LETTER_TOKEN_RE = re.compile(r"[^\W\d_]+", re.UNICODE)
 
 
 class AuditIssue(BaseModel):
@@ -696,6 +768,325 @@ class TargetTermComplianceRule:
                         ),
                     )
                 )
+
+        return issues
+
+
+def _normalize_script_name(script: str) -> str:
+    key = script.strip().lower().replace("-", "_").replace(" ", "_")
+    normalized = _SCRIPT_ALIASES.get(key)
+    if normalized is None:
+        raise ValueError(
+            f"Unsupported script '{script}'. Supported scripts: {sorted(_SUPPORTED_SCRIPTS)}."
+        )
+    return normalized
+
+
+def _infer_scripts_from_lang(lang: str | None) -> frozenset[str] | None:
+    """Infers expected script(s) only from unambiguous BCP-47 tags (e.g. 'sr-Latn', 'ru', 'el')."""
+    if not lang or not lang.strip():
+        return None
+    parts = [p.strip().lower() for p in re.split(r"[-_]", lang.strip()) if p.strip()]
+    if not parts:
+        return None
+    # Explicit BCP-47 script subtag (e.g. sr-Latn, sr-Cyrl, uz-Latn, zh-Hans)
+    for subtag in parts[1:]:
+        if subtag in _SCRIPT_ALIASES:
+            return frozenset({_SCRIPT_ALIASES[subtag]})
+    # Unambiguous primary language subtag (e.g. ru, uk, bg, el, ja)
+    primary = parts[0]
+    inferred = _UNAMBIGUOUS_LANG_SCRIPTS.get(primary)
+    if inferred is not None:
+        return frozenset(inferred)
+    return None
+
+
+def _char_script(ch: str) -> str | None:
+    """Classifies a Unicode letter into a canonical script name, or None for non-letters/common chars."""
+    if not unicodedata.category(ch).startswith("L"):
+        return None
+    cp = ord(ch)
+    if (0x0041 <= cp <= 0x005A) or (0x0061 <= cp <= 0x007A) or (0x00C0 <= cp <= 0x024F) or (0x1E00 <= cp <= 0x1EFF):
+        return "latin"
+    if (0x0400 <= cp <= 0x052F) or (0x2DE0 <= cp <= 0x2DFF) or (0xA640 <= cp <= 0xA69F) or (0x1C80 <= cp <= 0x1C8F):
+        return "cyrillic"
+    if (0x0370 <= cp <= 0x03FF) or (0x1F00 <= cp <= 0x1FFF):
+        return "greek"
+    if (0x0600 <= cp <= 0x06FF) or (0x0750 <= cp <= 0x077F) or (0x08A0 <= cp <= 0x08FF):
+        return "arabic"
+    if 0x0590 <= cp <= 0x05FF:
+        return "hebrew"
+    if 0x0900 <= cp <= 0x097F:
+        return "devanagari"
+    if 0x3040 <= cp <= 0x309F:
+        return "hiragana"
+    if (0x30A0 <= cp <= 0x30FF) or (0x31F0 <= cp <= 0x31FF) or (0xFF65 <= cp <= 0xFF9F):
+        return "katakana"
+    if (0xAC00 <= cp <= 0xD7AF) or (0x1100 <= cp <= 0x11FF) or (0x3130 <= cp <= 0x318F):
+        return "hangul"
+    if 0x0E00 <= cp <= 0x0E7F:
+        return "thai"
+    if _CJK_CHAR_RE.match(ch):
+        return "han"
+
+    name = unicodedata.name(ch, "")
+    if not name:
+        return None
+    first_word = name.split(" ", 1)[0].lower()
+    if first_word in _SCRIPT_ALIASES:
+        return _SCRIPT_ALIASES[first_word]
+    if "CJK" in name:
+        return "han"
+    return None
+
+
+def _mask_spans(text: str, pattern: re.Pattern[str]) -> str:
+    """Replaces matched spans with spaces of identical length so character offsets stay aligned."""
+    return pattern.sub(lambda m: " " * (m.end() - m.start()), text)
+
+
+class ScriptConsistencyRule:
+    """Detects unexpected script drift and mixed-script homoglyphs in target_text."""
+
+    name: str = "script_consistency"
+    required_tiers: frozenset[int] = frozenset({1})
+
+    def __init__(
+        self,
+        expected_script: str | Sequence[str] | None = None,
+        *,
+        severity: AuditSeverity = "error",
+        mixed_script_severity: AuditSeverity = "error",
+        allowed_tokens: Sequence[str] | None = None,
+        allowed_patterns: Sequence[str | re.Pattern[str]] | None = None,
+        allow_entity_names: bool = True,
+        allow_roman_numerals: bool = True,
+        ignore_urls: bool = True,
+        ignore_markup_and_placeholders: bool = True,
+        skip_exonym_leaks: bool = True,
+        snippet_radius: int = 30,
+    ) -> None:
+        if expected_script is None:
+            self.expected_scripts: frozenset[str] | None = None
+        elif isinstance(expected_script, str):
+            self.expected_scripts = frozenset({_normalize_script_name(expected_script)})
+        else:
+            normalized = frozenset(_normalize_script_name(s) for s in expected_script if s.strip())
+            if not normalized:
+                raise ValueError("expected_script sequence must contain at least one script name.")
+            self.expected_scripts = normalized
+
+        self.severity: AuditSeverity = severity
+        self.mixed_script_severity: AuditSeverity = mixed_script_severity
+        self.allowed_tokens: tuple[str, ...] = tuple(
+            t.strip() for t in (allowed_tokens or ()) if t and t.strip()
+        )
+        self.allowed_patterns: tuple[re.Pattern[str], ...] = tuple(
+            p if isinstance(p, re.Pattern) else re.compile(p)
+            for p in (allowed_patterns or ())
+        )
+        self.allow_entity_names = allow_entity_names
+        self.allow_roman_numerals = allow_roman_numerals
+        self.ignore_urls = ignore_urls
+        self.ignore_markup_and_placeholders = ignore_markup_and_placeholders
+        self.skip_exonym_leaks = skip_exonym_leaks
+        self.snippet_radius = snippet_radius
+
+    def _resolve_expected_scripts(self, ctx: AuditContext) -> frozenset[str] | None:
+        if self.expected_scripts is not None:
+            return self.expected_scripts
+        return _infer_scripts_from_lang(ctx.lang)
+
+    def _mask_exempt_regions(self, ctx: AuditContext, text: str) -> str:
+        masked = text
+        if self.ignore_urls:
+            masked = _mask_spans(masked, _URL_OR_EMAIL_RE)
+        if self.ignore_markup_and_placeholders:
+            masked = _mask_spans(masked, _MARKUP_OR_PLACEHOLDER_RE)
+        for pat in self.allowed_patterns:
+            masked = _mask_spans(masked, pat)
+
+        # Mask user-provided allowlisted tokens/phrases (longest first to handle multi-word phrases)
+        if self.allowed_tokens:
+            for phrase in sorted(self.allowed_tokens, key=len, reverse=True):
+                masked = _mask_spans(masked, re.compile(_phrase_pattern(phrase), re.IGNORECASE))
+
+        # Mask canon-approved entity names/aliases so glossary terms don't trigger false positives
+        if self.allow_entity_names and ctx.entities:
+            exempt_phrases: set[str] = set()
+            ctx_lang = ctx.lang.strip().lower() if ctx.lang and ctx.lang.strip() else None
+            for entity in ctx.entities:
+                raw_target = entity.base_attributes.get("target_name")
+                if isinstance(raw_target, str) and raw_target.strip():
+                    exempt_phrases.add(raw_target.strip())
+                if entity.base_attributes.get("allow_source_name") and entity.canonical_name.strip():
+                    exempt_phrases.add(entity.canonical_name.strip())
+            for al in ctx.aliases:
+                al_str = al.alias.strip()
+                if not al_str:
+                    continue
+                al_lang = al.lang.strip().lower() if al.lang and al.lang.strip() else None
+                if al.kind == "inflection" or (ctx_lang is not None and al_lang == ctx_lang):
+                    exempt_phrases.add(al_str)
+            for phrase in sorted(exempt_phrases, key=len, reverse=True):
+                masked = _mask_spans(masked, re.compile(_phrase_pattern(phrase), re.IGNORECASE))
+
+        # Avoid double-reporting verbatim canonical_name leaks already owned by ExonymLeakRule
+        if self.skip_exonym_leaks and ctx.entities:
+            aliases_by_entity: dict[str, list[str]] = {}
+            for a in ctx.aliases:
+                if a.alias.strip():
+                    aliases_by_entity.setdefault(a.entity_id, []).append(a.alias.strip())
+            has_source = bool(ctx.source_text.strip())
+            for entity in ctx.entities:
+                if entity.base_attributes.get("allow_source_name"):
+                    continue
+                canonical = entity.canonical_name.strip()
+                raw_target = entity.base_attributes.get("target_name")
+                if not canonical or not isinstance(raw_target, str) or not raw_target.strip():
+                    continue
+                target_name = raw_target.strip()
+                if canonical.lower() == target_name.lower():
+                    continue
+                if re.search(_phrase_pattern(canonical), target_name, re.IGNORECASE):
+                    continue
+                if has_source:
+                    cues = [canonical, *aliases_by_entity.get(entity.entity_id, ())]
+                    if not any(
+                        re.search(_phrase_pattern(cue), ctx.source_text, re.IGNORECASE)
+                        for cue in cues
+                        if cue
+                    ):
+                        continue
+                masked = _mask_spans(masked, re.compile(_phrase_pattern(canonical)))
+
+        return masked
+
+    def check(self, ctx: AuditContext) -> list[AuditIssue]:
+        if not ctx.target_text.strip():
+            return []
+
+        expected = self._resolve_expected_scripts(ctx)
+        if not expected:
+            return []
+
+        masked = self._mask_exempt_regions(ctx, ctx.target_text)
+        expected_sorted = sorted(expected)
+        expected_label = "/".join(expected_sorted)
+
+        # Group pure-foreign tokens by detected script, and mixed-script homoglyphs separately
+        by_script: dict[str, list[tuple[str, int, int, int]]] = {}
+        mixed_hits: list[tuple[str, int, int, list[str]]] = []
+
+        for match in _LETTER_TOKEN_RE.finditer(masked):
+            tok = match.group(0)
+            scripts_in_tok: list[str] = []
+            seen_in_tok: set[str] = set()
+            unexpected_char_count = 0
+            for ch in tok:
+                sc = _char_script(ch)
+                if sc is None:
+                    continue
+                if sc not in seen_in_tok:
+                    seen_in_tok.add(sc)
+                    scripts_in_tok.append(sc)
+                if sc not in expected:
+                    unexpected_char_count += 1
+
+            if unexpected_char_count == 0 or not scripts_in_tok:
+                continue
+
+            # Exempt standard uppercase Roman numerals (e.g. IV, XII) when Latin is not expected
+            if (
+                self.allow_roman_numerals
+                and seen_in_tok == {"latin"}
+                and tok.isupper()
+                and _ROMAN_NUMERAL_RE.match(tok) is not None
+            ):
+                continue
+
+            start, end = match.start(), match.end()
+            if len(seen_in_tok) >= 2:
+                mixed_hits.append((tok, start, end, sorted(seen_in_tok)))
+            else:
+                found_script = scripts_in_tok[0]
+                by_script.setdefault(found_script, []).append(
+                    (tok, start, end, unexpected_char_count)
+                )
+
+        issues: list[AuditIssue] = []
+
+        if mixed_hits:
+            first_tok, first_start, first_end, _ = mixed_hits[0]
+            unique_tokens = list(dict.fromkeys(tok for tok, _, _, _ in mixed_hits))
+            scripts_by_tok: dict[str, list[str]] = {}
+            for tok, _, _, scs in mixed_hits:
+                if tok not in scripts_by_tok and len(scripts_by_tok) < 10:
+                    scripts_by_tok[tok] = scs
+            sample_str = ", ".join(repr(t) for t in unique_tokens[:5])
+            issues.append(
+                AuditIssue(
+                    code="mixed_script_token",
+                    rule_name=self.name,
+                    severity=self.mixed_script_severity,
+                    step=ctx.step,
+                    timeline_id=ctx.timeline_id,
+                    subject_key="script:mixed",
+                    message=(
+                        f"Detected {len(mixed_hits)} mixed-script token(s) in target_text "
+                        f"({sample_str}); expected only {expected_label} script."
+                    ),
+                    evidence={
+                        "expected_scripts": expected_sorted,
+                        "mixed_tokens": unique_tokens[:10],
+                        "mixed_scripts_by_token": scripts_by_tok,
+                        "offending_token_count": len(mixed_hits),
+                        "snippet": _extract_snippet(
+                            ctx.target_text, first_start, first_end, self.snippet_radius
+                        ),
+                    },
+                    suggestion=(
+                        f"Fix mixed-script homoglyph characters in {sample_str} so all letters "
+                        f"use {expected_label} script."
+                    ),
+                )
+            )
+
+        for found_script in sorted(by_script.keys()):
+            hits = by_script[found_script]
+            _, first_start, first_end, _ = hits[0]
+            unique_tokens = list(dict.fromkeys(tok for tok, _, _, _ in hits))
+            total_chars = sum(c for _, _, _, c in hits)
+            sample_str = ", ".join(repr(t) for t in unique_tokens[:5])
+            issues.append(
+                AuditIssue(
+                    code="script_drift",
+                    rule_name=self.name,
+                    severity=self.severity,
+                    step=ctx.step,
+                    timeline_id=ctx.timeline_id,
+                    subject_key=f"script:{found_script}",
+                    message=(
+                        f"Unexpected {found_script} script detected in target_text "
+                        f"({len(hits)} token(s), {total_chars} char(s): {sample_str}); "
+                        f"expected {expected_label}."
+                    ),
+                    evidence={
+                        "expected_scripts": expected_sorted,
+                        "found_script": found_script,
+                        "offending_tokens": unique_tokens[:10],
+                        "offending_token_count": len(hits),
+                        "offending_char_count": total_chars,
+                        "snippet": _extract_snippet(
+                            ctx.target_text, first_start, first_end, self.snippet_radius
+                        ),
+                    },
+                    suggestion=(
+                        f"Rewrite the unexpected {found_script} text ({sample_str}) "
+                        f"in {expected_label} script."
+                    ),
+                )
+            )
 
         return issues
 
