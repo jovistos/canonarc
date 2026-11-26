@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, Field
 
+from .inflections import InflectionRequest, generate_inflections_batch
 from .models import (
     AliasRecord,
     DirectedEdgeRecord,
@@ -265,11 +266,15 @@ def render_bible(
     include_state: bool = False,
     include_edges: bool | None = None,
     include_aliases: bool = True,
+    include_inflections: bool | None = None,
     lang: str | None = None,
 ) -> tuple[str, BibleExportResult]:
     """Renders the active world Bible at `(timeline_id, at_step)` into CSV, JSON, or Markdown."""
     eff_include_edges = (
         engine._policy.has_tier(2) if include_edges is None else include_edges
+    )
+    eff_include_inflections = (
+        (format == "json") if include_inflections is None else include_inflections
     )
     tl = timeline_id or engine.active_timeline
     tl_info = engine.store.get_timeline(tl)
@@ -291,6 +296,8 @@ def render_bible(
         lang_filter = lang.strip().lower() if lang and lang.strip() else None
         for a in raw_aliases:
             if a.entity_id not in kept_entity_ids:
+                continue
+            if not eff_include_inflections and a.kind == "inflection":
                 continue
             if lang_filter is not None and (a.lang or "").lower() != lang_filter:
                 continue
@@ -545,6 +552,7 @@ def export_bible(
     include_state: bool = False,
     include_edges: bool | None = None,
     include_aliases: bool = True,
+    include_inflections: bool | None = None,
     lang: str | None = None,
     excel_bom: bool = False,
 ) -> BibleExportResult:
@@ -559,6 +567,7 @@ def export_bible(
         include_state=include_state,
         include_edges=include_edges,
         include_aliases=include_aliases,
+        include_inflections=include_inflections,
         lang=lang,
     )
     out_path = Path(path)
@@ -836,6 +845,7 @@ def sync_bible(
     mode: BibleSyncMode = "upsert",
     target_lang: str | None = None,
     auto_inflect: bool = True,
+    batch_size: int = 25,
     dry_run: bool = False,
     column_map: dict[str, str] | None = None,
 ) -> BibleSyncReport:
@@ -898,7 +908,12 @@ def sync_bible(
 
     incoming_entity_ids: set[str] = set()
 
-    for entry in parsed.entries:
+    # Phase 1: Plan entity updates & collect all inflection requests for batched generation
+    planned_entries: list[tuple[_ParsedEntityEntry, EntityRecord | None, EntityRecord, bool, bool, bool]] = []
+    pending_inflect_indices: list[int] = []
+    pending_inflect_requests: list[InflectionRequest] = []
+
+    for idx, entry in enumerate(parsed.entries):
         inc = entry.entity
         eid = inc.entity_id
         incoming_entity_ids.add(eid)
@@ -917,20 +932,87 @@ def sync_bible(
                 private_state=merged_priv,
                 reason=reason_tag,
             )
+            should_inflect_now = auto_inflect and not dry_run
+            planned_entries.append((entry, None, resolved_entity, True, True, should_inflect_now))
+        else:
+            if mode == "merge":
+                new_base = dict(existing.base_attributes)
+                new_base.update(inc.base_attributes)
+                new_state = dict(existing.state)
+                if entry.has_state:
+                    new_state.update(inc.state)
+                new_priv = dict(existing.private_state)
+                if entry.has_private_state:
+                    new_priv.update(inc.private_state)
+            else:
+                # 'upsert' or 'replace': row is authoritative for base_attributes
+                new_base = dict(inc.base_attributes)
+                new_state = dict(inc.state) if entry.has_state else dict(existing.state)
+                new_priv = dict(inc.private_state) if entry.has_private_state else dict(existing.private_state)
 
+            entity_changed = (
+                inc.kind != existing.kind
+                or inc.canonical_name != existing.canonical_name
+                or new_base != existing.base_attributes
+                or new_state != existing.state
+                or new_priv != existing.private_state
+            )
+
+            # Smart auto_inflect gating: only fire inflection generator if target_name/lang/gender/declension changed
+            inflection_inputs_changed = any(
+                new_base.get(k) != existing.base_attributes.get(k) for k in _INFLECTION_SENSITIVE_ATTRS
+            ) or (inc.kind != existing.kind)
+
+            resolved_entity = EntityRecord(
+                entity_id=eid,
+                kind=inc.kind,
+                canonical_name=inc.canonical_name,
+                base_attributes=new_base,
+                state=new_state,
+                private_state=new_priv,
+                reason=reason_tag,
+            )
+            should_inflect_now = auto_inflect and inflection_inputs_changed and not dry_run
+            planned_entries.append(
+                (entry, existing, resolved_entity, entity_changed, inflection_inputs_changed, should_inflect_now)
+            )
+
+        if should_inflect_now and engine.inflection_generator is not None:
+            req = engine._make_inflection_request(resolved_entity, target_lang=target_lang)
+            if req is not None:
+                pending_inflect_indices.append(idx)
+                pending_inflect_requests.append(req)
+
+    # Phase 2: Generate all needed inflections in batched calls
+    prefetched_forms_by_idx: dict[int, list[str]] = {}
+    if pending_inflect_requests and engine.inflection_generator is not None:
+        batched_forms = generate_inflections_batch(
+            engine.inflection_generator,
+            pending_inflect_requests,
+            batch_size=batch_size,
+        )
+        for idx, forms in zip(pending_inflect_indices, batched_forms):
+            prefetched_forms_by_idx[idx] = forms
+
+    # Phase 3: Diff aliases & emit deltas
+    for idx, (entry, existing, resolved_entity, entity_changed, inflection_inputs_changed, should_inflect_now) in enumerate(
+        planned_entries
+    ):
+        eid = resolved_entity.entity_id
+
+        if existing is None:
             desired_aliases = list(entry.aliases)
             extra_target_aliases = engine._build_target_aliases(
                 resolved_entity,
                 desired_aliases,
                 target_lang=target_lang,
-                auto_inflect=auto_inflect and not dry_run,
+                auto_inflect=False,
+                prefetched_forms=prefetched_forms_by_idx.get(idx),
             )
             if extra_target_aliases:
-                raw_target = str(resolved_entity.base_attributes.get("target_name", "")).strip().lower()
-                inflection_count = sum(
-                    1 for a in extra_target_aliases if a.alias.strip().lower() != raw_target
+                report.inflections_generated += sum(
+                    1 for a in extra_target_aliases if a.kind == "inflection"
                 )
-                report.inflections_generated += inflection_count
                 desired_aliases.extend(extra_target_aliases)
 
             report.created_entities.append(eid)
@@ -948,61 +1030,21 @@ def sync_bible(
                 )
             continue
 
-        # Existing entity: compute target state based on sync mode
-        if mode == "merge":
-            new_base = dict(existing.base_attributes)
-            new_base.update(inc.base_attributes)
-            new_state = dict(existing.state)
-            if entry.has_state:
-                new_state.update(inc.state)
-            new_priv = dict(existing.private_state)
-            if entry.has_private_state:
-                new_priv.update(inc.private_state)
-        else:
-            # 'upsert' or 'replace': row is authoritative for base_attributes
-            new_base = dict(inc.base_attributes)
-            new_state = dict(inc.state) if entry.has_state else dict(existing.state)
-            new_priv = dict(inc.private_state) if entry.has_private_state else dict(existing.private_state)
-
-        entity_changed = (
-            inc.kind != existing.kind
-            or inc.canonical_name != existing.canonical_name
-            or new_base != existing.base_attributes
-            or new_state != existing.state
-            or new_priv != existing.private_state
-        )
-
-        # Smart auto_inflect gating: only fire inflection generator if target_name/lang/gender/declension changed
-        inflection_inputs_changed = any(
-            new_base.get(k) != existing.base_attributes.get(k) for k in _INFLECTION_SENSITIVE_ATTRS
-        ) or (inc.kind != existing.kind)
-
-        resolved_entity = EntityRecord(
-            entity_id=eid,
-            kind=inc.kind,
-            canonical_name=inc.canonical_name,
-            base_attributes=new_base,
-            state=new_state,
-            private_state=new_priv,
-            reason=reason_tag,
-        )
-
-        # Build desired alias map for this entity
+        # Existing entity: build desired alias map
         desired_alias_map: dict[str, AliasRecord] = {
             a.alias.strip().lower(): a for a in entry.aliases
         }
-        should_inflect_now = auto_inflect and inflection_inputs_changed and not dry_run
         extra_target_aliases = engine._build_target_aliases(
             resolved_entity,
             list(desired_alias_map.values()),
             target_lang=target_lang,
-            auto_inflect=should_inflect_now,
+            auto_inflect=False,
+            prefetched_forms=prefetched_forms_by_idx.get(idx),
         )
         if extra_target_aliases:
-            raw_target = str(resolved_entity.base_attributes.get("target_name", "")).strip().lower()
             if should_inflect_now:
                 report.inflections_generated += sum(
-                    1 for a in extra_target_aliases if a.alias.strip().lower() != raw_target
+                    1 for a in extra_target_aliases if a.kind == "inflection"
                 )
             for a in extra_target_aliases:
                 desired_alias_map.setdefault(a.alias.strip().lower(), a)
@@ -1018,23 +1060,14 @@ def sync_bible(
                 report.added_aliases.append((eid, al_rec.alias))
 
         if mode in ("upsert", "replace"):
-            # In CSV mode, preserve existing target-language inflections if target_name inputs didn't change
-            raw_lang = (
-                target_lang
-                or new_base.get("target_lang")
-                or new_base.get("lang")
-            )
-            eff_lang = raw_lang.strip().lower() if isinstance(raw_lang, str) and raw_lang.strip() else None
+            # In CSV mode, preserve existing generated inflections when inflection inputs didn't change
             for al_key, cur in existing_alias_map.items():
                 if al_key in desired_alias_map:
                     continue
                 if (
                     eff_format == "csv"
-                    and auto_inflect
                     and not inflection_inputs_changed
-                    and eff_lang is not None
-                    and cur.lang == eff_lang
-                    and cur.kind == "permanent"
+                    and cur.kind == "inflection"
                 ):
                     continue
                 aliases_to_remove.append(cur.alias)
