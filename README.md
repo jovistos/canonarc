@@ -308,6 +308,28 @@ report = engine.sync_bible(
 print(report.summary())
 ```
 
+### Pluggable QA & Continuity Audit
+
+Run fast, deterministic, zero-LLM continuity and localization checks after each step or across an entire timeline (catches untranslated `canonical_name` leaks, alias-hijack/fuzzy duplicate entities, unexplained register flips, and mixed register vocabularies):
+
+```python
+from canonarc import CallableAuditRule, AuditIssue
+
+# Single-step audit (built-in rules run automatically; Tier 2/3 rules auto-skip under LEXICON_ONLY)
+report = engine.audit_step(step=2, source_text=chunk_en, target_text=chunk_sr)
+if not report.passed:
+    print(report.summary())
+
+# Plug in your own custom rule alongside the built-ins
+no_slang = CallableAuditRule(
+    "no_slang",
+    lambda ctx: [
+        AuditIssue(code="slang", rule_name="no_slang", step=ctx.step, message="Modern slang detected")
+    ] if "okay" in ctx.target_text.lower() else [],
+)
+full_report = engine.audit_timeline(texts={1: (en_1, sr_1), 2: (en_2, sr_2)}, rules=[no_slang])
+```
+
 ### CLI Timeline Inspector
 
 Inspect branching timelines, POV world state, diffs, trajectories, and Series Bibles directly from `.sqlite` saves (pass `--json` to any subcommand for machine-readable output):
@@ -329,6 +351,7 @@ canonarc inspect story_save.sqlite --timeline main --step 85 --pov char_arthur
 canonarc history story_save.sqlite char_arthur --timeline main
 canonarc export story_save.sqlite bible.md --step 85 --include-state
 canonarc import story_save.sqlite glossary.csv --step 0 --dry-run
+canonarc audit story_save.sqlite --timeline main --fail-on error
 ```
 
 ---
