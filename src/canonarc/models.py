@@ -300,6 +300,10 @@ class StepContext(BaseModel):
     background_edges: list[DirectedEdgeRecord] = Field(default_factory=list)
     voice_exemplars: list[VoiceExemplar] = Field(default_factory=list)
     episodes: list[EpisodeRecord] = Field(default_factory=list)
+    entity_names: dict[str, str] = Field(
+        default_factory=dict,
+        description="Optional entity_id -> canonical_name lookup for entities referenced in edges, episodes, or voice exemplars",
+    )
 
 
 class EntityMergeReport(BaseModel):
