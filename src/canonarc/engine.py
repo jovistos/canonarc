@@ -16,6 +16,7 @@ from .audit import (
     AuditReport,
     AuditRule,
     AuditSeverity,
+    run_audit_draft as _run_audit_draft,
     run_audit_step as _run_audit_step,
     run_audit_timeline as _run_audit_timeline,
 )
@@ -181,6 +182,34 @@ class StepTransaction:
         if self._context is None:
             raise RuntimeError("StepTransaction is not active.")
         return self._context
+
+    def audit_draft(
+        self,
+        target_text: str,
+        *,
+        source_text: str | None = None,
+        rules: Sequence[AuditRule] | None = None,
+        include_rules: Sequence[str] | None = None,
+        exclude_rules: Sequence[str] | None = None,
+        min_severity: AuditSeverity = "info",
+        lang: str | None = None,
+        include_all_timeline_entities: bool = False,
+    ) -> AuditReport:
+        """Audits a pre-commit draft translation against tx.context before commit()/extract_and_commit()."""
+        return _run_audit_draft(
+            self.engine,
+            self.step,
+            source_text=self.text if source_text is None else source_text,
+            target_text=target_text,
+            context=self.context,
+            timeline_id=self.timeline_id,
+            rules=rules,
+            include_rules=include_rules,
+            exclude_rules=exclude_rules,
+            min_severity=min_severity,
+            lang=self.lang if lang is None else lang,
+            include_all_timeline_entities=include_all_timeline_entities,
+        )
 
     def commit(
         self,
