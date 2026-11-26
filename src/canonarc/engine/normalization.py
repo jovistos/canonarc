@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from ..models import AliasRecord, EntityRecord, EpisodeRecord, StepContext, StepDelta
@@ -180,18 +181,11 @@ def build_extraction_messages_impl(
     return system_prompt, "\n\n".join(user_parts)
 
 
-def normalize_delta_impl(
-    engine: CanonArcEngine,
+def _build_entity_lookup(
+    entities: Sequence[Any],
+    aliases: Sequence[Any],
     delta: StepDelta,
-    *,
-    step: int | None = None,
-    timeline_id: str | None = None,
-) -> StepDelta:
-    """Normalizes canonical names/aliases into entity_ids and resolves intra-step episode IDs."""
-    tl = timeline_id or engine.active_timeline
-    entities = engine.store.get_all_active_entities(tl, step)
-    aliases = engine.store.get_all_active_aliases(tl, step)
-
+) -> dict[str, str]:
     lookup: dict[str, str] = {}
     for e in entities:
         lookup[e.entity_id.lower()] = e.entity_id
@@ -224,101 +218,151 @@ def normalize_delta_impl(
                     lookup.setdefault(alias_item.alias.lower(), ed.entity_id)
             elif isinstance(alias_item, str) and alias_item.strip():
                 lookup.setdefault(alias_item.strip().lower(), ed.entity_id)
+    return lookup
 
+
+def _normalize_episodes(
+    episodes: Sequence[EpisodeRecord],
+    lookup: dict[str, str],
+    *,
+    timeline_id: str,
+    step: int | None,
+) -> tuple[list[EpisodeRecord], dict[str, str]]:
     def _norm_id(raw: str) -> str:
         return lookup.get(raw.strip().lower(), raw)
 
     ep_id_map: dict[str, str] = {}
     norm_episodes: list[EpisodeRecord] = []
-    for idx, ep in enumerate(delta.episodes):
+    for idx, ep in enumerate(episodes):
         old_id = ep.episode_id
         if old_id:
             new_id = old_id
+            ep_id_map[old_id] = new_id
         else:
             digest = hashlib.sha256(
-                f"{tl}:{step if step is not None else 0}:{idx}:{ep.predicate}:{ep.summary}".encode()
+                f"{timeline_id}:{step if step is not None else 0}:{idx}:{ep.predicate}:{ep.summary}".encode()
             ).hexdigest()[:8]
             new_id = f"ep_{step if step is not None else 0}_{digest}"
-        if old_id:
-            ep_id_map[old_id] = new_id
-        norm_participants = {_norm_id(k): v for k, v in ep.participants.items()}
-        norm_witnesses = [_norm_id(w) for w in ep.witnesses]
-        norm_known_by = {_norm_id(k): v for k, v in ep.known_by.items()}
-        norm_believed = {_norm_id(k): v for k, v in ep.believed_summaries.items()}
-        norm_loc = _norm_id(ep.location_id) if ep.location_id else None
         ep_updates: dict[str, Any] = {
             "episode_id": new_id,
-            "participants": norm_participants,
-            "witnesses": norm_witnesses,
-            "known_by": norm_known_by,
-            "believed_summaries": norm_believed,
-            "location_id": norm_loc,
+            "participants": {_norm_id(k): v for k, v in ep.participants.items()},
+            "witnesses": [_norm_id(w) for w in ep.witnesses],
+            "known_by": {_norm_id(k): v for k, v in ep.known_by.items()},
+            "believed_summaries": {_norm_id(k): v for k, v in ep.believed_summaries.items()},
+            "location_id": _norm_id(ep.location_id) if ep.location_id else None,
         }
         if step is not None:
             ep_updates["step"] = step
         norm_episodes.append(ep.model_copy(update=ep_updates))
+    return norm_episodes, ep_id_map
 
-    location_ids = {e.entity_id for e in entities if e.kind == "location"}
 
-    def _norm_entity_state(state_dict: dict[str, Any]) -> dict[str, Any]:
-        if not state_dict:
-            return state_dict
-        out = dict(state_dict)
-        if "location_id" in out and isinstance(out["location_id"], str):
-            out["location_id"] = _norm_id(out["location_id"])
-        else:
-            for alt_loc_key in ("location", "current_location"):
-                if alt_loc_key in out and isinstance(out[alt_loc_key], str):
-                    resolved_loc = _norm_id(out[alt_loc_key])
-                    if resolved_loc.startswith("loc_") or resolved_loc in location_ids:
-                        out.pop(alt_loc_key, None)
-                        out["location_id"] = resolved_loc
-                        break
-        if "mood" not in out:
-            for alt_mood_key in ("emotional_state", "emotion"):
-                if alt_mood_key in out and isinstance(out[alt_mood_key], str) and out[alt_mood_key].strip():
-                    out["mood"] = out[alt_mood_key].strip()
+def _normalize_entity_state(
+    state_dict: dict[str, Any],
+    lookup: dict[str, str],
+    location_ids: set[str],
+) -> dict[str, Any]:
+    if not state_dict:
+        return state_dict
+
+    def _norm_id(raw: str) -> str:
+        return lookup.get(raw.strip().lower(), raw)
+
+    out = dict(state_dict)
+    if "location_id" in out and isinstance(out["location_id"], str):
+        out["location_id"] = _norm_id(out["location_id"])
+    else:
+        for alt_loc_key in ("location", "current_location"):
+            if alt_loc_key in out and isinstance(out[alt_loc_key], str):
+                resolved_loc = _norm_id(out[alt_loc_key])
+                if resolved_loc.startswith("loc_") or resolved_loc in location_ids:
+                    out.pop(alt_loc_key, None)
+                    out["location_id"] = resolved_loc
                     break
-        return out
+    if "mood" not in out:
+        for alt_mood_key in ("emotional_state", "emotion"):
+            if (
+                alt_mood_key in out
+                and isinstance(out[alt_mood_key], str)
+                and out[alt_mood_key].strip()
+            ):
+                out["mood"] = out[alt_mood_key].strip()
+                break
+    return out
 
-    raw_norm_entities = [
-        ed.model_copy(
+
+def _normalize_and_merge_entity_deltas(
+    entity_deltas: Sequence[Any],
+    lookup: dict[str, str],
+    location_ids: set[str],
+    ep_id_map: dict[str, str],
+) -> list[Any]:
+    merged_by_id: dict[str, Any] = {}
+    for ed in entity_deltas:
+        norm_ed = ed.model_copy(
             update={
-                "entity_id": _norm_id(ed.entity_id),
-                "state": _norm_entity_state(ed.state),
-                "caused_by_episode_id": ep_id_map.get(ed.caused_by_episode_id, ed.caused_by_episode_id)
+                "entity_id": lookup.get(ed.entity_id.strip().lower(), ed.entity_id),
+                "state": _normalize_entity_state(ed.state, lookup, location_ids),
+                "caused_by_episode_id": ep_id_map.get(
+                    ed.caused_by_episode_id, ed.caused_by_episode_id
+                )
                 if ed.caused_by_episode_id
                 else None,
             }
         )
-        for ed in delta.entities
-    ]
-    merged_entities_by_id: dict[str, Any] = {}
-    for ed in raw_norm_entities:
-        existing = merged_entities_by_id.get(ed.entity_id)
-        if existing is None or ed.remove or existing.remove:
-            merged_entities_by_id[ed.entity_id] = ed
+        existing = merged_by_id.get(norm_ed.entity_id)
+        if existing is None or norm_ed.remove or existing.remove:
+            merged_by_id[norm_ed.entity_id] = norm_ed
         else:
-            merged_entities_by_id[ed.entity_id] = existing.model_copy(
+            merged_by_id[norm_ed.entity_id] = existing.model_copy(
                 update={
-                    "kind": ed.kind or existing.kind,
-                    "canonical_name": ed.canonical_name or existing.canonical_name,
-                    "base_attributes": {**existing.base_attributes, **ed.base_attributes},
-                    "state": {**existing.state, **ed.state},
-                    "private_state": {**existing.private_state, **ed.private_state},
-                    "add_aliases": [*existing.add_aliases, *ed.add_aliases],
-                    "remove_aliases": [*existing.remove_aliases, *ed.remove_aliases],
-                    "caused_by_episode_id": ed.caused_by_episode_id or existing.caused_by_episode_id,
-                    "reason": ed.reason or existing.reason,
+                    "kind": norm_ed.kind or existing.kind,
+                    "canonical_name": norm_ed.canonical_name or existing.canonical_name,
+                    "base_attributes": {**existing.base_attributes, **norm_ed.base_attributes},
+                    "state": {**existing.state, **norm_ed.state},
+                    "private_state": {**existing.private_state, **norm_ed.private_state},
+                    "add_aliases": [*existing.add_aliases, *norm_ed.add_aliases],
+                    "remove_aliases": [*existing.remove_aliases, *norm_ed.remove_aliases],
+                    "caused_by_episode_id": norm_ed.caused_by_episode_id
+                    or existing.caused_by_episode_id,
+                    "reason": norm_ed.reason or existing.reason,
                 }
             )
-    norm_entities = list(merged_entities_by_id.values())
+    return list(merged_by_id.values())
+
+
+def normalize_delta_impl(
+    engine: CanonArcEngine,
+    delta: StepDelta,
+    *,
+    step: int | None = None,
+    timeline_id: str | None = None,
+) -> StepDelta:
+    """Normalizes canonical names/aliases into entity_ids and resolves intra-step episode IDs."""
+    tl = timeline_id or engine.active_timeline
+    entities = engine.store.get_all_active_entities(tl, step)
+    aliases = engine.store.get_all_active_aliases(tl, step)
+
+    lookup = _build_entity_lookup(entities, aliases, delta)
+    norm_episodes, ep_id_map = _normalize_episodes(
+        delta.episodes, lookup, timeline_id=tl, step=step
+    )
+    location_ids = {e.entity_id for e in entities if e.kind == "location"}
+    norm_entities = _normalize_and_merge_entity_deltas(
+        delta.entities, lookup, location_ids, ep_id_map
+    )
+
+    def _norm_id(raw: str) -> str:
+        return lookup.get(raw.strip().lower(), raw)
+
     norm_edges = [
         rd.model_copy(
             update={
                 "source_id": _norm_id(rd.source_id),
                 "target_id": _norm_id(rd.target_id),
-                "caused_by_episode_id": ep_id_map.get(rd.caused_by_episode_id, rd.caused_by_episode_id)
+                "caused_by_episode_id": ep_id_map.get(
+                    rd.caused_by_episode_id, rd.caused_by_episode_id
+                )
                 if rd.caused_by_episode_id
                 else None,
             }
