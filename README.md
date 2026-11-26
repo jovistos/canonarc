@@ -286,9 +286,31 @@ diff = engine.diff_timelines("main", "reconciliation_route", at_step=85)
 engine.rollback_to(step=10, timeline_id="main")
 ```
 
+### Series Bible Import/Export & Sync (CSV / JSON / Markdown)
+
+Author or review glossaries and world bibles in spreadsheets, Git-tracked JSON, or Markdown, and sync changes back idempotently with diff/upsert semantics:
+
+```python
+# Export active Series Bible at step 0 (or omit at_step for timeline head)
+engine.export_bible("bible.json", at_step=0)                 # Lossless entities, aliases & edges
+engine.export_bible("glossary.csv", at_step=0, excel_bom=True)  # Excel/Sheets-friendly CSV
+engine.export_bible("bible.md", include_state=True)          # Human-readable Markdown doc
+
+# Sync human edits back with diff-before-write idempotency (supports upsert | merge | replace)
+report = engine.sync_bible(
+    "glossary.csv",
+    step=0,
+    mode="upsert",
+    target_lang="sr",
+    column_map={"Source": "canonical_name", "Target": "target_name"},
+    dry_run=False,
+)
+print(report.summary())
+```
+
 ### CLI Timeline Inspector
 
-Inspect branching timelines, POV world state, diffs, and entity trajectories directly from `.sqlite` saves (pass `--json` to any subcommand for machine-readable output):
+Inspect branching timelines, POV world state, diffs, trajectories, and Series Bibles directly from `.sqlite` saves (pass `--json` to any subcommand for machine-readable output):
 
 ```bash
 $ canonarc tree story_save.sqlite
@@ -305,6 +327,8 @@ Diff main vs reconciliation_route @ step 85:
 # Additional commands:
 canonarc inspect story_save.sqlite --timeline main --step 85 --pov char_arthur
 canonarc history story_save.sqlite char_arthur --timeline main
+canonarc export story_save.sqlite bible.md --step 85 --include-state
+canonarc import story_save.sqlite glossary.csv --step 0 --dry-run
 ```
 
 ---

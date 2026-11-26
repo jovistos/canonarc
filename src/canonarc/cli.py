@@ -6,6 +6,7 @@ import sys
 from collections.abc import Sequence
 from typing import Any
 
+from .bible import infer_export_format
 from .engine import CanonArcEngine
 from .models import TimelineInfo
 
@@ -108,6 +109,78 @@ def _cmd_history(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_export(args: argparse.Namespace) -> int:
+    kinds = [k.strip() for k in args.kinds.split(",") if k.strip()] if args.kinds else None
+    with CanonArcEngine(args.db_path, timeline_id=args.timeline, on_embedder_mismatch="ignore") as engine:
+        if args.output_path == "-":
+            fmt = infer_export_format(None, args.format)
+            content, _ = engine.render_bible(
+                format=fmt,
+                at_step=args.step,
+                timeline_id=args.timeline,
+                kinds=kinds,
+                include_state=bool(args.include_state),
+                include_edges=not bool(args.no_edges),
+                include_aliases=not bool(args.no_aliases),
+                lang=args.lang,
+            )
+            sys.stdout.write(content)
+            return 0
+        result = engine.export_bible(
+            args.output_path,
+            format=args.format,
+            at_step=args.step,
+            timeline_id=args.timeline,
+            kinds=kinds,
+            include_state=bool(args.include_state),
+            include_edges=not bool(args.no_edges),
+            include_aliases=not bool(args.no_aliases),
+            lang=args.lang,
+            excel_bom=bool(args.excel_bom),
+        )
+    if args.json:
+        print(json.dumps(result.model_dump(), indent=2, ensure_ascii=False))
+    else:
+        print(
+            f"Exported {result.entity_count} entities, {result.alias_count} aliases, "
+            f"{result.edge_count} edges ({result.format}) to {result.path} "
+            f"[timeline={result.timeline_id}, step={result.at_step}]."
+        )
+    return 0
+
+
+def _cmd_import(args: argparse.Namespace) -> int:
+    col_map: dict[str, str] | None = None
+    if args.column_map:
+        col_map = {}
+        for pair in args.column_map:
+            if "=" not in pair:
+                print(
+                    f"Error: --column-map expects 'SRC=DST' format, got {pair!r}.",
+                    file=sys.stderr,
+                )
+                return 2
+            src_col, dst_col = pair.split("=", 1)
+            col_map[src_col.strip()] = dst_col.strip()
+    with CanonArcEngine(args.db_path, timeline_id=args.timeline, on_embedder_mismatch="ignore") as engine:
+        report = engine.sync_bible(
+            args.input_path,
+            format=args.format,
+            step=args.step,
+            timeline_id=args.timeline,
+            mode=args.mode,
+            target_lang=args.target_lang,
+            auto_inflect=False,
+            dry_run=bool(args.dry_run),
+            column_map=col_map,
+        )
+    if args.json:
+        print(json.dumps(report.model_dump(), indent=2, ensure_ascii=False))
+    else:
+        print(report.summary())
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="canonarc",
@@ -145,6 +218,54 @@ def build_parser() -> argparse.ArgumentParser:
     p_hist.add_argument("--type", default=None, help="Record type filter (entity|edge|alias).")
     p_hist.add_argument("--json", action="store_true", help="Output JSON.")
     p_hist.set_defaults(func=_cmd_history)
+
+    p_export = sub.add_parser("export", help="Export Series Bible to CSV, JSON, or Markdown.")
+    p_export.add_argument("db_path", help="Path to SQLite database file.")
+    p_export.add_argument("output_path", help="Output file path (or '-' for stdout).")
+    p_export.add_argument(
+        "--format",
+        default="auto",
+        choices=["auto", "csv", "json", "md"],
+        help="Output format (default: auto-detect from extension).",
+    )
+    p_export.add_argument("--timeline", default="main", help="Timeline ID (default: main).")
+    p_export.add_argument("--step", type=int, default=None, help="Step to export (default: timeline head).")
+    p_export.add_argument("--kinds", default=None, help="Comma-separated entity kind filter (e.g. character,term).")
+    p_export.add_argument("--lang", default=None, help="Filter aliases by ISO/BCP-47 language tag.")
+    p_export.add_argument("--include-state", action="store_true", help="Include Tier 3 rolling state.")
+    p_export.add_argument("--no-edges", action="store_true", help="Exclude directed edges (JSON/MD).")
+    p_export.add_argument("--no-aliases", action="store_true", help="Exclude aliases.")
+    p_export.add_argument("--excel-bom", action="store_true", help="Write UTF-8 BOM for Excel CSV compatibility.")
+    p_export.add_argument("--json", action="store_true", help="Output export metadata as JSON.")
+    p_export.set_defaults(func=_cmd_export)
+
+    p_import = sub.add_parser("import", help="Sync a CSV or JSON Series Bible into the database.")
+    p_import.add_argument("db_path", help="Path to SQLite database file.")
+    p_import.add_argument("input_path", help="Path to CSV or JSON Bible file.")
+    p_import.add_argument(
+        "--format",
+        default="auto",
+        choices=["auto", "csv", "json"],
+        help="Input format (default: auto-detect from extension).",
+    )
+    p_import.add_argument("--timeline", default="main", help="Timeline ID (default: main).")
+    p_import.add_argument("--step", type=int, default=0, help="Causal step at which to apply changes (default: 0).")
+    p_import.add_argument(
+        "--mode",
+        default="upsert",
+        choices=["upsert", "merge", "replace"],
+        help="Sync mode: upsert (default), merge (non-destructive), or replace (strict mirror).",
+    )
+    p_import.add_argument("--target-lang", default=None, help="Default target language tag for target_name aliases.")
+    p_import.add_argument(
+        "--column-map",
+        action="append",
+        default=[],
+        help="Map CSV header to canonical column in 'SRC=DST' format (repeatable).",
+    )
+    p_import.add_argument("--dry-run", action="store_true", help="Preview diff without modifying the database.")
+    p_import.add_argument("--json", action="store_true", help="Output sync report as JSON.")
+    p_import.set_defaults(func=_cmd_import)
 
     return parser
 

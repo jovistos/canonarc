@@ -1,5 +1,15 @@
 from __future__ import annotations
 
+from .bible import (
+    BibleExportFormat,
+    BibleExportResult,
+    BibleImportFormat,
+    BibleSyncMode,
+    BibleSyncReport,
+    export_bible,
+    render_bible,
+    sync_bible,
+)
 from .embedders import (
     CallableEmbedder,
     Embedder,
@@ -76,6 +86,11 @@ __all__ = [
     "MODEL_PRICING_PER_1M_USD",
     "AliasRecord",
     "BaseEngineHooks",
+    "BibleExportFormat",
+    "BibleExportResult",
+    "BibleImportFormat",
+    "BibleSyncMode",
+    "BibleSyncReport",
     "CachedDeltaExtractor",
     "CallableEmbedder",
     "CallableExtractor",
@@ -127,8 +142,11 @@ __all__ = [
     "build_inflection_prompt",
     "compute_step_hash",
     "embed_texts_batch",
+    "export_bible",
     "get_embedder_info",
     "get_model_pricing_per_1m_usd",
     "load_dotenv",
+    "render_bible",
     "resolve_lmstudio_model",
+    "sync_bible",
 ]
