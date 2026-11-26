@@ -68,7 +68,7 @@ What `tx.harvest_voice()` does automatically:
 ### Pluggable `VoiceQualityScorer` Implementations
 - **`HeuristicVoiceQualityScorer`** *(default, zero-LLM)*: Deterministic scorer combining normalized Gate-1 distinctiveness, lexical diversity, length sweet spot, attribution/metadata completeness, dialogue expressiveness, and template/markup artifact penalties.
 - **`CallableVoiceQualityScorer(fn)`**: Wraps any 1-, 2-, or 3-argument Python callable `(candidate[, metadata[, context]]) -> float | VoiceScoreResult`.
-- **`LLMVoiceQualityScorer(extractor, *, batch_size=15, fallback_scorer=None)`**: Optional batched LLM judge backed by `OpenAICompatibleExtractor`. Evaluates all Gate-1 candidates from a scene in a single JSON call (verifying character voice, register fidelity, and optional `source_text` alignment), with optional `metadata_updates` and fallback scoring.
+- **`LLMVoiceQualityScorer(extractor, *, batch_size=15, fallback_scorer=None)`**: Optional batched LLM judge backed by any `JsonCompletionClient` (`OpenAICompatibleExtractor`, `CallableExtractor`, `CachedDeltaExtractor`, or custom client). Evaluates all Gate-1 candidates from a scene in a single JSON call (verifying character voice, register fidelity, and optional `source_text` alignment), with optional `metadata_updates`, fallback scoring, and `last_usage`/`total_usage` tracking.
 
 Configure a default scorer on `CanonArcEngine(..., voice_scorer=...)` or pass `scorer=...` per call to `tx.harvest_voice(...)`.
 

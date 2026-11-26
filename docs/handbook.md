@@ -825,23 +825,39 @@ with CanonArcEngine("story_save.sqlite", extractor=extractor) as engine:
     print("Est. USD:", extractor.billable_usage.estimate_cost_usd(model=raw_extractor.model))
 ```
 
-**Bridging LangChain or custom SDKs (`CallableExtractor`):** If your application already manages LLM clients (e.g., LangChain, Anthropic SDK, Google GenAI), pass `messages_fn` so `canonarc` keeps the static `system_prompt` separate from the dynamic `user_prompt` (preserving provider prefix caching even across validation retries) and return `(payload, usage)` to bridge token telemetry into `CachedDeltaExtractor`:
+**Bridging LangChain or custom SDKs (`CallableExtractor` & `JsonCompletionClient`):** If your application already manages LLM clients (e.g., LangChain, Anthropic SDK, Google GenAI), pass `messages_fn` so `canonarc` keeps the static `system_prompt` separate from the dynamic `user_prompt` (preserving provider prefix caching even across validation retries) and return `(payload, usage)` to bridge token telemetry into `CachedDeltaExtractor`. Because `CallableExtractor` and `CachedDeltaExtractor` also implement `JsonCompletionClient.call_json_api(...)`, the **exact same adapter** powers `DeltaExtractor`, `LLMInflectionGenerator`, and `LLMVoiceQualityScorer` with unified `on_usage` accounting:
 
 ```python
-from canonarc import CachedDeltaExtractor, CallableExtractor, StepDelta
+from canonarc import (
+    CachedDeltaExtractor,
+    CallableExtractor,
+    LLMInflectionGenerator,
+    LLMVoiceQualityScorer,
+    StepDelta,
+)
 
-def call_sdk(system_prompt: str, user_prompt: str, schema: dict):
-    # Send system_prompt as SystemMessage and user_prompt as HumanMessage
-    parsed, usage_meta = my_structured_caller.invoke(system_prompt, user_prompt, schema=StepDelta)
-    return parsed, usage_meta  # accepts TokenUsage or OpenAI / Anthropic / LangChain usage dicts
+def call_sdk(system_prompt: str, user_prompt: str, schema: dict, *, max_tokens=None, temperature=None):
+    # `schema` is StepDelta's JSON schema during extraction, and {} for generic JSON calls
+    # (inflections / Gate-2 voice scoring). Optional max_tokens / temperature are forwarded when accepted.
+    if schema:
+        parsed, usage_meta = my_structured_caller.invoke(system_prompt, user_prompt, schema=StepDelta)
+        return parsed, usage_meta
+    raw_json, usage_meta = my_json_caller.invoke(
+        system_prompt, user_prompt, max_tokens=max_tokens, temperature=temperature
+    )
+    return raw_json, usage_meta  # accepts TokenUsage or OpenAI / Anthropic / LangChain usage dicts
 
 raw_extractor = CallableExtractor(
     messages_fn=call_sdk,
-    model="gemini-2.5-flash",          # flows into CachedDeltaExtractor cache key & pricing
+    model="gemini-2.5-flash",          # flows into CachedDeltaExtractor & inflection cache keys
     max_retries=2,
-    on_usage=my_ledger.record,         # optional callback (skipped on disk cache hits)
+    on_usage=my_ledger.record,         # unified callback across extraction, inflections, and voice scoring
 )
 extractor = CachedDeltaExtractor(raw_extractor, cache_dir=".canonarc_cache")
+
+# Reuse the same adapter across all three LLM subsystems:
+inflector = LLMInflectionGenerator(extractor, cache_dir=".canonarc_inflections")
+voice_scorer = LLMVoiceQualityScorer(extractor)
 ```
 
 **Why `engine.normalize_delta()` matters:** Even when an LLM emits natural surface names (`"Arthur"`, `"the old wizard"`) instead of canonical IDs (`"char_arthur"`, `"char_merlin"`), or links an `EdgeDelta.caused_by_episode_id` to a newly created episode in the same step, `normalize_delta()` automatically maps surface names back to canonical IDs and resolves intra-step symbolic episode references before writing to SQLite.
@@ -1206,7 +1222,7 @@ Benchmarks across 3K–12K synthetic stories ([`docs/benchmarks.md`](benchmarks.
 | **Episodic Ranker** | [`src/canonarc/episodic.py`](../src/canonarc/episodic.py) | `EpisodeRanker`, `DefaultEpisodeRanker`, `EpisodicScoringPolicy` | Deceived-POV safe 4-signal scorer with salience-modulated exponential decay |
 | **Mention Resolver** | [`src/canonarc/resolver.py`](../src/canonarc/resolver.py) | `MentionResolver`, `DefaultLexicalResolver` | Word-boundary, CJK-safe, shared-span, and `rapidfuzz` inflection matching |
 | **Inflections** | [`src/canonarc/inflections.py`](../src/canonarc/inflections.py) | `InflectionGenerator`, `InflectionRequest`, `CallableInflectionGenerator`, `LLMInflectionGenerator`, `generate_inflections_batch` | One-shot and batched (`batch_size=25`) morphological inflection generation with shared per-item cache (`kind="inflection"`) |
-| **LLM Extractors** | [`src/canonarc/extractors.py`](../src/canonarc/extractors.py) | `DeltaExtractor`, `CallableExtractor`, `OpenAICompatibleExtractor`, `CachedDeltaExtractor`, `TokenUsage`, `load_dotenv` | Zero-dep OpenAI/Gemini/DeepSeek/LM Studio clients, `<think>` stripping, retry loop, SHA-256 cache, cost estimation |
+| **LLM Extractors** | [`src/canonarc/extractors.py`](../src/canonarc/extractors.py) | `DeltaExtractor`, `JsonCompletionClient`, `CallableExtractor`, `OpenAICompatibleExtractor`, `CachedDeltaExtractor`, `TokenUsage`, `load_dotenv` | Zero-dep OpenAI/Gemini/DeepSeek/LM Studio clients, unified JSON completion protocol, `<think>` stripping, retry loop, SHA-256 cache, cost estimation |
 | **Lifecycle Hooks** | [`src/canonarc/hooks.py`](../src/canonarc/hooks.py) | `EngineHooks`, `BaseEngineHooks` | Observability callbacks for commit, rollback, branch, and Gate 1/2 rejections |
 | **Domain Presets** | [`src/canonarc/presets.py`](../src/canonarc/presets.py) | `DomainPreset`, `SchemaPolicy`, `InteractiveFictionPreset`, `TranslationPreset`, `SimulationPreset` | Domain prompt formatters and policy-driven filter/boost weights |
 | **Engine Facade** | [`src/canonarc/engine.py`](../src/canonarc/engine.py) | `CanonArcEngine`, `StepTransaction`, `TimelineSession` | Unified Tier 1–6 retrieval, POV projection, `normalize_delta`, consolidation, `contextvars` sessions |
