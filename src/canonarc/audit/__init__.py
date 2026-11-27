@@ -36,7 +36,8 @@ from .runner import (
     run_audit_step,
     run_audit_timeline,
 )
-from .text_utils import _ENTITY_ID_PREFIXES as _ENTITY_ID_PREFIXES, _entity_id_slug as _entity_id_slug
+from .text_utils import _ENTITY_ID_PREFIXES as _ENTITY_ID_PREFIXES
+from .text_utils import _entity_id_slug as _entity_id_slug
 
 __all__ = [
     "AuditContext",
