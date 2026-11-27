@@ -33,7 +33,7 @@ Only co-present scene characters (`ctx.entities`) and edges between them (`ctx.a
 
 ## 2. `TranslationPreset`
 
-Designed for literary and video game localization pipelines. Emphasizes grammatical declension/gender rules, target exonyms, entity kinds, translator notes, register constraints, and historical episodic context.
+Designed for literary and video game localization pipelines (used in the [blebel-ai-book-translator](https://github.com/jovistos/blebel-ai-book-translator) book translation app). Emphasizes grammatical declension/gender rules, target exonyms, entity kinds, translator notes, register constraints, and historical episodic context.
 
 By default, `TranslationPreset` renders **translator-friendly prose prompts** using human-readable display names (no raw `char_*` / `loc_*` internal IDs that can leak into translated output on smaller local models), while `engine.build_extraction_messages()` continues to pass full canonical `entity_id`s to the extractor LLM. Colliding canonical names are automatically disambiguated by `[kind]` (when kinds differ) or `({entity_id})` (when both name and kind collide).
 
