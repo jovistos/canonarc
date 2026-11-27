@@ -463,6 +463,12 @@ jupyter lab examples/
 
 ---
 
+## Used In
+
+- [**blebel-ai-book-translator**](https://github.com/jovistos/blebel-ai-book-translator) — AI book translation app using `canonarc` for narrative memory, glossary locking, and cross-chapter translation continuity.
+
+---
+
 ## Built-In Adapters, Sessions & Lifecycle Hooks
 
 - **Embedders (no extra SDKs required)** (`canonarc.embedders`): `OfflineNgramEmbedder` (with CJK tokenization & signed feature hashing), `CallableEmbedder`, `OpenAICompatibleEmbedder`, and `OllamaEmbedder` with `embed_batch()` and automatic embedder-mismatch detection (`on_embedder_mismatch="warn" | "raise" | "reindex" | "ignore"`).
