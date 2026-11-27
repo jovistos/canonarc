@@ -21,6 +21,7 @@ These domains are directly supported by built-in [Domain Presets](presets.md) an
 ### Literary & Video Game Localization / Translation Pipelines
 - **Preset:** `TranslationPreset`
 - **Typical targets:** Sequential novel translation, JRPG/visual novel localization, and dubbing or subtitle pipelines.
+- **Real-world example:** [blebel-ai-book-translator](https://github.com/jovistos/blebel-ai-book-translator) — book translation app powered by `canonarc`.
 - **Why `canonarc` fits:**
   - **Grammar & exonym locking (Tier 1):** Stores immutable base attributes such as grammatical gender, declension class, and target-language exonyms.
   - **Asymmetric dyadic register (Tier 2):** Models directed relationships (`A -> B != B -> A`) for T–V distinctions (e.g., *ti* vs. *Vi*), Japanese/Korean honorifics, and politeness shifts across a story.
