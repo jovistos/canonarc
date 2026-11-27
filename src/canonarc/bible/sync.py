@@ -4,7 +4,7 @@ import hashlib
 import json
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -209,7 +209,7 @@ def _record_sync_metadata(
         return
     payload = dict(fingerprint)
     payload["path"] = str(src_path.resolve())
-    payload["synced_at"] = datetime.now(timezone.utc).isoformat()
+    payload["synced_at"] = datetime.now(UTC).isoformat()
     set_meta(_bible_sync_metadata_key(timeline_id, src_path), json.dumps(payload, sort_keys=True))
 
 

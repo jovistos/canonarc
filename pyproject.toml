@@ -87,6 +87,10 @@ target-version = "py311"
 line-length = 120
 src = ["src", "tests"]
 
+[tool.ruff.lint]
+# JSON/LLM payload schema validation intentionally raises ValueError on unexpected payload types.
+ignore = ["TRY004"]
+
 [tool.mypy]
 python_version = "3.11"
 mypy_path = "src"

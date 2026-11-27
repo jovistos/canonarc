@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 from unittest.mock import patch
 
 import pytest
@@ -329,10 +329,10 @@ def test_openai_compatible_extractor_on_usage_callback() -> None:
     usage_events: list[TokenUsage] = []
 
     class _FakeResp:
-        def __enter__(self) -> _FakeResp:
+        def __enter__(self) -> Self:
             return self
 
-        def __exit__(self, *args: Any) -> None:
+        def __exit__(self, *args: object) -> None:
             return None
 
         def read(self) -> bytes:

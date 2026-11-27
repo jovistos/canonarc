@@ -117,13 +117,7 @@ def build_extraction_messages_impl(
         if compact_schema
         else json.dumps(raw_schema, indent=2)
     )
-    system_prompt = "\n\n".join(
-        [
-            engine.preset.extraction_instructions(),
-            "### Target StepDelta JSON Schema:",
-            schema_json,
-        ]
-    )
+    system_prompt = f"{engine.preset.extraction_instructions()}\n\n### Target StepDelta JSON Schema:\n\n{schema_json}"
 
     seen_entity_ids: set[str] = set()
     entity_lines: list[str] = []

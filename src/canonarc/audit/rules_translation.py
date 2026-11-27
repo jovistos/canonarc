@@ -7,7 +7,7 @@ from rapidfuzz import fuzz
 
 from ..embedders import _CJK_CHAR_RE
 from ..models import AliasRecord, EntityRecord, ResolvedMention
-from ..resolver import DefaultLexicalResolver, _VOWELS
+from ..resolver import _VOWELS, DefaultLexicalResolver
 from .models import AuditContext, AuditIssue, AuditSeverity
 from .text_utils import (
     _LETTER_TOKEN_RE,
@@ -178,9 +178,12 @@ class TargetTermComplianceRule:
                 if not raw_tok or not raw_tok[0].isupper():
                     continue
                 for stem, allowed_suffixes in stems:
-                    if lower_tok.startswith(stem) and len(lower_tok) > len(stem):
-                        if lower_tok[len(stem) :] in allowed_suffixes:
-                            return True
+                    if (
+                        lower_tok.startswith(stem)
+                        and len(lower_tok) > len(stem)
+                        and lower_tok[len(stem) :] in allowed_suffixes
+                    ):
+                        return True
 
         if fuzzy_stem_threshold is not None and len(ref_word_lower) >= 5:
             stem = (
@@ -192,9 +195,12 @@ class TargetTermComplianceRule:
                 for raw_tok, lower_tok, _, _ in raw_token_spans:
                     if not raw_tok or not raw_tok[0].isupper():
                         continue
-                    if lower_tok.startswith(stem) and len(lower_tok) <= len(ref_word_lower) + 4:
-                        if float(fuzz.ratio(ref_word_lower, lower_tok)) >= fuzzy_stem_threshold:
-                            return True
+                    if (
+                        lower_tok.startswith(stem)
+                        and len(lower_tok) <= len(ref_word_lower) + 4
+                        and float(fuzz.ratio(ref_word_lower, lower_tok)) >= fuzzy_stem_threshold
+                    ):
+                        return True
         return False
 
     def _matches_target(
@@ -300,9 +306,10 @@ class TargetTermComplianceRule:
                     if abs(len(cand_lower) - len(ref)) > max_len_diff:
                         continue
                     score = float(fuzz.ratio(cand_lower, ref))
-                    if score >= self.near_miss_threshold:
-                        if best is None or score > best[3] or (score == best[3] and len(cand_raw) > len(best[0])):
-                            best = (cand_raw, start, end, score)
+                    if score >= self.near_miss_threshold and (
+                        best is None or score > best[3] or (score == best[3] and len(cand_raw) > len(best[0]))
+                    ):
+                        best = (cand_raw, start, end, score)
         return best
 
     @staticmethod
@@ -471,10 +478,12 @@ class TargetTermComplianceRule:
             if entity.base_attributes.get("allow_source_name"):
                 if re.search(_phrase_pattern(canonical), target_text, re.IGNORECASE):
                     continue
-            elif canonical.lower() != target_name.lower():
-                if not re.search(_phrase_pattern(canonical), target_name, re.IGNORECASE):
-                    if re.search(_phrase_pattern(canonical), target_text, 0):
-                        continue
+            elif (
+                canonical.lower() != target_name.lower()
+                and not re.search(_phrase_pattern(canonical), target_name, re.IGNORECASE)
+                and re.search(_phrase_pattern(canonical), target_text, 0)
+            ):
+                continue
 
             accepted_forms = self._collect_accepted_target_forms(
                 target_name, ent_aliases, target_lang
@@ -673,7 +682,7 @@ class ScriptConsistencyRule:
         issues: list[AuditIssue] = []
 
         if mixed_hits:
-            first_tok, first_start, first_end, _ = mixed_hits[0]
+            _first_tok, first_start, first_end, _ = mixed_hits[0]
             unique_tokens = list(dict.fromkeys(tok for tok, _, _, _ in mixed_hits))
             scripts_by_tok: dict[str, list[str]] = {}
             for tok, _, _, scs in mixed_hits:

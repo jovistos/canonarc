@@ -90,7 +90,7 @@ class NearDuplicateEntityRule:
             for e_src, e_lbl in exist_labels:
                 if not e_lbl:
                     continue
-                is_alias = e_src.startswith("alias:") or e_src.startswith("persona:")
+                is_alias = e_src.startswith(("alias:", "persona:"))
                 if self.same_kind_only and not is_alias and candidate.kind != existing.kind:
                     continue
                 if c_lbl == e_lbl:
@@ -100,9 +100,8 @@ class NearDuplicateEntityRule:
                 else:
                     continue
 
-                if score >= self.fuzzy_threshold:
-                    if best is None or score > best[0]:
-                        best = (score, c_src, e_src, e_lbl)
+                if score >= self.fuzzy_threshold and (best is None or score > best[0]):
+                    best = (score, c_src, e_src, e_lbl)
         return best
 
     def check(self, ctx: AuditContext) -> list[AuditIssue]:

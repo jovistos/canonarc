@@ -15,8 +15,14 @@ from ..audit import (
     DuplicateCandidate,
     StepTextEntry,
     StepTextProvider,
+)
+from ..audit import (
     find_duplicate_candidates as _find_duplicate_candidates,
+)
+from ..audit import (
     run_audit_step as _run_audit_step,
+)
+from ..audit import (
     run_audit_timeline as _run_audit_timeline,
 )
 from ..bible import (
@@ -28,10 +34,20 @@ from ..bible import (
     BibleSection,
     BibleSyncMode,
     BibleSyncReport,
+)
+from ..bible import (
     bootstrap_bible as _bootstrap_bible,
+)
+from ..bible import (
     export_bible as _export_bible,
+)
+from ..bible import (
     render_bible as _render_bible,
+)
+from ..bible import (
     sync_bible as _sync_bible,
+)
+from ..bible import (
     sync_bible_if_changed as _sync_bible_if_changed,
 )
 from ..embedders import Embedder

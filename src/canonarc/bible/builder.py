@@ -173,8 +173,10 @@ class BibleDraft(BaseModel):
     def summary(self) -> str:
         total_aliases = sum(len(v) for v in self.aliases.values())
         parts = [
-            f"BibleDraft: {len(self.entities)} entities, {total_aliases} aliases "
-            f"({self.sections_processed} sections, {self.api_calls} API calls, {self.cache_hits} cache hits)",
+            (
+                f"BibleDraft: {len(self.entities)} entities, {total_aliases} aliases "
+                f"({self.sections_processed} sections, {self.api_calls} API calls, {self.cache_hits} cache hits)"
+            ),
         ]
         if self.conflicts:
             parts.append(f"  Conflicts ({len(self.conflicts)}):")

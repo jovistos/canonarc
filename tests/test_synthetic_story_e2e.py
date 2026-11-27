@@ -5,6 +5,15 @@ from pathlib import Path
 from typing import Self
 
 import pytest
+
+from canonarc import (
+    CachedDeltaExtractor,
+    OpenAICompatibleExtractor,
+    StepDelta,
+    TokenUsage,
+    load_dotenv,
+    resolve_lmstudio_model,
+)
 from synthetic_story_harness import (
     BlueprintOracleExtractor,
     DeterministicStoryCompiler,
@@ -21,15 +30,6 @@ from synthetic_story_library import (
     StoryLibraryManager,
     moods_soft_match,
     validate_story_prose_contract,
-)
-
-from canonarc import (
-    CachedDeltaExtractor,
-    OpenAICompatibleExtractor,
-    StepDelta,
-    TokenUsage,
-    load_dotenv,
-    resolve_lmstudio_model,
 )
 
 

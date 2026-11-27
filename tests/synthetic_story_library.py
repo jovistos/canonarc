@@ -10,16 +10,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, ClassVar, Literal
 
-from synthetic_story_harness import (
-    ArtifactSeed,
-    CharacterSeed,
-    DeterministicStoryCompiler,
-    InitialEdgeSeed,
-    LocationSeed,
-    SyntheticChunkSpec,
-    SynthStoryParams,
-)
-
 from canonarc import (
     AliasRecord,
     CachedDeltaExtractor,
@@ -38,6 +28,15 @@ from canonarc import (
     load_dotenv,
 )
 from canonarc.extractors import _strip_json_fences
+from synthetic_story_harness import (
+    ArtifactSeed,
+    CharacterSeed,
+    DeterministicStoryCompiler,
+    InitialEdgeSeed,
+    LocationSeed,
+    SyntheticChunkSpec,
+    SynthStoryParams,
+)
 
 DEFAULT_STORIES_ROOT = Path(__file__).resolve().parent / "synthetic_stories"
 

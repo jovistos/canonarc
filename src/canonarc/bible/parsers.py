@@ -81,7 +81,7 @@ def _parse_csv_bible(
 
         state: dict[str, Any] = {}
         has_state = False
-        if "state" in mapped and mapped["state"]:
+        if mapped.get("state"):
             try:
                 parsed_state = json.loads(mapped["state"])
             except json.JSONDecodeError as exc:
@@ -93,7 +93,7 @@ def _parse_csv_bible(
 
         private_state: dict[str, Any] = {}
         has_private_state = False
-        if "private_state" in mapped and mapped["private_state"]:
+        if mapped.get("private_state"):
             try:
                 parsed_priv = json.loads(mapped["private_state"])
             except json.JSONDecodeError as exc:

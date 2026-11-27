@@ -184,10 +184,11 @@ def _merge_dict_fields(
     for k, v in source.items():
         if k in skip_keys or _is_empty_val(v):
             continue
-        if conflict_strategy == "duplicate_wins" or k not in target or _is_empty_val(target[k]):
-            if target.get(k) != v:
-                target[k] = v
-                merged_keys.append(k)
+        if (
+            conflict_strategy == "duplicate_wins" or k not in target or _is_empty_val(target[k])
+        ) and target.get(k) != v:
+            target[k] = v
+            merged_keys.append(k)
     return merged_keys
 
 

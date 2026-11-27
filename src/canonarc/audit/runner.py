@@ -77,9 +77,7 @@ def build_audit_context(
     episodes_at_step: tuple[EpisodeRecord, ...] = ()
     all_episode_ids: frozenset[str] = frozenset()
     if engine._policy.has_tier(6):
-        if load_episodes is None:
-            should_load_episodes = True
-        elif load_episodes:
+        if load_episodes is None or load_episodes:
             should_load_episodes = True
         else:
             should_load_episodes = bool(
