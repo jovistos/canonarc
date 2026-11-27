@@ -193,9 +193,8 @@ class DefaultLexicalResolver:
         for a in aliases:
             if not a.alias:
                 continue
-            if lang_norm is not None and a.lang is not None:
-                if a.lang.strip().lower() != lang_norm:
-                    continue
+            if lang_norm is not None and a.lang is not None and a.lang.strip().lower() != lang_norm:
+                continue
             alias_map.setdefault(a.alias.lower(), []).append(a)
         return name_to_id, alias_map
 

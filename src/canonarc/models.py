@@ -495,12 +495,16 @@ class EntityMergeReport(BaseModel):
     def summary(self) -> str:
         prefix = "[DRY RUN] " if self.dry_run else ""
         lines = [
-            f"{prefix}Merged '{self.duplicate_id}' -> '{self.canonical_id}' "
-            f"(timeline={self.timeline_id}, step={self.step})",
+            (
+                f"{prefix}Merged '{self.duplicate_id}' -> '{self.canonical_id}' "
+                f"(timeline={self.timeline_id}, step={self.step})"
+            ),
             f"  Aliases promoted: {len(self.aliases_added)}, tombstoned: {len(self.aliases_tombstoned)}",
             f"  Attributes merged: {len(self.base_attributes_merged)}, state keys merged: {len(self.state_keys_merged)}",
-            f"  Edges migrated: {len(self.edges_migrated)}, merged on collision: {len(self.edges_merged_on_collision)}, "
-            f"tombstoned: {len(self.edges_tombstoned)}, self-loops dropped: {len(self.self_loops_dropped)}",
+            (
+                f"  Edges migrated: {len(self.edges_migrated)}, merged on collision: {len(self.edges_merged_on_collision)}, "
+                f"tombstoned: {len(self.edges_tombstoned)}, self-loops dropped: {len(self.self_loops_dropped)}"
+            ),
         ]
         if self.location_refs_updated:
             lines.append(f"  Location refs updated: {len(self.location_refs_updated)}")

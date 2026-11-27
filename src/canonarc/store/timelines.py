@@ -115,12 +115,12 @@ class _TimelineStoreMixin:
             try:
                 data = json.loads(row["value"])
                 synced_step = int(data.get("step", 0))
-            except Exception:
+            except (ValueError, TypeError, AttributeError):
                 keys_to_delete.append(row["key"])
                 continue
-            if gt_step is not None and synced_step > gt_step:
-                keys_to_delete.append(row["key"])
-            elif exact_steps is not None and synced_step in exact_steps:
+            if (gt_step is not None and synced_step > gt_step) or (
+                exact_steps is not None and synced_step in exact_steps
+            ):
                 keys_to_delete.append(row["key"])
         if keys_to_delete:
             self.conn.executemany(

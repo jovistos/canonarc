@@ -43,7 +43,7 @@ class VoiceQualityScorer(Protocol):
     ) -> float | VoiceScoreResult: ...
 
 
-def _coerce_voice_score_result(raw: float | int | VoiceScoreResult) -> VoiceScoreResult:
+def _coerce_voice_score_result(raw: float | VoiceScoreResult) -> VoiceScoreResult:
     if isinstance(raw, VoiceScoreResult):
         clamped = round(max(0.0, min(10.0, float(raw.score))), 3)
         clean_updates = {
