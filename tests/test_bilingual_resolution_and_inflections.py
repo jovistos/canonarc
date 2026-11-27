@@ -210,13 +210,17 @@ def test_callable_inflection_generator_and_registration_oneshot() -> None:
     # Resolve multiple chunks without any additional generator calls
     for chunk, expected_speaker in [
         (
-            'Petrov glas odjeknu hodnikom. '
-            '"Nikome ne verujte dok pažljivo ne proverimo sve pečate i ne zatvorimo kapije tvrđave večeras!"',
+            (
+                'Petrov glas odjeknu hodnikom. '
+                '"Nikome ne verujte dok pažljivo ne proverimo sve pečate i ne zatvorimo kapije tvrđave večeras!"'
+            ),
             "char_petar",
         ),
         (
-            'Jelenin pogled pade na Petra. '
-            '"Ovaj dokument je očigledan falsifikat koji su nam podmetnuli u samoj arhivi pre zore!"',
+            (
+                'Jelenin pogled pade na Petra. '
+                '"Ovaj dokument je očigledan falsifikat koji su nam podmetnuli u samoj arhivi pre zore!"'
+            ),
             "char_elena",
         ),
     ]:

@@ -299,10 +299,9 @@ def test_transaction_trace_skipped_rolled_back_and_unentered() -> None:
         assert skip_trace.error is None
 
         # Rolled back: exception raised inside block
-        with pytest.raises(ValueError, match="boom"):
-            with engine.step_transaction(2, text="Failing step") as tx_err:
-                tx_err.commit(StepDelta())
-                raise ValueError("boom")
+        with pytest.raises(ValueError, match="boom"), engine.step_transaction(2, text="Failing step") as tx_err:
+            tx_err.commit(StepDelta())
+            raise ValueError("boom")
         err_trace = tx_err.trace()
         assert err_trace.status == "rolled_back"
         assert err_trace.error == "ValueError: boom"

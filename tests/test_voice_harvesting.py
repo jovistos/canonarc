@@ -397,14 +397,13 @@ def test_harvest_voice_gate2_rejection_hooks_dry_run_and_rollback():
     assert engine.store.get_lineage_voice_exemplars("main", 2, "char_merlin") == []
 
     # 3. Exception inside transaction rolls back harvested exemplars atomically
-    with pytest.raises(RuntimeError, match="boom"):
-        with engine.step_transaction(3, text=scene) as tx:
-            staged = tx.harvest_voice(
-                scene,
-                scorer=CallableVoiceQualityScorer(lambda c: 9.2),
-            )
-            assert len(staged) == 1
-            raise RuntimeError("boom")
+    with pytest.raises(RuntimeError, match="boom"), engine.step_transaction(3, text=scene) as tx:
+        staged = tx.harvest_voice(
+            scene,
+            scorer=CallableVoiceQualityScorer(lambda c: 9.2),
+        )
+        assert len(staged) == 1
+        raise RuntimeError("boom")
     assert engine.store.get_lineage_voice_exemplars("main", 3, "char_merlin") == []
 
 

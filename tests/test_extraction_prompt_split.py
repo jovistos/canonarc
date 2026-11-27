@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 
 import pytest
 
@@ -118,7 +118,7 @@ def test_step_transaction_routes_split_messages_to_openai_compatible_extractor(
         def read(self) -> bytes:
             return self._raw
 
-        def __enter__(self) -> _FakeHTTPResponse:
+        def __enter__(self) -> Self:
             return self
 
         def __exit__(self, *args: object) -> None:

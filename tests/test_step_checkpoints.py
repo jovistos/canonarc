@@ -153,10 +153,11 @@ def test_step_transaction_checkpoints_and_atomic_rollback() -> None:
         assert engine.is_step_committed(2, metadata_match={"source": "commit_arg"}) is True
 
         # Exception raised inside StepTransaction must not leave a checkpoint behind
-        with pytest.raises(RuntimeError, match="boom"):
-            with engine.step_transaction(step=3, content_hash="tx_hash_3") as tx:
-                tx.commit(StepDelta())
-                raise RuntimeError("boom")
+        with pytest.raises(RuntimeError, match="boom"), engine.step_transaction(
+            step=3, content_hash="tx_hash_3"
+        ) as tx:
+            tx.commit(StepDelta())
+            raise RuntimeError("boom")
         assert engine.is_step_committed(3) is False
         assert engine.last_committed_step() == 2
 
