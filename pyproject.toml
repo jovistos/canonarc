@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "canonarc"
-version = "0.1.0"
+version = "0.2.0"
 description = "Branchable, spoiler-free narrative memory & world-state engine for LLM games, interactive fiction, multi-agent simulations, and localization — in a single SQLite file."
 readme = "README.md"
 license = "MIT"
